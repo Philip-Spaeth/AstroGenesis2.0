@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+      {
+          "label": "build-in-external-terminal",
+          "type": "shell",
+          "command": "c:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build-in-external-terminal.bat",
+          "group": {
+              "kind": "build",
+              "isDefault": true
+          },
+          "problemMatcher": ["$gcc"]
+      }
+  ]
+}

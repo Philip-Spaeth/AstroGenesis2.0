@@ -1,0 +1,7 @@
+{
+    "terminal.external.windowsExec": "C:\\Windows\\System32\\cmd.exe",
+    "terminal.external.linuxExec": "x-terminal-emulator",
+    "terminal.external.osxExec": "Terminal",
+    "cmake.configureOnOpen": true
+  }
+  

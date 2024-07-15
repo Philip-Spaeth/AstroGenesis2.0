@@ -1,0 +1,5 @@
+C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/CMakeFiles/rebuild_cache.dir
+C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/CMakeFiles/Astro_Genesis.dir
+C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/CMakeFiles/clean-build.dir
+C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/CMakeFiles/build-in-external-terminal.dir
+C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/CMakeFiles/edit_cache.dir
