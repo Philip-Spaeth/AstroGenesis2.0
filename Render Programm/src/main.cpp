@@ -1,6 +1,4 @@
 #include <iostream>
-#include "Engine.h"
-#include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -8,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string.h>
+#include <filesystem>
 #include "FileManager.h"
 #include "Engine.h"
 
@@ -17,8 +16,13 @@
 #include <debugapi.h>
 #endif
 
+using namespace std;
+namespace fs = std::filesystem;
+
 int main()
 {   
+	std::string dataFolder = "";
+	std::string dataFile = "";
     //get the DataFolder
     double deltaTime = 1;
     int numParticle = 1;
@@ -29,7 +33,8 @@ int main()
 
     while (true)
     {
-        std::string dataPath = "Data"; // Pfad zum Data-Ordner
+
+        std::string dataPath = "../Data"; // Pfad zum Data-Ordner eine Ebene höher
         std::cout << endl;
         std::cout << "Available simulations: \n\n";
 
@@ -117,9 +122,10 @@ int main()
 
 	//Remder the data
     std::cout << dataFolder << std::endl;
-    Engine engine(dataFolder);
-    FileManager* fileManager = new FileManager(dataFolder);
+    //Engine engine(dataFolder);
+    //FileManager* fileManager = new FileManager(dataFolder);
 
+/*
     if (!engine.init(physics->deltaTime)) {
         std::cerr << "Engine initialization failed." << std::endl;
         return;
@@ -241,4 +247,5 @@ int main()
     // Beenden Sie GLFW
     engine.clean();
     glfwTerminate();
+    */
 }

@@ -4,8 +4,6 @@
 #include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "Particle.h"
-#include "Physics.h"
 #include "FileManager.h"
 
 class Physics;
