@@ -6,6 +6,8 @@
 #include <vector>
 #include "Constants.h"
 #include "TimeIntegration.h"
+#include "DataManager.h"
+#include "random.h"
 
 using namespace math;
 
@@ -19,15 +21,22 @@ public:
 
 
 private:
-    double deltaTime = 1e2; //time step length
-    double timeSteps = 1000; //number of time steps
+    double deltaTime = 1; //time step length
+    double timeSteps = 100; //number of time steps
 
     double softening = 1e-3; //softening factor
 
+    //Total Energy of the system
+    std::vector<double> totalPotentialEnergy;
+    std::vector<double> totalKineticEnergy;
+    std::vector<double> totalInternalEnergy;
+    std::vector<double> totalEnergy;
+
     //pointers to modules
     std::shared_ptr<TimeIntegration> timeIntegration = std::make_shared<TimeIntegration>();
+    std::shared_ptr<DataManager> dataManager = std::make_shared<DataManager>("../../../Data/data1/");
 
     //particles
-    double numberOfParticles = 5;
+    double numberOfParticles = 10;
     std::vector<std::shared_ptr<Particle>> particles;
 };

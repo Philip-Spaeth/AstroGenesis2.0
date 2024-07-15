@@ -1,3 +1,5 @@
 # ninja log v6
-3	2189	7427454047023872	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	3383c79f295c0d18
-2195	2731	7427454068932605	MeinProgramm.exe	8ff5777a7b609967
+3	1626	7427602249975838	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	3383c79f295c0d18
+1633	2096	7427602266273796	MeinProgramm.exe	8ff5777a7b609967
+16	1668	7427602721226322	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	3383c79f295c0d18
+1669	2224	7427602737751813	MeinProgramm.exe	8ff5777a7b609967

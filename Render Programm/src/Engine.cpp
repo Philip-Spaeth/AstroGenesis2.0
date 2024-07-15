@@ -1,4 +1,4 @@
-#include "Engine.h"
+/*#include "Engine.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -907,3 +907,4 @@ void Engine::calculateGlobalScale()
     int exponent = static_cast<int>(std::floor(std::log10(std::abs(maxDistance))));
     globalScale = maxDistance / pow(10, exponent * 2 - 2);
 }
+*/

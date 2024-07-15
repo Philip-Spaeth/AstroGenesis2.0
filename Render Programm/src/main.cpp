@@ -7,8 +7,9 @@
 #include <iostream>
 #include <string.h>
 #include <filesystem>
-#include "FileManager.h"
+#include "DataManager.h"
 #include "Engine.h"
+#include <memory>
 
 //  Nur unter Windows
 #ifdef WIN32
@@ -20,108 +21,21 @@ using namespace std;
 namespace fs = std::filesystem;
 
 int main()
-{   
-	std::string dataFolder = "";
-	std::string dataFile = "";
+{
+
+    std::string dataFolder = "../../../Data"; // Pfad zum Data-Ordner eine Ebene höher
+
+
     //get the DataFolder
-    double deltaTime = 1;
-    int numParticle = 1;
+    int deltaTime = 1;
+    int numOfParticles = 1;
     int numTimeSteps = 1;
 
     std::string input;
     std::getline(std::cin, input);
 
-    while (true)
-    {
-
-        std::string dataPath = "../Data"; // Pfad zum Data-Ordner eine Ebene höher
-        std::cout << endl;
-        std::cout << "Available simulations: \n\n";
-
-        // Überprüfen, ob das Verzeichnis existiert und darauf zugegriffen werden kann
-        if (fs::exists(dataPath) && fs::is_directory(dataPath)) {
-            int i = 1;
-            for (const auto& entry : fs::directory_iterator(dataPath)) {
-                std::cout << "[" << i << "] " << entry.path().filename() << std::endl;
-                i++;
-            }
-        }
-        else {
-            std::cout << "No available simulations. The 'Data' folder is missing or inaccessible.\n";
-        }
 
 
-        //check wich folder to use based on the i number from above
-        std::string Input;
-        std::getline(std::cin, Input);
-        if (Input == "")
-        {
-            break;
-        }
-        else
-        {
-            int i = std::stoi(Input);
-            int j = 1;
-            for (const auto& entry : fs::directory_iterator("Data"))
-            {
-                if (i == j)
-                {
-                    dataFolder = entry.path().filename().string();
-
-                    // Get the number of timesteps and the particlesize from the info.txt file, separated by ';'
-                    std::string infoFile = "Data/" + dataFolder + "/info.txt";
-                    std::ifstream file(infoFile);
-                    if (!file.is_open()) {
-                        std::cerr << "Error opening file: " << infoFile << std::endl;
-                        break;
-                    }
-
-                    std::string line;
-                    // read the first line
-                    if (std::getline(file, line)) {
-                        try {
-                            numTimeSteps = std::stoi(line);
-                        }
-                        catch (const std::invalid_argument& e) {
-                            std::cerr << "Invalid number format for time steps: " << line << std::endl;
-                            file.close();
-                            break;
-                        }
-                    }
-                    // read the second line
-                    if (std::getline(file, line)) {
-                        try {
-                            numParticle = std::stoi(line);
-                        }
-                        catch (const std::invalid_argument& e) {
-                            std::cerr << "Invalid number format for particle size: " << line << std::endl;
-                            file.close();
-                            break;
-                        }
-                    }
-                    //read the third line
-                    if (std::getline(file, line)) {
-                        try {
-                            deltaTime = std::stod(line);
-                        }
-                        catch (const std::invalid_argument& e) {
-                            std::cerr << "Invalid number format for delta time: " << line << std::endl;
-                            file.close();
-                            break;
-                        }
-                    }
-
-                    file.close();
-                    break;
-                }
-                j++;
-            }
-            break;
-        }
-    }
-
-	//Remder the data
-    std::cout << dataFolder << std::endl;
     //Engine engine(dataFolder);
     //FileManager* fileManager = new FileManager(dataFolder);
 
