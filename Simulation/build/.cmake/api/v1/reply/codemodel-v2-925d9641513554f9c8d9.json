@@ -6,6 +6,7 @@
 			[
 				{
 					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16"
@@ -42,7 +43,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "Astro_Genesis::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Astro_Genesis-Debug-824748ab71996686dc06.json",
+					"jsonFile" : "target-Astro_Genesis-Debug-bffd6a82662c8975635b.json",
 					"name" : "Astro_Genesis",
 					"projectIndex" : 0
 				},
@@ -66,12 +67,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build",
-		"source" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation"
+		"build" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/build",
+		"source" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 2
+		"minor" : 6
 	}
 }

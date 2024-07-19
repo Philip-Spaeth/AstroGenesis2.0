@@ -84,33 +84,30 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g"
+					"fragment" : "-g -std=gnu++17"
 				},
 				{
 					"backtrace" : 3,
 					"fragment" : "-Wall"
-				},
-				{
-					"fragment" : "-std=gnu++17"
 				}
 			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 4,
-					"path" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/src"
+					"path" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/src/File"
+					"path" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/File"
 				},
 				{
 					"backtrace" : 7,
-					"path" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/src/Math"
+					"path" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math"
 				},
 				{
 					"backtrace" : 8,
-					"path" : "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/src/Physics"
+					"path" : "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Physics"
 				}
 			],
 			"language" : "CXX",

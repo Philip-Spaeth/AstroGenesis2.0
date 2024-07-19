@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation
+# Install script for directory: C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/philip/Desktop/Astro_Genesis_2.0/Simulation/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
