@@ -9,7 +9,7 @@ Simulation::Simulation()
 
     for(int i = 0; i < numberOfParticles; i++)
     {
-        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-1,1), random::between(-1,1), random::between(-1,1)), vec3(0.0, 0.0, 0.0), 1000000));
+        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
     }
     
     //save the particles data
@@ -57,12 +57,12 @@ void Simulation::run()
             totalKineticEnergy[t] += particles[i]->kineticEnergy;
             totalInternalEnergy[t] += particles[i]->internalEnergy;
             totalEnergy[t] += particles[i]->totalEnergy + particles[i]->potentialEnergy + particles[i]->kineticEnergy;
-
-            //calc the energy loss and print it out
-            //std::cout << (totalEnergy[0] - totalEnergy[t]) << std::endl;
         }
 
-        if(t == 0) std::cout << "total energy in the begining: " << totalEnergy[t] << std::endl;
+        if(t == 0) {std::cout << "total energy in the begining: " << totalEnergy[t] << std::endl;}
+
+        dataManager->printProgress(t, timeSteps);
+
         if(t == timeSteps - 1) std::cout << "total energy at the end: " << totalEnergy[t] << std::endl;
         if(t == timeSteps - 1) std::cout << "difference: " << (totalEnergy[t] - totalEnergy[0])<< std::endl;
         if(t == timeSteps - 1) std::cout << "difference in percentage: " << ((totalEnergy[t] - totalEnergy[0]) / totalEnergy[0] * 100)<< "%" << std::endl;

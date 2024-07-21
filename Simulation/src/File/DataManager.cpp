@@ -5,13 +5,11 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <iostream>
-#include <string.h>
 #include <filesystem>
+#include <iomanip>
 
 using namespace std;
 namespace fs = std::filesystem;
-
 
 DataManager::DataManager(std::string path)
 {
@@ -24,7 +22,6 @@ DataManager::~DataManager()
 
 void DataManager::writeInfoFile(int deltaTime, int timeSteps, int numberOfParticles)
 {
-    //create the directory if it does not exist
     if (!fs::exists(this->path))
     {
         fs::create_directories(this->path);
@@ -37,7 +34,7 @@ void DataManager::writeInfoFile(int deltaTime, int timeSteps, int numberOfPartic
         return;
     }
 
-    file << deltaTime<< ";" << std::endl;
+    file << deltaTime << ";" << std::endl;
     file << timeSteps << ";" << std::endl;
     file << numberOfParticles << ";" << std::endl;
 
@@ -47,8 +44,7 @@ void DataManager::writeInfoFile(int deltaTime, int timeSteps, int numberOfPartic
 void DataManager::readInfoFile(int& deltaTime, int& timeSteps, int& numberOfParticles)
 {
     std::string filename = this->path + "info.txt";
-    std::ifstream
-        file(filename);
+    std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return;
@@ -69,7 +65,6 @@ void DataManager::readInfoFile(int& deltaTime, int& timeSteps, int& numberOfPart
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep)
 {
-    //create the directory if it does not exist
     if (!fs::exists(this->path))
     {
         fs::create_directories(this->path);
@@ -81,12 +76,10 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         return;
     }
 
-    // Reserve space in the file for all particles
     size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(int));
     file.seekp(totalSize - 1);
-    file.write("", 1); // Write a dummy byte to extend the file size
+    file.write("", 1);
 
-    // Write particles in a single block
     char* buffer = reinterpret_cast<char*>(malloc(totalSize));
     if (buffer) {
         char* ptr = buffer;
@@ -116,24 +109,21 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
         return;
     }
 
-    particles.clear(); // Clear existing particles
+    particles.clear();
 
     while (!file.eof()) {
         auto particle = std::make_shared<Particle>();
 
-        // Read position
         file.read(reinterpret_cast<char*>(&particle->position), sizeof(vec3));
         if (file.gcount() != sizeof(vec3)) {
-            break; // Error or end of file
+            break;
         }
 
-        // Read velocity
         file.read(reinterpret_cast<char*>(&particle->velocity), sizeof(vec3));
         if (file.gcount() != sizeof(vec3)) {
-            break; // Error or end of file
+            break;
         }
 
-        // Read remaining properties
         file.read(reinterpret_cast<char*>(&particle->mass), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->temperature), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->pressure), sizeof(double));
@@ -145,4 +135,66 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
     }
 
     file.close();
+}
+
+void DataManager::printProgress(double currentStep, double steps) {
+    static const int barWidth = 70;
+    static const int bufferSize = 100; // Adjust buffer size to be large enough for the entire line
+    
+
+    if (!timerStarted) {
+        std::cout << std::endl;
+        startTime = std::chrono::high_resolution_clock::now();
+        timerStarted = true;
+    }
+
+    std::cout << "[";
+    int pos = barWidth * (((currentStep + 1) / steps) * 100) / 100.0;
+
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+
+    double remainingTime = 0;
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = currentTime - startTime;
+    double estimatedTotalTime = (elapsed.count() / (currentStep + 1)) * steps;
+    double estimatedRemainingTime = estimatedTotalTime - elapsed.count();
+    remainingTime = estimatedRemainingTime;
+
+    std::string unit;
+    if (remainingTime < 60) {
+        unit = "s";
+    } else if (remainingTime < 3600) {
+        remainingTime /= 60;
+        unit = "min";
+    } else {
+        remainingTime /= 3600;
+        unit = "h";
+    }
+
+    std::ostringstream timeStream;
+    timeStream << std::fixed << std::setprecision(1) << remainingTime;
+    std::string timeleft = timeStream.str();
+
+    std::ostringstream output;
+    output << "] " << std::fixed << std::setprecision(1) << (((currentStep + 1) / steps) * 100) << " %"
+           << "  Estimated remaining time: " << timeleft << unit;
+
+    // Ensure the entire line is cleared by filling with spaces up to bufferSize
+    std::string outputStr = output.str();
+    if (outputStr.length() < bufferSize) {
+        outputStr.append(bufferSize - outputStr.length(), ' ');
+    }
+
+    std::cout << outputStr << "\r";
+    std::cout.flush();
+
+    if (currentStep == steps - 1) {
+        std::cout << std::endl;
+        std::cout << std::endl;
+    }
 }

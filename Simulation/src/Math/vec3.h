@@ -3,9 +3,6 @@
 #include <iostream>
 #include <cmath>
 
-namespace math
-{
-
 class vec3 {
 public:
     double x, y, z;
@@ -30,6 +27,7 @@ public:
 
     // Scalar multiplication
     vec3 operator*(double scalar) const;
+    friend vec3 operator*(double scalar, const vec3& v);
     vec3& operator*=(double scalar);
 
     // Scalar division
@@ -50,6 +48,9 @@ public:
 
     // Output stream operator
     friend std::ostream& operator<<(std::ostream& os, const vec3& v);
-};
 
-} // namespace math
+    // Convert to float array
+    void toFloatArray(float arr[3]) const;
+
+    const double* data() const { return &x; }
+};

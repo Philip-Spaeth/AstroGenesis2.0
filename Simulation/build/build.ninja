@@ -67,6 +67,15 @@ build CMakeFiles/Astro_Genesis.dir/src/Math/kernel.cpp.obj: CXX_COMPILER__Astro_
   TARGET_COMPILE_PDB = CMakeFiles\Astro_Genesis.dir\
   TARGET_PDB = bin\Astro_Genesis.pdb
 
+build CMakeFiles/Astro_Genesis.dir/src/Math/mat4.cpp.obj: CXX_COMPILER__Astro_Genesis_unscanned_Debug C$:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math/mat4.cpp || cmake_object_order_depends_target_Astro_Genesis
+  DEP_FILE = CMakeFiles\Astro_Genesis.dir\src\Math\mat4.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -Wall
+  INCLUDES = -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/File -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Physics
+  OBJECT_DIR = CMakeFiles\Astro_Genesis.dir
+  OBJECT_FILE_DIR = CMakeFiles\Astro_Genesis.dir\src\Math
+  TARGET_COMPILE_PDB = CMakeFiles\Astro_Genesis.dir\
+  TARGET_PDB = bin\Astro_Genesis.pdb
+
 build CMakeFiles/Astro_Genesis.dir/src/Math/random.cpp.obj: CXX_COMPILER__Astro_Genesis_unscanned_Debug C$:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math/random.cpp || cmake_object_order_depends_target_Astro_Genesis
   DEP_FILE = CMakeFiles\Astro_Genesis.dir\src\Math\random.cpp.obj.d
   FLAGS = -g -std=gnu++17 -Wall
@@ -78,6 +87,15 @@ build CMakeFiles/Astro_Genesis.dir/src/Math/random.cpp.obj: CXX_COMPILER__Astro_
 
 build CMakeFiles/Astro_Genesis.dir/src/Math/vec3.cpp.obj: CXX_COMPILER__Astro_Genesis_unscanned_Debug C$:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math/vec3.cpp || cmake_object_order_depends_target_Astro_Genesis
   DEP_FILE = CMakeFiles\Astro_Genesis.dir\src\Math\vec3.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -Wall
+  INCLUDES = -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/File -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Physics
+  OBJECT_DIR = CMakeFiles\Astro_Genesis.dir
+  OBJECT_FILE_DIR = CMakeFiles\Astro_Genesis.dir\src\Math
+  TARGET_COMPILE_PDB = CMakeFiles\Astro_Genesis.dir\
+  TARGET_PDB = bin\Astro_Genesis.pdb
+
+build CMakeFiles/Astro_Genesis.dir/src/Math/vec4.cpp.obj: CXX_COMPILER__Astro_Genesis_unscanned_Debug C$:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math/vec4.cpp || cmake_object_order_depends_target_Astro_Genesis
+  DEP_FILE = CMakeFiles\Astro_Genesis.dir\src\Math\vec4.cpp.obj.d
   FLAGS = -g -std=gnu++17 -Wall
   INCLUDES = -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/File -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Math -IC:/Users/Phili/Desktop/AstroGenesis2.0/Simulation/src/Physics
   OBJECT_DIR = CMakeFiles\Astro_Genesis.dir
@@ -120,7 +138,7 @@ build CMakeFiles/Astro_Genesis.dir/src/main.cpp.obj: CXX_COMPILER__Astro_Genesis
 #############################################
 # Link the executable bin\Astro_Genesis.exe
 
-build bin/Astro_Genesis.exe: CXX_EXECUTABLE_LINKER__Astro_Genesis_Debug CMakeFiles/Astro_Genesis.dir/src/File/DataManager.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/kernel.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/random.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/vec3.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Physics/Simulation.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Physics/TimeIntegration.cpp.obj CMakeFiles/Astro_Genesis.dir/src/main.cpp.obj
+build bin/Astro_Genesis.exe: CXX_EXECUTABLE_LINKER__Astro_Genesis_Debug CMakeFiles/Astro_Genesis.dir/src/File/DataManager.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/kernel.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/mat4.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/random.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/vec3.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Math/vec4.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Physics/Simulation.cpp.obj CMakeFiles/Astro_Genesis.dir/src/Physics/TimeIntegration.cpp.obj CMakeFiles/Astro_Genesis.dir/src/main.cpp.obj
   FLAGS = -g
   LINK_LIBRARIES = -lws2_32  -lgdi32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\Astro_Genesis.dir

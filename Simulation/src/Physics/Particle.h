@@ -2,8 +2,6 @@
 
 #include "vec3.h"
 
-using namespace math;
-
 class Particle
 {
 public:

@@ -22,7 +22,7 @@ public:
 
 private:
     double deltaTime = 1; //time step length
-    double timeSteps = 100; //number of time steps
+    double timeSteps = 10000; //number of time steps
 
     double softening = 1e-3; //softening factor
 

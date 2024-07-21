@@ -129,10 +129,17 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
 }
 
 
-void DataManager::printProgress(double currentStep, double steps) 
-{
+void DataManager::printProgress(double currentStep, double steps) {
+    static const int barWidth = 70;
+    static const int bufferSize = 100; // Adjust buffer size to be large enough for the entire line
+    
 
-    int barWidth = 70;
+    if (!timerStarted) {
+        std::cout << std::endl;
+        startTime = std::chrono::high_resolution_clock::now();
+        timerStarted = true;
+    }
+
     std::cout << "[";
     int pos = barWidth * (((currentStep + 1) / steps) * 100) / 100.0;
 
@@ -143,20 +150,13 @@ void DataManager::printProgress(double currentStep, double steps)
     }
 
     double remainingTime = 0;
-    if(!timerStarted) 
-    {
-        startTime = std::chrono::high_resolution_clock::now();
-        timerStarted = true;
-    }
-    
+
     auto currentTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = currentTime - startTime;
-    double estimatedTotalTime = (elapsed.count() / currentStep) * steps;
+    double estimatedTotalTime = (elapsed.count() / (currentStep + 1)) * steps;
     double estimatedRemainingTime = estimatedTotalTime - elapsed.count();
     remainingTime = estimatedRemainingTime;
 
-    std::string timeleft = std::to_string(remainingTime);
-    timeleft = timeleft.substr(0, timeleft.find("."));
     std::string unit;
     if (remainingTime < 60) {
         unit = "s";
@@ -167,7 +167,26 @@ void DataManager::printProgress(double currentStep, double steps)
         remainingTime /= 3600;
         unit = "h";
     }
-    std::string text = " Estimated remaining time: " + timeleft + unit;
-    std::cout << "] " << std::fixed << std::setprecision(1) << (((currentStep + 1) / steps) * 100) << " %" << "  " << text << "\r";
+
+    std::ostringstream timeStream;
+    timeStream << std::fixed << std::setprecision(1) << remainingTime;
+    std::string timeleft = timeStream.str();
+
+    std::ostringstream output;
+    output << "] " << std::fixed << std::setprecision(1) << (((currentStep + 1) / steps) * 100) << " %"
+           << "  Estimated remaining time: " << timeleft << unit;
+
+    // Ensure the entire line is cleared by filling with spaces up to bufferSize
+    std::string outputStr = output.str();
+    if (outputStr.length() < bufferSize) {
+        outputStr.append(bufferSize - outputStr.length(), ' ');
+    }
+
+    std::cout << outputStr << "\r";
     std::cout.flush();
+
+    if (currentStep == steps - 1) {
+        std::cout << std::endl;
+        std::cout << std::endl;
+    }
 }

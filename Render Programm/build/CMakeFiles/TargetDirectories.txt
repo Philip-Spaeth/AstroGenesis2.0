@@ -1,3 +1,0 @@
-C:/Users/Phili/Desktop/AstroGenesis2.0/Render Programm/build/CMakeFiles/MeinProgramm.dir
-C:/Users/Phili/Desktop/AstroGenesis2.0/Render Programm/build/CMakeFiles/edit_cache.dir
-C:/Users/Phili/Desktop/AstroGenesis2.0/Render Programm/build/CMakeFiles/rebuild_cache.dir
