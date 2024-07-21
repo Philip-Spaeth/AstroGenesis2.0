@@ -25,7 +25,7 @@ if(WIN32)
     link_directories("${CMAKE_SOURCE_DIR}/External Libraries/GLEW/lib/Release/x64")
 
     # Andere Bibliotheken verknüpfen
-    link_libraries(${GLEW_LIBRARY} ${GLFW_LIBRARY})
+    list(APPEND ADDITIONAL_LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ole32 uuid)
 endif()
 
 # Define GLM_ENABLE_EXPERIMENTAL to use experimental GLM features
@@ -46,10 +46,8 @@ include_directories(${CMAKE_SOURCE_DIR}/src/)
 
 add_executable(MeinProgramm ${MAIN_SOURCE} ${HEADER_FILES} ${SOURCE_FILES})
 
-target_link_libraries(MeinProgramm PRIVATE ${OPENGL_LIBRARIES} ${GLFW_LIBRARY} ${GLEW_LIBRARY} pthread)
-
-find_package(Curses REQUIRED)
-target_link_libraries(MeinProgramm PRIVATE ${CURSES_LIBRARIES})
+# Link libraries
+target_link_libraries(MeinProgramm PRIVATE ${OPENGL_LIBRARIES} ${ADDITIONAL_LIBRARIES} pthread)
 
 # Hinzufügen der DLLs zum Ausführungsverzeichnis
 if(WIN32)

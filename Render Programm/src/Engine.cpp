@@ -56,6 +56,15 @@ bool Engine::init(double physicsFaktor)
         return false;
     }
 
+    // Fensterstile ändern, um Minimierung und Maximierung zu verhindern
+    #ifdef WIN32
+    HWND hwnd = glfwGetWin32Window(window);
+    LONG style = GetWindowLong(hwnd, GWL_STYLE);
+    style &= ~WS_MINIMIZEBOX; // Deaktiviere Minimierungsbox
+    style &= ~WS_MAXIMIZEBOX; // Deaktiviere Maximierungsbox
+    SetWindowLong(hwnd, GWL_STYLE, style);
+    #endif
+
     // GLFW-Kontext setzen
     glfwMakeContextCurrent(window);
 
@@ -184,13 +193,21 @@ void Engine::saveAsPicture(std::string folderName, int index)
 		}
 	}
 
-    std::filesystem::create_directory("Video/" + folderName);
+    folderName = "../Video_Output/"+ videoName + "/";
+
+    std::filesystem::create_directory(folderName);
 	// Speichern Sie das gerenderte Bild als .png-Datei
-	std::string filename = "Video/" + folderName + "/Picture_" + std::to_string(index) + ".png";
+	std::string filename = folderName + "/Picture_" + std::to_string(index) + ".png";
 	stbi_write_png(filename.c_str(), width, height, 3, data, 3 * width);
-	//std::cout << "Saved rendered image as " << filename << std::endl;
+	//td::cout << "Saved rendered image as " << filename << std::endl;
 
 	delete[] data;
+}
+
+void Engine::window_iconify_callback(GLFWwindow* window, int iconified) {
+    if (iconified) {
+        glfwRestoreWindow(window);
+    }
 }
 
 void Engine::update(int index)
@@ -238,6 +255,7 @@ void Engine::update(int index)
     if (RenderLive == false && index != oldIndex)
     {
         saveAsPicture(dataFolder, index);
+        glfwSetWindowIconifyCallback(window, window_iconify_callback);
     }
 
     if(RenderLive == true)
@@ -433,15 +451,18 @@ void Engine::processInput()
             }
         }
     }
-    if (focusedCamera) {
-        // Richtet die Kamera auf den Ursprung aus
-        vec3 direction = (vec3(0, 0, 0) - cameraPosition).normalize();
-        cameraFront = direction;
-    }
     if (RenderLive == false)
     {
         float index = 0.1f; 
         cameraPosition += cameraSpeed * index * cameraFront.cross(cameraUp);
+        //std::cout << "Camera Position: " << cameraPosition.x << " " << cameraPosition.y << " " << cameraPosition.z << std::endl;
+    }
+
+    
+    if (focusedCamera) {
+        // Richtet die Kamera auf den Ursprung aus
+        vec3 direction = (vec3(0, 0, 0) - cameraPosition).normalize();
+        cameraFront = direction;
     }
     // Aktualisieren der Ansichtsmatrix (Kameraposition und Blickrichtung)
     view = mat4::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);

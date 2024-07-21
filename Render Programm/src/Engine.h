@@ -12,6 +12,11 @@
 #include "Particle.h"
 #include <cmath>
 
+#ifdef WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
+
 class Engine {
 public:
     Engine(std::string dataFolder, int deltaTime, int numOfParticles, int numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles);
@@ -30,7 +35,9 @@ public:
     bool clean();
     void saveAsPicture(std::string folderName, int index);
 
+    static void window_iconify_callback(GLFWwindow* window, int iconified);
     bool RenderLive = true;
+    std::string videoName;
 
     GLFWwindow* window;
 
@@ -63,7 +70,7 @@ public:
     const double theta = 0;
     void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 private:
-    int oldIndex = 0;
+    int oldIndex = -1;
     bool BGstars = true;
     int amountOfStars = 1000;
     std::vector<vec4> bgStars;

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -13,6 +12,19 @@
 #include <thread>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <string>
+#include <windows.h>
+#include <commdlg.h>
+#include <shlobj.h>
+#include <shobjidl.h>
+#include <comdef.h>
+#include <windows.h>
+#include <commdlg.h>
+#include <shlobj.h>
+#include <shobjidl.h>
+#include <comdef.h>
+#include <combaseapi.h>
+#include <shlguid.h>
 
 #define TARGET_FPS 60
 
@@ -25,9 +37,21 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+
+//get the DataFolder
+int deltaTime = 1;
+int numOfParticles = 1;
+int numTimeSteps = 1;
+
+
+std::string dataFolder; // Pfad zum Data-Ordner eine Ebene höher
+DataManager dataManager;
+
+void renderLive();
+void renderVideo();
+
 int main()
 {
-    std::string dataFolder; // Pfad zum Data-Ordner eine Ebene höher
 
     //print out all the folders in in the folder "../../Data/" as options to choose from wich data to load
     std::cout << "Choose a data folder to load: " << std::endl;
@@ -59,28 +83,187 @@ int main()
 
     cout << endl;
 
-    //get the DataFolder
-    int deltaTime = 1;
-    int numOfParticles = 1;
-    int numTimeSteps = 1;
-
-    std::string input;
-    std::getline(std::cin, input);
-
-    DataManager dataManager;
     dataManager.path = dataFolder;
     dataManager.readInfoFile(deltaTime, numTimeSteps, numOfParticles);
-    std::cout << "deltaTime: " << deltaTime << std::endl;
-    std::cout << "numOfParticles: " << numOfParticles << std::endl;
-    std::cout << "numTimeSteps: " << numTimeSteps << std::endl;
+    //std::cout << "deltaTime: " << deltaTime << std::endl;
+    //std::cout << "numOfParticles: " << numOfParticles << std::endl;
+    //std::cout << "numTimeSteps: " << numTimeSteps << std::endl;
 
+    //choose between Rendering a video or liveViewer
+    std::cout << "Choose between rendering a video or liveViewer: " << std::endl;
+    std::cout << "[1]   Video" << std::endl;
+    std::cout << "[2]   LiveViewer" << std::endl;
+
+    int choice;
+    std::cin >> choice;
+
+    //if enter is pressed, the liveViewer will be started, else check the input
+    if (choice == 2)
+    {
+        renderLive();
+    }
+    else if (choice == 1)
+    {
+        renderVideo();
+    }
+    else
+    {
+        std::cout << "Invalid input" << std::endl;
+    }
+
+    return 0;
+}
+
+void renderVideo()
+{
+    std::getline(std::cin, dataFolder);
+    std::cout << "\nPlease enter a name for the video: ";
+    std::string videoName;
+    std::getline(std::cin, videoName);
+        
+    std::cout << "\nDo you want to rotate the camera around the center? (y/n): ";
+    std::string input2;
+    std::getline(std::cin, input2);
+    
+    bool rotate = false;
+    double speed = 0;
+    if (input2 == "y")
+    {
+        rotate = true;
+        std::cout << "\nPlease enter the speed of the rotation(between 10-1000): ";
+        std::getline(std::cin, input2);
+        speed = std::stod(input2);
+    }
+    
+    std::cout << "" << std::endl;
+    
+    std::vector<std::shared_ptr<Particle>> particles;
+    Engine engine(dataFolder, deltaTime, numOfParticles, numTimeSteps, &particles);
+    engine.RenderLive = false;
+
+    if (!engine.init(1.0)) {
+        std::cerr << "Engine initialization failed." << std::endl;
+        return;
+    }
+
+    engine.start();
+    engine.videoName = videoName;
+
+    double lastFrameTime = glfwGetTime(); 
+    double frameTime;
+    int frameCount = 0;
+    double secondCounter = 0.0;
+    int counter = 0;
+    std::vector<Particle> currentParticles;
+
+    engine.cameraSpeed = speed;
+    engine.focusedCamera = true;
+
+
+    while (!glfwWindowShouldClose(engine.window))
+    {
+        #ifdef WIN32
+        if (GetAsyncKeyState(27) & 0x8000)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            glfwSetWindowShouldClose(engine.window, true);
+        }
+        #endif
+
+        double currentFrameTime = glfwGetTime();
+        frameTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
+        dataManager.loadData(counter, particles);
+        engine.isRunning = true;
+
+        engine.update(counter);
+        
+        if (counter >= numTimeSteps - 1)
+        {
+            engine.clean();
+            glfwTerminate();
+            std::cout << "" << std::endl;
+            std::cout << "" << std::endl;
+            std::cout << "All steps rendered" << std::endl;
+            std::string workingDir = fs::current_path().string();
+            std::cout << "You can find the video in the folder: " << videoName << std::endl;
+            return;
+        }
+
+        if (engine.isRunning)
+        {
+            if (counter >= 0 && counter <= numTimeSteps - 1)
+            {
+                counter = counter + engine.playSpeed;
+            }
+        }
+        if (counter >= numTimeSteps - 1)
+        {
+            counter = numTimeSteps - 1;
+            engine.playSpeed = 0;
+        }
+        if (counter < 0)
+        {
+            counter = 0;
+            engine.playSpeed = 0;
+        }
+
+        #ifdef WIN32
+        if (GetAsyncKeyState(82) & 0x8000)
+        {
+            counter = 0;
+            engine.playSpeed = 0;
+        }
+        #endif
+
+        frameCount++;
+        secondCounter += frameTime;
+
+        if (secondCounter >= 1.0)
+        {
+            char numStr[20];
+            snprintf(numStr, sizeof(numStr), "%d", frameCount);
+            #ifdef WIN32
+            strcat_s(numStr, " FPS");
+            #else
+            strcat(numStr, " FPS");
+            #endif
+            glfwSetWindowTitle(engine.window, numStr);
+            frameCount = 0;
+            secondCounter = 0.0;
+        }
+
+        if (glfwGetKey(engine.window, GLFW_KEY_F11) == GLFW_PRESS) 
+        {
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            if (glfwGetWindowMonitor(engine.window) == NULL) {
+                glfwSetWindowMonitor(engine.window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                engine.framebuffer_size_callback(engine.window, mode->width, mode->height);
+            }
+            else {
+                glfwSetWindowMonitor(engine.window, NULL, 100, 100, 1200, 800, mode->refreshRate);
+                engine.framebuffer_size_callback(engine.window, 1200, 800);
+            }
+        }
+        dataManager.printProgress((double)counter, (double)numTimeSteps);
+    }
+
+    engine.clean();
+    glfwTerminate();
+    return;
+}
+
+void renderLive()
+{
     std::vector<std::shared_ptr<Particle>> particles;
 
     Engine engine(dataFolder, deltaTime, numOfParticles, numTimeSteps, &particles);
 
     if (!engine.init(1.0)) { // Hier muss der physikalische Faktor übergeben werden
         std::cerr << "Engine initialization failed." << std::endl;
-        return -1;
+        return;
     }
 
     engine.start();
@@ -197,5 +380,5 @@ int main()
     // Beenden Sie GLFW
     engine.clean();
     glfwTerminate();
-    return 0;
+    return;
 }
