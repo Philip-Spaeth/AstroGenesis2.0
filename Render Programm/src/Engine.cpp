@@ -555,7 +555,7 @@ void Engine::renderParticles()
             scaledPosition.toFloatArray(scaledPosArray);
             glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, scaledPosArray);
 
-            glPointSize(particle->mass);
+            glPointSize(5.0f); // Setzen der Punktgröße auf 5 Pixel
 
             // Zeichnen Punkt
             glDrawArrays(GL_POINTS, 0, 1);
