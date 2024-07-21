@@ -6,3 +6,19 @@
 
 # Ignore Data directory
 /Data/
+
+# Ignore temporary files
+*.tmp
+
+#ignore object files
+*.obj
+*.o
+
+# ignore render output files, pictures and videos
+*.png
+*.bmp
+*.jpg
+*.jpeg
+*.avi
+*.mp4
+*.mov
