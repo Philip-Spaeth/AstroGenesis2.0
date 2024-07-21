@@ -1,5 +1,6 @@
-# Ignore build directory
-/build/
+# Ignore build directories
+/Render Programm/build/
+/Simulation/build/
 
 # Ignore binary files
 *.bin
