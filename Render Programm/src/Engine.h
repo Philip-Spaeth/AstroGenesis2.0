@@ -48,7 +48,6 @@ public:
     double passedTime = 0;
 
     double globalScale = 1e-9;
-    //double globalScale = 1e-18;
     void calculateGlobalScale();
 
     bool focusedCamera = false; 
@@ -81,13 +80,6 @@ private:
     bool shouldClose = false;
     GLuint VAO;
     GLuint instanceVBO;
-    GLuint framebuffer;
-    GLuint textureColorbuffer;
-    GLuint blurSizeLocation;
-    GLuint rbo;
-    GLuint blurShaderProgram; // Shader-Programm für den Blur-Effekt
-    GLuint quadVAO; // VAO für das Quad, auf das der Blur-Effekt angewendet wird
-    void renderBlur();
     void renderParticles();
     void checkShaderCompileStatus(GLuint shader, const char* shaderType);
     void checkShaderLinkStatus(GLuint program);

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <memory>
+#include <filesystem>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -12,7 +14,6 @@
 #include <string>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-
 
 inline float radians(float degrees) {
     return degrees * (M_PI / 180.0f);
@@ -63,115 +64,6 @@ bool Engine::init(double physicsFaktor)
         std::cerr << "Failed to initialize GLEW" << std::endl;
         return false;
     }
-    // Blur-Shader-Quellcode
-    const char* blurVertexShaderSource = R"glsl(
-    #version 330 core
-    layout (location = 0) in vec2 aPos;
-    layout (location = 1) in vec2 aTexCoords;
-
-    out vec2 TexCoords;
-
-    void main()
-    {
-        TexCoords = aTexCoords;
-        gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
-    }
-)glsl";
-
-    const char* blurFragmentShaderSource = R"glsl(
-    #version 330 core
-    out vec4 FragColor;
-
-    in vec2 TexCoords;
-
-    uniform sampler2D screenTexture;
-    uniform float blurSize;
-
-    const float offset = 1.0 / 300.0;
-
-    void main() {             
-        vec2 offsets[9] = vec2[](
-            vec2(-offset,  offset),
-            vec2( 0.0f,    offset),
-            vec2( offset,  offset),
-            vec2(-offset,  0.0f),
-            vec2( 0.0f,    0.0f),
-            vec2( offset,  0.0f),
-            vec2(-offset, -offset),
-            vec2( 0.0f,   -offset),
-            vec2( offset, -offset)
-        );
-
-        float kernel[9] = float[](
-            1.0, 2.0, 1.0,
-            2.0, 4.0, 2.0,
-            1.0, 2.0, 1.0  
-        );
-
-        vec4 blurColor = vec4(0.0);
-        float total = 0.0;
-
-        for(int i = 0; i < 9; i++) {
-            blurColor += texture(screenTexture, TexCoords + blurSize * offsets[i]) * kernel[i];
-            total += kernel[i];
-        }
-        FragColor = blurColor / total;
-    }
-)glsl";
-
-    GLuint blurVertexShader, blurFragmentShader;
-    blurVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(blurVertexShader, 1, &blurVertexShaderSource, NULL);
-    glCompileShader(blurVertexShader);
-    checkShaderCompileStatus(blurVertexShader, "BLUR VERTEX");
-
-    blurFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(blurFragmentShader, 1, &blurFragmentShaderSource, NULL);
-    glCompileShader(blurFragmentShader);
-    checkShaderCompileStatus(blurFragmentShader, "BLUR FRAGMENT");
-
-    GLuint blurShaderProgram = glCreateProgram();
-    glAttachShader(blurShaderProgram, blurVertexShader);
-    glAttachShader(blurShaderProgram, blurFragmentShader);
-    glLinkProgram(blurShaderProgram);
-    checkShaderLinkStatus(blurShaderProgram);
-
-    // Speichere blurShaderProgram in einem Klassenmitglied, um es später zu verwenden
-    this->blurShaderProgram = blurShaderProgram;
-
-    // Abrufen der Location der Uniform-Variable für den Blur-Size
-    this->blurSizeLocation = glGetUniformLocation(blurShaderProgram, "blurSize");
-    glUseProgram(blurShaderProgram);
-    glUniform1f(blurSizeLocation, 0.005f); // Vergrößern des Blur-Effekts für Sichtbarkeit
-    glUseProgram(0);
-
-    // Framebuffer erstellen
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-    // Textur erstellen
-    glGenTextures(1, &textureColorbuffer);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1200, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Textur an Framebuffer binden
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-
-    // Renderbuffer-Objekt für Tiefen- und Stencil-Test erstellen
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1200, 800);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    // Renderbuffer an Framebuffer binden
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Shader-Programm kompilieren und verlinken
     const char* vertexShaderSource = "#version 330 core\n"
@@ -227,13 +119,6 @@ void Engine::framebuffer_size_callback(GLFWwindow* window, int width, int height
 {
     // Stellen Sie sicher, dass die Ansichtsportgröße dem neuen Fenster entspricht
     glViewport(0, 0, width, height);
-
-    // Aktualisieren Sie die Größe der Texturen und des Framebuffers
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 }
 
 void Engine::start()
@@ -268,31 +153,6 @@ void Engine::start()
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    GLuint quadVAO, quadVBO;
-    float quadVertices[] = {
-        // Positionen   // Texturen
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
-    };
-
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    // Speichere quadVAO in einem Klassenmitglied, um es später zu verwenden
-    this->quadVAO = quadVAO;
-
     //place the BGstars in the background
     if (BGstars)
     {
@@ -309,21 +169,8 @@ void Engine::start()
     std::cout << "Data loaded" << std::endl;
 }
 
-void Engine::renderBlur() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // Bildschirm rendern
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(blurShaderProgram);
-    glUniform1f(blurSizeLocation, 0.005f); // Vergrößern des Blur-Effekts für Sichtbarkeit
-    glBindVertexArray(quadVAO);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-    glUseProgram(0);
-}
-
 void Engine::saveAsPicture(std::string folderName, int index)
 {
-    /*
     // Speichern Sie das gerenderte Bild als .png-Datei
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -344,7 +191,6 @@ void Engine::saveAsPicture(std::string folderName, int index)
 	//std::cout << "Saved rendered image as " << filename << std::endl;
 
 	delete[] data;
-    */
 }
 
 void Engine::update(int index)
@@ -384,7 +230,6 @@ void Engine::update(int index)
     }
 
     renderParticles();
-    renderBlur();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -397,7 +242,6 @@ void Engine::update(int index)
 
     if(RenderLive == true)
     {
-
         //speed up if right arrow is pressed
     #ifdef WIN32
         if (GetAsyncKeyState(39) & 0x8000)
@@ -457,7 +301,7 @@ void Engine::update(int index)
 void Engine::renderParticles()
 {
     // Binden des Framebuffers
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Deaktivieren Sie den Tiefentest und das Z-Buffering
@@ -504,35 +348,31 @@ void Engine::renderParticles()
             glDrawArrays(GL_POINTS, 0, 1);
         }
     }
-    if (true)
+
+    for (const auto& particle : *particles)
     {
-        for (const auto& particle : *particles)
-        {
-            vec3 color = vec3(0.0f, 1, 0.0f);
+        vec3 color = vec3(1, 0, 0);
 
-            vec3 scaledPosition = particle->position * globalScale; 
+        vec3 scaledPosition = particle->position * globalScale; 
 
-            // Setzen Position im Shader
-            float scaledPosArray[3];
-            scaledPosition.toFloatArray(scaledPosArray);
-            glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, scaledPosArray);
+        // Setzen Position im Shader
+        float scaledPosArray[3];
+        scaledPosition.toFloatArray(scaledPosArray);
+        glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, scaledPosArray);
 
-            // Setzen Farbe im Shader
-            float colorArray[3];
-            color.toFloatArray(colorArray);
-            glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, colorArray);
+        // Setzen Farbe im Shader
+        float colorArray[3];
+        color.toFloatArray(colorArray);
+        glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, colorArray);
 
+        glPointSize(5.0f); // Setzen der Punktgröße auf 5 Pixel
 
-            glPointSize(5.0f); // Setzen der Punktgröße auf 5 Pixel
-
-            // Zeichnen Punkt
-            glDrawArrays(GL_POINTS, 0, 1);
-        }
+        // Zeichnen Punkt
+        glDrawArrays(GL_POINTS, 0, 1);
     }
+
     // VAO lösen
     glBindVertexArray(0);
-    // Lösen des Framebuffers
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Engine::processInput()
@@ -610,7 +450,6 @@ void Engine::processInput()
     GLuint viewLoc = glGetUniformLocation(shaderProgram, "view");
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view.data());
 }
-
 
 void Engine::processMouseInput()
 {
