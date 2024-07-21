@@ -11,6 +11,10 @@
 #include "vec4.h"
 #include "Particle.h"
 #include <cmath>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 
 #ifdef WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -20,6 +24,7 @@
 class Engine {
 public:
     Engine(std::string dataFolder, int deltaTime, int numOfParticles, int numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles);
+    ~Engine();
 
     int deltaTime;
     int numOfParticles;
@@ -33,7 +38,20 @@ public:
     void start();
     void update(int index);
     bool clean();
-    void saveAsPicture(std::string folderName, int index);
+
+    GLuint pbo = 0;
+    std::queue<std::pair<std::string, std::vector<unsigned char>>> saveQueue;
+    std::mutex queueMutex;
+    std::condition_variable queueCondition;
+    std::thread saveThread;
+    bool terminateThread = false;
+    int width, height;
+
+    void initializePBO();
+    void saveWorker();
+
+    void initializePBO(int width, int height);
+    void saveAsPicture(const std::string& folderName, int index);
 
     static void window_iconify_callback(GLFWwindow* window, int iconified);
     bool RenderLive = true;

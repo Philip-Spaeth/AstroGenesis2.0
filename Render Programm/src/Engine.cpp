@@ -33,6 +33,21 @@ Engine::Engine(std::string NewDataFolder, int deltaTime, int numOfParticles, int
     cameraUp = vec3(0.0, 1.0, 0.0);
     cameraYaw = -90.0f;
     cameraPitch = 0.0f;
+
+    saveThread = std::thread(&Engine::saveWorker, this);
+}
+
+Engine::~Engine() {
+    // Terminate the save worker thread
+    {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        terminateThread = true;
+        queueCondition.notify_all();
+    }
+    saveThread.join();
+    if (pbo != 0) {
+        glDeleteBuffers(1, &pbo);
+    }
 }
 
 bool Engine::init(double physicsFaktor) 
@@ -178,30 +193,71 @@ void Engine::start()
     std::cout << "Data loaded" << std::endl;
 }
 
-void Engine::saveAsPicture(std::string folderName, int index)
-{
-    // Speichern Sie das gerenderte Bild als .png-Datei
-	int width, height;
-	glfwGetFramebufferSize(window, &width, &height);
-	unsigned char* data = new unsigned char[3 * width * height];
-	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+void Engine::initializePBO() {
+    if (pbo == 0) {
+        glGenBuffers(1, &pbo);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_PACK_BUFFER, 3 * width * height, nullptr, GL_STREAM_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    }
+}
 
-	// Umkehren der Pixelreihenfolge
-	for (int y = 0; y < height / 2; y++) {
-		for (int x = 0; x < 3 * width; x++) {
-			std::swap(data[3 * width * y + x], data[3 * width * (height - 1 - y) + x]);
-		}
-	}
+void Engine::saveAsPicture(const std::string& folderName, int index) {
+    // Speichern Sie das gerenderte Bild als BMP-Datei
+    glfwGetFramebufferSize(window, &width, &height);
 
-    folderName = "../Video_Output/"+ videoName + "/";
+    // Initialize PBO if not already initialized
+    initializePBO();
 
-    std::filesystem::create_directory(folderName);
-	// Speichern Sie das gerenderte Bild als .png-Datei
-	std::string filename = folderName + "/Picture_" + std::to_string(index) + ".png";
-	stbi_write_png(filename.c_str(), width, height, 3, data, 3 * width);
-	//td::cout << "Saved rendered image as " << filename << std::endl;
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-	delete[] data;
+    // Map the PBO to process its data on the CPU
+    unsigned char* data = (unsigned char*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+
+    // Copy data to a vector to pass to the saving thread
+    std::vector<unsigned char> imageData(data, data + 3 * width * height);
+
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    // Umkehren der Pixelreihenfolge in-place
+    for (int y = 0; y < height / 2; y++) {
+        for (int x = 0; x < 3 * width; x++) {
+            std::swap(imageData[3 * width * y + x], imageData[3 * width * (height - 1 - y) + x]);
+        }
+    }
+
+    std::string fullPath = "../Video_Output/" + videoName + "/";
+    std::filesystem::create_directory(fullPath);
+
+    std::string filename = fullPath + "Picture_" + std::to_string(index) + ".bmp";
+
+    // Add the data to the save queue
+    {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        saveQueue.emplace(filename, std::move(imageData));
+        queueCondition.notify_one();
+    }
+}
+
+void Engine::saveWorker() {
+    while (true) {
+        std::pair<std::string, std::vector<unsigned char>> item;
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            queueCondition.wait(lock, [this] { return !saveQueue.empty() || terminateThread; });
+
+            if (terminateThread && saveQueue.empty()) {
+                break;
+            }
+
+            item = std::move(saveQueue.front());
+            saveQueue.pop();
+        }
+
+        stbi_write_bmp(item.first.c_str(), width, height, 3, item.second.data());
+    }
 }
 
 void Engine::window_iconify_callback(GLFWwindow* window, int iconified) {

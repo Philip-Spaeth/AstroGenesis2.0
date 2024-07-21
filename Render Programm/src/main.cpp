@@ -158,6 +158,12 @@ void renderVideo()
 
     engine.cameraSpeed = speed;
     engine.focusedCamera = true;
+    
+    engine.cameraPosition = vec3(0, 100, 600);
+    engine.cameraFront = vec3(0, 0, -1);
+    engine.cameraUp = vec3(0, 1, 0);
+    engine.cameraYaw = -90;
+    engine.cameraPitch = 0;
 
 
     while (!glfwWindowShouldClose(engine.window))

@@ -1,0 +1,26 @@
+# ninja log v5
+34	3610	7432901799920172	CMakeFiles/MeinProgramm.dir/src/vec4.cpp.obj	b4ece80e2f5c5fcb
+29	3851	7432901802253485	CMakeFiles/MeinProgramm.dir/src/mat4.cpp.obj	4e8d5726a37f7d2e
+23	3944	7432901803503302	CMakeFiles/MeinProgramm.dir/src/vec3.cpp.obj	6e49e6fee89bec59
+40	9550	7432901861582318	CMakeFiles/MeinProgramm.dir/src/DataManager.cpp.obj	1ddf246f18d4943a
+17	17449	7432901939862908	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+10	20279	7432901968923364	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+20280	22453	7432901987721956	MeinProgramm.exe	87e9cf7d45e08a30
+38	6273	7432903050439126	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+6280	10669	7432903092673025	MeinProgramm.exe	87e9cf7d45e08a30
+44	4902	7432903847594997	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+4904	6681	7432903864386883	MeinProgramm.exe	87e9cf7d45e08a30
+36	4607	7432904153693500	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+4609	6371	7432904168471381	MeinProgramm.exe	87e9cf7d45e08a30
+49	6132	7432906377154100	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+35	7054	7432906386314330	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+7054	8979	7432906403961267	MeinProgramm.exe	87e9cf7d45e08a30
+56	5355	7432908976945517	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+48	6365	7432908987200001	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+6366	8608	7432909008279017	MeinProgramm.exe	87e9cf7d45e08a30
+40	5249	7432910147980933	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+34	6269	7432910158166514	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+6269	8148	7432910175344967	MeinProgramm.exe	87e9cf7d45e08a30
+54	6002	7432913436475906	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+48	6382	7432913440318158	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+6383	8545	7432913460566477	MeinProgramm.exe	87e9cf7d45e08a30
