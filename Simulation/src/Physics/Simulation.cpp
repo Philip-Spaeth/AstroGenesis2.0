@@ -9,7 +9,7 @@ Simulation::Simulation()
 
     for(int i = 0; i < numberOfParticles; i++)
     {
-        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
+        particles.push_back(std::make_shared<Particle>(vec3(random::between(-9,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
     }
     
     //save the particles data
