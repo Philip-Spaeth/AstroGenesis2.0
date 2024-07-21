@@ -508,45 +508,7 @@ void Engine::renderParticles()
     {
         for (const auto& particle : *particles)
         {
-            vec3 color;
-            if (showDarkMatter == false && particle->type == 3)
-            {
-                continue;
-            }
-            if (showBaryonicMatter == false && particle->type != 3)
-            {
-                continue;
-            }
-            if (showDarkMatter == true && particle->type == 3)
-            {
-                if (colorMode == 0)
-                {
-                    color = vec3(0.8f, 0.8f, 0.8f); // Example density color
-                }
-                if (colorMode == 1)
-                {
-                    color = vec3(0.2f, 0.5f, 0.9f); // Example standard color
-                }
-                if (colorMode == 2)
-                {
-                    color = vec3(0.7f, 0.3f, 0.3f); // Example thermal color
-                }
-            }
-            else
-            {
-                if (colorMode == 0)
-                {
-                    color = vec3(0.8f, 0.8f, 0.8f); // Example density color
-                }
-                if (colorMode == 1)
-                {
-                    color = vec3(0.2f, 0.5f, 0.9f); // Example standard color
-                }
-                if (colorMode == 2)
-                {
-                    color = vec3(0.7f, 0.3f, 0.3f); // Example thermal color
-                }
-            }
+            vec3 color = vec3(0.0f, 1, 0.0f);
 
             vec3 scaledPosition = particle->position * globalScale; 
 
@@ -554,6 +516,12 @@ void Engine::renderParticles()
             float scaledPosArray[3];
             scaledPosition.toFloatArray(scaledPosArray);
             glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, scaledPosArray);
+
+            // Setzen Farbe im Shader
+            float colorArray[3];
+            color.toFloatArray(colorArray);
+            glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, colorArray);
+
 
             glPointSize(5.0f); // Setzen der Punktgröße auf 5 Pixel
 
