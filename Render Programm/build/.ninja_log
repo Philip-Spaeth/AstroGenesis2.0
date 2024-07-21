@@ -1,5 +1,9 @@
-# ninja log v6
-3	1626	7427602249975838	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	3383c79f295c0d18
-1633	2096	7427602266273796	MeinProgramm.exe	8ff5777a7b609967
-16	1668	7427602721226322	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	3383c79f295c0d18
-1669	2224	7427602737751813	MeinProgramm.exe	8ff5777a7b609967
+# ninja log v5
+31	2575	7432748409591282	CMakeFiles/MeinProgramm.dir/src/vec4.cpp.obj	b4ece80e2f5c5fcb
+21	2763	7432748411762786	CMakeFiles/MeinProgramm.dir/src/vec3.cpp.obj	6e49e6fee89bec59
+26	2903	7432748412931115	CMakeFiles/MeinProgramm.dir/src/mat4.cpp.obj	4e8d5726a37f7d2e
+36	5554	7432748439569696	CMakeFiles/MeinProgramm.dir/src/DataManager.cpp.obj	1ddf246f18d4943a
+15	8817	7432748472689423	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+10	9299	7432748477490072	CMakeFiles/MeinProgramm.dir/src/main.cpp.obj	4f0c4a693322b79f
+34	3325	7432749330073523	CMakeFiles/MeinProgramm.dir/src/Engine.cpp.obj	68db0f2c3699f3d2
+3326	5438	7432749346627434	MeinProgramm.exe	145468d38f043ddb

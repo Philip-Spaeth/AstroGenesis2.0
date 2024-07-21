@@ -1,14 +1,12 @@
-/*#include "Engine.h"
+#include "Engine.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <gtc/matrix_transform.hpp>
 
 #ifdef WIN32
 #include <Windows.h>
 #endif
 
-#include <gtc/type_ptr.hpp>
 #include <chrono>
 #include <thread>
 #include <string>
@@ -16,15 +14,24 @@
 #include "stb_image_write.h"
 
 
- Engine::Engine(std::string NewDataFolder) : window(nullptr), shaderProgram(0), VAO(0)
+inline float radians(float degrees) {
+    return degrees * (M_PI / 180.0f);
+}
+
+Engine::Engine(std::string NewDataFolder, int deltaTime, int numOfParticles, int numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles) : window(nullptr), shaderProgram(0), VAO(0)
 {
     dataFolder = NewDataFolder;
-     // start kamera position
-     cameraPosition = glm::vec3(0.0f, 0.0f, 1000.0f);                     
-     cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-     cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-     cameraYaw = -90.0f;
-     cameraPitch = 0.0f;
+    this->deltaTime = deltaTime;
+    this->numOfParticles = numOfParticles;
+    this->numTimeSteps = numTimeSteps;
+    this->particles = particles;
+
+    // start kamera position
+    cameraPosition = vec3(0, 0, 0);                  
+    cameraFront = vec3(0.0, 0.0, -1.0);
+    cameraUp = vec3(0.0, 1.0, 0.0);
+    cameraYaw = -90.0f;
+    cameraPitch = 0.0f;
 }
 
 bool Engine::init(double physicsFaktor) 
@@ -171,10 +178,10 @@ bool Engine::init(double physicsFaktor)
         "layout (location = 0) in vec3 position;\n"
         "uniform mat4 projection;\n"
         "uniform mat4 view;\n"
-        "uniform vec3 particlePosition; // Neue Uniform-Variable f�r die Partikelposition\n"
+        "uniform vec3 particlePosition; // Neue Uniform-Variable für die Partikelposition\n"
         "void main()\n"
         "{\n"
-        "    // Berechnen Sie die endg�ltige Position des Partikels, indem Sie die Partikelposition hinzuf�gen\n"
+        "    // Berechnen Sie die endgültige Position des Partikels, indem Sie die Partikelposition hinzufügen\n"
         "    vec4 finalPosition = projection * view * vec4(position + particlePosition, 1.0);\n"
         "    gl_Position = finalPosition;\n"
         "}\0";
@@ -184,7 +191,7 @@ bool Engine::init(double physicsFaktor)
         "uniform vec3 particleColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = vec4(particleColor, 1.0); // Wei�\n"
+        "    FragColor = vec4(particleColor, 1.0); // Weiß\n"
         "}\n\0";
 
     // Erstellen des Shader-Programms und kompilieren
@@ -215,6 +222,7 @@ bool Engine::init(double physicsFaktor)
 
     return true;
 }
+
 void Engine::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // Stellen Sie sicher, dass die Ansichtsportgröße dem neuen Fenster entspricht
@@ -228,32 +236,38 @@ void Engine::framebuffer_size_callback(GLFWwindow* window, int width, int height
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 }
 
-void Engine::start(Physics* p)
+void Engine::start()
 {
-    // Erstellen des FileManagers
-    fileManager = new FileManager(dataFolder);
-
-    fileManager->loadParticles(p, 0, positions, colors, densityColors,thermalColors,isDarkMatter, maxNumberOfParticles);
-    int size = p->particlesSize;
-    if (p->particlesSize > maxNumberOfParticles)
+    int size = numOfParticles;
+    if (size > maxNumberOfParticles)
     {
         size = maxNumberOfParticles;
 	}
+    
     // Hier VBO und VAO erstellen und konfigurieren
     GLuint VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
+    // Vektor zur Speicherung der Partikelpositionen vorbereiten
+    std::vector<vec4> positions;
+    positions.reserve(particles->size());
+    for (const auto& particle : *particles)
+    {
+        positions.emplace_back(particle->position.x, particle->position.y, particle->position.z, 1.0f);
+    }
+
     // Stelle sicher, dass du die korrekte Größe und den korrekten Typ für die Daten verwendest
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * positions.size(), positions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec4) * positions.size(), positions.data(), GL_STATIC_DRAW);
 
     // Erstellen des Vertex Array Objects (VAO)
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
-    // Konfigurieren des VAO f�r das VBO
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // Konfigurieren des VAO für das VBO
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
     GLuint quadVAO, quadVBO;
     float quadVertices[] = {
         // Positionen   // Texturen
@@ -279,7 +293,6 @@ void Engine::start(Physics* p)
     // Speichere quadVAO in einem Klassenmitglied, um es später zu verwenden
     this->quadVAO = quadVAO;
 
-
     //place the BGstars in the background
     if (BGstars)
     {
@@ -289,10 +302,9 @@ void Engine::start(Physics* p)
 			double y = random(-1e14, 1e14);
 			double z = random(-1e14, 1e14);
             double size = random(0.1, 2);
-			bgStars.push_back(glm::vec4(x, y, z, size));
+			bgStars.push_back(vec4(x, y, z, size));
 		}   
     }
-
 
     std::cout << "Data loaded" << std::endl;
 }
@@ -311,6 +323,7 @@ void Engine::renderBlur() {
 
 void Engine::saveAsPicture(std::string folderName, int index)
 {
+    /*
     // Speichern Sie das gerenderte Bild als .png-Datei
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -331,10 +344,10 @@ void Engine::saveAsPicture(std::string folderName, int index)
 	//std::cout << "Saved rendered image as " << filename << std::endl;
 
 	delete[] data;
+    */
 }
 
-
-void Engine::update(int index, std::string folderName)
+void Engine::update(int index)
 {
     //calculate the time
     if (isRunning && index != oldIndex && RenderLive)
@@ -379,7 +392,7 @@ void Engine::update(int index, std::string folderName)
     //if video is rendered
     if (RenderLive == false && index != oldIndex)
     {
-        saveAsPicture(folderName, index);
+        saveAsPicture(dataFolder, index);
     }
 
     if(RenderLive == true)
@@ -414,7 +427,6 @@ void Engine::update(int index, std::string folderName)
             //set the play speed to 1
             playSpeed = 1;
         }
-
 
         //disable / enable dark matter with Z
     #ifdef WIN32
@@ -455,15 +467,16 @@ void Engine::renderParticles()
     // In der renderParticles-Funktion
     glUseProgram(shaderProgram);
 
-    // Erstellen der Projektionsmatrix und far !!!!!!!
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, (float)cameraViewDistance);
+    // Erstellen der Projektionsmatrix und Sichtmatrix
+    mat4 projection = mat4::perspective(45.0f, 800.0f / 600.0f, 0.1f, cameraViewDistance);
+    mat4 viewMatrix = mat4::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
     // Setzen der Matrizen im Shader
     GLuint projectionLoc = glGetUniformLocation(shaderProgram, "projection");
     GLuint viewLoc = glGetUniformLocation(shaderProgram, "view");
 
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, projection.data());
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, viewMatrix.data());
 
     // Vertex Array Object (VAO) binden
     glBindVertexArray(VAO);
@@ -476,12 +489,16 @@ void Engine::renderParticles()
             glPointSize(bgStars[i].w);
 
             // Setzen der Position im Shader
-            glm::vec3 pos = glm::vec3(bgStars[i].x, bgStars[i].y, bgStars[i].z);
-            glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, glm::value_ptr(pos));
+            vec3 pos(bgStars[i].x, bgStars[i].y, bgStars[i].z);
+            float posArray[3];
+            pos.toFloatArray(posArray);
+            glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, posArray);
 
             // Setzen der Farbe im Shader
-            glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
-            glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr(color));
+            vec3 color(1.0f, 1.0f, 1.0f);
+            float colorArray[3];
+            color.toFloatArray(colorArray);
+            glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, colorArray);
 
             // Zeichnen des Punktes
             glDrawArrays(GL_POINTS, 0, 1);
@@ -489,63 +506,62 @@ void Engine::renderParticles()
     }
     if (true)
     {
-        for (int p = 0; p < positions.size(); p++)
+        for (const auto& particle : *particles)
         {
-            if(showDarkMatter == false && isDarkMatter[p].x)
-			{
-                continue;
-			}
-            if (showBaryonicMatter == false && !isDarkMatter[p].x)
+            vec3 color;
+            if (showDarkMatter == false && particle->type == 3)
             {
-				continue;
+                continue;
             }
-            if (showDarkMatter == true && isDarkMatter[p].x)
+            if (showBaryonicMatter == false && particle->type != 3)
+            {
+                continue;
+            }
+            if (showDarkMatter == true && particle->type == 3)
             {
                 if (colorMode == 0)
                 {
-                    glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((densityColors[p])));
+                    color = vec3(0.8f, 0.8f, 0.8f); // Example density color
                 }
                 if (colorMode == 1)
                 {
-                    glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((colors[p])));
+                    color = vec3(0.2f, 0.5f, 0.9f); // Example standard color
                 }
                 if (colorMode == 2)
                 {
-					glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((thermalColors[p])));
-				}
+                    color = vec3(0.7f, 0.3f, 0.3f); // Example thermal color
+                }
             }
             else
-			{
+            {
                 if (colorMode == 0)
                 {
-                    glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((densityColors[p])));
+                    color = vec3(0.8f, 0.8f, 0.8f); // Example density color
                 }
                 if (colorMode == 1)
                 {
-                    glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((colors[p])));
+                    color = vec3(0.2f, 0.5f, 0.9f); // Example standard color
                 }
                 if (colorMode == 2)
                 {
-                    glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, glm::value_ptr((thermalColors[p])));
+                    color = vec3(0.7f, 0.3f, 0.3f); // Example thermal color
                 }
-			}
+            }
 
-            glm::vec3 scaledPosition = glm::vec3(
-                positions[p].x * globalScale,
-                positions[p].y * globalScale,
-                positions[p].z * globalScale
-            ); 
+            vec3 scaledPosition = particle->position * globalScale; 
 
             // Setzen Position im Shader
-            glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, glm::value_ptr(scaledPosition));
+            float scaledPosArray[3];
+            scaledPosition.toFloatArray(scaledPosArray);
+            glUniform3fv(glGetUniformLocation(shaderProgram, "particlePosition"), 1, scaledPosArray);
 
-            glPointSize(positions[p].w);
+            glPointSize(particle->mass);
 
             // Zeichnen Punkt
             glDrawArrays(GL_POINTS, 0, 1);
         }
     }
-    // VAO l�sen
+    // VAO lösen
     glBindVertexArray(0);
     // Lösen des Framebuffers
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -570,8 +586,6 @@ void Engine::processInput()
         if (lKeyPressed && !lKeyWasPressedLastFrame)
         {
             focusedCamera = !focusedCamera;
-
-
         }
 
         // Aktualisieren des letzten Tastendruckzustands
@@ -592,9 +606,9 @@ void Engine::processInput()
                 if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
                     cameraPosition -= rushSpeed * index * cameraFront;
                 if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-                    cameraPosition -= rushSpeed * index * glm::normalize(glm::cross(cameraFront, cameraUp));
+                    cameraPosition -= rushSpeed * index * cameraFront.cross(cameraUp);
                 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-                    cameraPosition += rushSpeed * index * glm::normalize(glm::cross(cameraFront, cameraUp));
+                    cameraPosition += rushSpeed * index * cameraFront.cross(cameraUp);
             }
             else
             {
@@ -605,31 +619,31 @@ void Engine::processInput()
                 if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
                     cameraPosition -= cameraSpeed * index * cameraFront;
                 if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-                    cameraPosition -= cameraSpeed * index * glm::normalize(glm::cross(cameraFront, cameraUp));
+                    cameraPosition -= cameraSpeed * index * cameraFront.cross(cameraUp);
                 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-                    cameraPosition += cameraSpeed * index * glm::normalize(glm::cross(cameraFront, cameraUp));
+                    cameraPosition += cameraSpeed * index * cameraFront.cross(cameraUp);
             }
         }
     }
     if (focusedCamera) {
         // Richtet die Kamera auf den Ursprung aus
-        glm::dvec3 direction = glm::normalize(glm::dvec3(0, 0, 0) - cameraPosition);
+        vec3 direction = (vec3(0, 0, 0) - cameraPosition).normalize();
         cameraFront = direction;
     }
     if (RenderLive == false)
     {
         float index = 0.1f; 
-        cameraPosition += cameraSpeed * index * glm::normalize(glm::cross(cameraFront, cameraUp));
+        cameraPosition += cameraSpeed * index * cameraFront.cross(cameraUp);
     }
     // Aktualisieren der Ansichtsmatrix (Kameraposition und Blickrichtung)
-    view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+    view = mat4::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
     // Setzen der Matrizen im Shader
     GLuint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view.data());
 }
 
-// F�gen Sie diese Methode zur Engine-Klasse hinzu
+
 void Engine::processMouseInput()
 {
     if (focusedCamera == false)
@@ -642,7 +656,7 @@ void Engine::processMouseInput()
         static double lastMouseY = mouseY;
 
         double xOffset = mouseX - lastMouseX;
-        double yOffset = lastMouseY - mouseY; // Umgekehrtes Vorzeichen f�r umgekehrte Mausrichtung
+        double yOffset = lastMouseY - mouseY; // Umgekehrtes Vorzeichen für umgekehrte Mausrichtung
 
         lastMouseX = mouseX;
         lastMouseY = mouseY;
@@ -654,23 +668,24 @@ void Engine::processMouseInput()
         cameraYaw += xOffset;
         cameraPitch += yOffset;
 
-        // Begrenzen Sie die Kamerapitch, um ein �berdrehen zu verhindern
+        // Begrenzen Sie die Kamerapitch, um ein Überdrehen zu verhindern
         if (cameraPitch > 89.0f)
             cameraPitch = 89.0f;
         if (cameraPitch < -89.0f)
             cameraPitch = -89.0f;
 
         // Berechnen der neuen Kamerarichtung
-        glm::vec3 newFront;
-        newFront.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
-        newFront.y = sin(glm::radians(cameraPitch));
-        newFront.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
-        cameraFront = glm::normalize(newFront);
+        vec3 newFront;
+        newFront.x = cos(radians(cameraYaw)) * cos(radians(cameraPitch));
+        newFront.y = sin(radians(cameraPitch));
+        newFront.z = sin(radians(cameraYaw)) * cos(radians(cameraPitch));
+        cameraFront = newFront.normalize();
 
         // Aktualisieren der Ansichtsmatrix
-        view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+        view = mat4::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
     }
 }
+
 
 void Engine::checkShaderCompileStatus(GLuint shader, const char* shaderType)
 {
@@ -695,19 +710,20 @@ void Engine::checkShaderLinkStatus(GLuint program)
         std::cerr << "Error linking shader program:\n" << infoLog << std::endl;
     }
 }
+
 bool Engine::clean()
 {
-    // Aufr�umen und beenden
+    // Aufräumen und beenden
     glfwTerminate();
     return true;
 }
 
 void Engine::calcTime(int index) 
 {
-    calcTime(glm::dvec3(0, 0, 0), index);
+    calcTime(vec3(0, 0, 0), index);
 }
 
-void Engine::calcTime(glm::dvec3 position, int index)
+void Engine::calcTime(vec3 position, int index)
 {
     passedTime = (index * faktor);
 
@@ -721,7 +737,6 @@ void Engine::calcTime(glm::dvec3 position, int index)
     else if (passedTime < 86400) { passedTime /= 3600; Unit = " h"; }
     else if (passedTime < 31536000) { passedTime /= 86400; Unit = " days"; }
     else { passedTime /= 31536000; Unit = " years"; }
-
 
     std::string time; 
     //set the time to like millions, billions, trillions, ...
@@ -772,106 +787,10 @@ void Engine::calcTime(glm::dvec3 position, int index)
         newTime = newTime.substr(0, newTime.find(".") + 2);
         time = newTime + " quadrillion";
     }
-    
 
-    Physics physics;
-    //print out the past time in the right unit
-    if (!physics.showDate)
-    {
-        std::cout << std::scientific << std::setprecision(2) << "passed time: " << time << Unit << std::endl;
-        return;
-    }
-    // Berechne das Enddatum basierend auf der "passedTime"
-
-    int startYear = physics.year;
-    int startMonth = physics.month;
-    int startDay = physics.day;
-    
-    
-    // Berechnen Sie das aktuellen datums basierend auf der "passedTimeInSec"
-    int currentYear = startYear;
-    int currentMonth = startMonth;
-    int currentDay = startDay;
-
-    // Berechnen Sie das aktuelle Datum basierend auf der "passedTimeInSec"
-    while (passedTimeInSec > 0) {
-        // Berechnen Sie die Anzahl der Tage im aktuellen Monat
-        int daysInMonth = 0;
-        switch (currentMonth) {
-        case 1: daysInMonth = 31; break;
-        case 2: daysInMonth = 28; break;
-        case 3: daysInMonth = 31; break;
-        case 4: daysInMonth = 30; break;
-        case 5: daysInMonth = 31; break;
-        case 6: daysInMonth = 30; break;
-        case 7: daysInMonth = 31; break;
-        case 8: daysInMonth = 31; break;
-        case 9: daysInMonth = 30; break;
-        case 10: daysInMonth = 31; break;
-        case 11: daysInMonth = 30; break;
-        case 12: daysInMonth = 31; break;
-        }
-
-        // �berpr�fen Sie, ob das aktuelle Jahr ein Schaltjahr ist
-        bool isLeapYear = false;
-        if (currentYear % 4 == 0) {
-            if (currentYear % 100 == 0) {
-                if (currentYear % 400 == 0) {
-                    isLeapYear = true;
-                }
-            }
-            else {
-                isLeapYear = true;
-            }
-        }
-
-        // �berpr�fen Sie, ob das aktuelle Jahr ein Schaltjahr ist
-        if (isLeapYear && currentMonth == 2) {
-            daysInMonth = 29;
-        }
-
-        // �berpr�fen Sie, ob das aktuelle Jahr ein Schaltjahr ist
-        if (currentDay == daysInMonth) {
-            currentDay = 1;
-            if (currentMonth == 12) {
-                currentMonth = 1;
-                currentYear++;
-            }
-            else {
-                currentMonth++;
-            }
-        }
-        else {
-            currentDay++;
-        }
-
-        passedTimeInSec--;
-    }
-
-    
-    std::string day = std::to_string(currentDay);
-    if (currentDay < 10)
-    {
-        day = "0" + day;
-    }
-    std::string month = std::to_string(currentMonth);
-    if (currentMonth < 10)
-    {
-		month = "0" + month;
-	}
-    
-    if (passedTime < 1000000)
-    {
-        std::cout << "passed time: " << (int)passedTime << Unit << "    date: " << currentYear << "." << month << "." << day << std::endl;
-    }
-    else
-    {
-        //print out the past time in the right unit
-        std::cout << std::scientific << std::setprecision(0) << "passed time: " << passedTime << Unit << "    date: " << currentYear << "." << month << "." << day << std::endl;
-    }
-    
-    
+    std::cout << "Passed time: " << time << Unit << std::endl;
 }
+
 double Engine::random(double min, double max)
 {
     // Generiere eine zufällige Gleitkommazahl zwischen min und max
@@ -883,16 +802,16 @@ double Engine::random(double min, double max)
 void Engine::calculateGlobalScale()
 {
     double maxDistance = 0;
-    for (int i = 0; i < positions.size(); i++)
+    for (const auto& particle : *particles)
     {
         // Skip ungültige oder extreme Werte
-        if (positions[i].x == 0 && positions[i].y == 0 && positions[i].z == 0)
+        if (particle->position.x == 0 && particle->position.y == 0 && particle->position.z == 0)
             continue;
-        if (std::isinf(positions[i].x) || std::isinf(positions[i].y) || std::isinf(positions[i].z) ||
-            std::isnan(positions[i].x) || std::isnan(positions[i].y) || std::isnan(positions[i].z))
+        if (std::isinf(particle->position.x) || std::isinf(particle->position.y) || std::isinf(particle->position.z) ||
+            std::isnan(particle->position.x) || std::isnan(particle->position.y) || std::isnan(particle->position.z))
             continue;
 
-        double distance = sqrt(pow(positions[i].x, 2) + pow(positions[i].y, 2) + pow(positions[i].z, 2));
+        double distance = sqrt(pow(particle->position.x, 2) + pow(particle->position.y, 2) + pow(particle->position.z, 2));
         if (distance > maxDistance)
             maxDistance = distance;
     }
@@ -907,4 +826,3 @@ void Engine::calculateGlobalScale()
     int exponent = static_cast<int>(std::floor(std::log10(std::abs(maxDistance))));
     globalScale = maxDistance / pow(10, exponent * 2 - 2);
 }
-*/

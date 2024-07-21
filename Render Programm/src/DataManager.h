@@ -16,9 +16,6 @@
 class DataManager
 {
 public:
-    DataManager(std::string path);
-    ~DataManager();
-
     std::string path;
 
     void writeInfoFile(int deltaTime, int timeSteps, int numberOfParticles);

@@ -12,16 +12,14 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-
-DataManager::DataManager(std::string path)
-{
-    this->path = path;
-}
-
-DataManager::~DataManager(){}
-
 void DataManager::writeInfoFile(int deltaTime, int timeSteps, int numberOfParticles)
 {
+    //create the directory if it does not exist
+    if (!fs::exists(this->path))
+    {
+        fs::create_directories(this->path);
+    }
+    
     std::string filename = this->path + "info.txt";
     std::ofstream file(filename);
     if (!file.is_open()) {

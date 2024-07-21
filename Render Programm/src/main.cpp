@@ -10,6 +10,11 @@
 #include "DataManager.h"
 #include "Engine.h"
 #include <memory>
+#include <thread>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#define TARGET_FPS 60
 
 //  Nur unter Windows
 #ifdef WIN32
@@ -22,9 +27,37 @@ namespace fs = std::filesystem;
 
 int main()
 {
+    std::string dataFolder; // Pfad zum Data-Ordner eine Ebene höher
 
-    std::string dataFolder = "../../../Data"; // Pfad zum Data-Ordner eine Ebene höher
+    //print out all the folders in in the folder "../../Data/" as options to choose from wich data to load
+    std::cout << "Choose a data folder to load: " << std::endl;
+    
+    cout << endl;
 
+    int i = 1;
+    for (const auto& entry : fs::directory_iterator("../../Data/"))
+    {
+        std::cout << "["<< i << "]   " << entry.path().filename() << std::endl;
+        i++;
+    }
+
+    //get the input from the user
+    int folderIndex;
+    std::cin >> folderIndex;
+
+    //get the folder name from the input
+    i = 1;
+    for (const auto& entry : fs::directory_iterator("../../Data/"))
+    {
+        if (i == folderIndex)
+        {
+            dataFolder = entry.path().string() + "/";
+            break;
+        }
+        i++;
+    }
+
+    cout << endl;
 
     //get the DataFolder
     int deltaTime = 1;
@@ -34,18 +67,23 @@ int main()
     std::string input;
     std::getline(std::cin, input);
 
+    DataManager dataManager;
+    dataManager.path = dataFolder;
+    dataManager.readInfoFile(deltaTime, numTimeSteps, numOfParticles);
+    std::cout << "deltaTime: " << deltaTime << std::endl;
+    std::cout << "numOfParticles: " << numOfParticles << std::endl;
+    std::cout << "numTimeSteps: " << numTimeSteps << std::endl;
 
+    std::vector<std::shared_ptr<Particle>> particles;
 
-    //Engine engine(dataFolder);
-    //FileManager* fileManager = new FileManager(dataFolder);
+    Engine engine(dataFolder, deltaTime, numOfParticles, numTimeSteps, &particles);
 
-/*
-    if (!engine.init(physics->deltaTime)) {
+    if (!engine.init(1.0)) { // Hier muss der physikalische Faktor übergeben werden
         std::cerr << "Engine initialization failed." << std::endl;
-        return;
+        return -1;
     }
 
-    engine.start(physics);
+    engine.start();
 
     double lastFrameTime = glfwGetTime(); // Zeit des letzten Frames
     double frameTime; // Zeitdauer eines Frames
@@ -53,7 +91,6 @@ int main()
     int frameCount = 0;
     double secondCounter = 0.0;
     int counter = 0;
-
 
     std::vector<Particle> currentParticles;
 
@@ -65,7 +102,7 @@ int main()
         if (GetAsyncKeyState(27) & 0x8000)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            OutputDebugString(L"ESC KEY\n");
+            //OutputDebugString(L"ESC KEY\n");
             glfwSetWindowShouldClose(engine.window, true);
         }
         #endif
@@ -74,27 +111,28 @@ int main()
         frameTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        // Rufen Sie die update-Funktion auf und �bergeben Sie die Zeitdauer eines Frames
+        // Rufen Sie die update-Funktion auf und übergeben Sie die Zeitdauer eines Frames
         if (frameTime < 1.0 / TARGET_FPS)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>((1.0 / TARGET_FPS - frameTime) * 1000)));
         }
 
-        fileManager->loadParticles(physics, counter, engine.positions, engine.colors, engine.densityColors, engine.thermalColors,engine.isDarkMatter, engine.maxNumberOfParticles);
+        // load particles
+        dataManager.loadData(counter, particles);
 
         // update particles
-        engine.update(counter, " ");
+        engine.update(counter);
         // add time when engine is running
         if (engine.isRunning)
         {
-            if (counter >= 0 && counter <= physics->numTimeSteps - 1)
+            if (counter >= 0 && counter <= numTimeSteps - 1)
             {
                 counter = counter + engine.playSpeed;
             }
         }
-        if (counter >= physics->numTimeSteps - 1)
+        if (counter >= numTimeSteps - 1)
         {
-            counter = physics->numTimeSteps - 1;
+            counter = numTimeSteps - 1;
             engine.playSpeed = 0;
         }
         if (counter < 0)
@@ -135,7 +173,6 @@ int main()
             secondCounter = 0.0;
         }
 
-        // Wenn F11 gedrückt wird fullstreen mit guter auflösung
         // Wenn F11 gedrückt wird, schalten Sie in den Vollbildmodus um
         if (glfwGetKey(engine.window, GLFW_KEY_F11) == GLFW_PRESS) 
         {
@@ -154,12 +191,11 @@ int main()
                 glfwSetWindowMonitor(engine.window, NULL, 100, 100, 1200, 800, mode->refreshRate);
                 engine.framebuffer_size_callback(engine.window, 1200, 800);
             }
-
         }
     }
 
     // Beenden Sie GLFW
     engine.clean();
     glfwTerminate();
-    */
+    return 0;
 }

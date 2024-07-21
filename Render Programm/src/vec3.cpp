@@ -2,9 +2,6 @@
 #include <iostream>
 #include <cmath>
 
-namespace math
-{
-
 // Default constructor
 vec3::vec3() : x(0), y(0), z(0) {}
 
@@ -50,6 +47,10 @@ vec3& vec3::operator-=(const vec3& v) {
 // Scalar multiplication
 vec3 vec3::operator*(double scalar) const {
     return vec3(x * scalar, y * scalar, z * scalar);
+}
+
+vec3 operator*(double scalar, const vec3& v) {
+    return vec3(v.x * scalar, v.y * scalar, v.z * scalar);
 }
 
 vec3& vec3::operator*=(double scalar) {
@@ -102,4 +103,9 @@ std::ostream& operator<<(std::ostream& os, const vec3& v) {
     return os;
 }
 
+// Convert to float array
+void vec3::toFloatArray(float arr[3]) const {
+    arr[0] = static_cast<float>(x);
+    arr[1] = static_cast<float>(y);
+    arr[2] = static_cast<float>(z);
 }

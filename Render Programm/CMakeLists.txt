@@ -2,22 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 project(MeinProjekt)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(MAIN_SOURCE "src/main.cpp")
 
 # Inkludieren Sie die OpenGL-Bibliothek
 find_package(OpenGL REQUIRED)
-
-# Funktion, um rekursiv alle Verzeichnisse zu finden
-function(add_subdirectories_recursive dir)
-    file(GLOB children RELATIVE ${dir} ${dir}/*)
-    foreach(child ${children})
-        if(IS_DIRECTORY ${dir}/${child})
-            include_directories(${dir}/${child})
-        endif()
-    endforeach()
-endfunction()
 
 if(WIN32)
     # Inkludieren Sie GLM
@@ -37,42 +26,30 @@ if(WIN32)
 
     # Andere Bibliotheken verknüpfen
     link_libraries(${GLEW_LIBRARY} ${GLFW_LIBRARY})
-
-elseif(UNIX AND NOT APPLE)
-    # Inkludieren Sie GLM
-    include_directories(${CMAKE_SOURCE_DIR}/External_Libraries_Linux/GLM/glm)
-    # Inkludieren und Verknüpfen Sie GLEW
-    find_package(GLEW REQUIRED)
-    include_directories(${CMAKE_SOURCE_DIR}/External_Libraries_Linux/GLEW/include)
-    link_directories(${CMAKE_SOURCE_DIR}/External_Libraries_Linux/GLEW/lib)
-    # Inkludieren und Verknüpfen Sie GLFW
-    find_package(glfw3 REQUIRED)
-    include_directories(${CMAKE_SOURCE_DIR}/External_Libraries_Linux/GLFW/include)
-    link_directories(${CMAKE_SOURCE_DIR}/External_Libraries_Linux/GLFW/lib) # Passen Sie dies an den tatsächlichen Pfad Ihrer GLFW-Bibliotheken an
 endif()
 
 # Define GLM_ENABLE_EXPERIMENTAL to use experimental GLM features
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/Physics/)
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/File/)
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/Physics/BarnesHut/)
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/Physics/Galaxies/)
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/Rendering)
-include_directories(${CMAKE_SOURCE_DIR}/GLApp/GLApp/Math/)
-include_directories(${CMAKE_SOURCE_DIR})
+# include all cpp and .h files
+file(GLOB_RECURSE HEADER_FILES "src/*.h")
+set(SOURCE_FILES
+    src/main.cpp
+    src/Engine.cpp
+    src/vec3.cpp
+    src/mat4.cpp
+    src/vec4.cpp
+    src/DataManager.cpp
+)
 
+include_directories(${CMAKE_SOURCE_DIR}/src/)
 
 add_executable(MeinProgramm ${MAIN_SOURCE} ${HEADER_FILES} ${SOURCE_FILES})
 
 target_link_libraries(MeinProgramm PRIVATE ${OPENGL_LIBRARIES} ${GLFW_LIBRARY} ${GLEW_LIBRARY} pthread)
 
-# Find Curses library
 find_package(Curses REQUIRED)
-if(CURSES_FOUND)
-    message(STATUS "Found Curses: ${CURSES_LIBRARY}")
-    target_link_libraries(MeinProgramm PRIVATE ${CURSES_LIBRARIES})
-endif()
+target_link_libraries(MeinProgramm PRIVATE ${CURSES_LIBRARIES})
 
 # Hinzufügen der DLLs zum Ausführungsverzeichnis
 if(WIN32)
