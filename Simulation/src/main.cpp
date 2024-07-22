@@ -1,6 +1,5 @@
 #include <iostream>
 #include "Simulation.h"
-#include "Constants.h"
 
 using namespace Constants;
 
