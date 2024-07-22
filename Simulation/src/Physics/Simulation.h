@@ -21,8 +21,8 @@ public:
 
 
 private:
-    double deltaTime = 1; //time step length
-    double timeSteps = 10000; //number of time steps
+    double deltaTime = 10; //time step length
+    double timeSteps = 10; //number of time steps
 
     double softening = 1e-3; //softening factor
 
@@ -37,6 +37,6 @@ private:
     std::shared_ptr<DataManager> dataManager = std::make_shared<DataManager>("../../../Data/data1/");
 
     //particles
-    double numberOfParticles = 10;
+    double numberOfParticles = 100;
     std::vector<std::shared_ptr<Particle>> particles;
 };

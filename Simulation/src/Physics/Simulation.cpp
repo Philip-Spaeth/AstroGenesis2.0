@@ -9,7 +9,7 @@ Simulation::Simulation()
 
     for(int i = 0; i < numberOfParticles; i++)
     {
-        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
+        particles.push_back(std::make_shared<Particle>(vec3(random::between(-9,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
     }
     
     //save the particles data
@@ -28,7 +28,6 @@ void Simulation::run()
         totalKineticEnergy.push_back(0);
         totalInternalEnergy.push_back(0);
         totalEnergy.push_back(0);
-
 
         for (int i = 0; i < numberOfParticles; i++)
         {
@@ -58,7 +57,6 @@ void Simulation::run()
             totalInternalEnergy[t] += particles[i]->internalEnergy;
             totalEnergy[t] += particles[i]->totalEnergy + particles[i]->potentialEnergy + particles[i]->kineticEnergy;
         }
-
         if(t == 0) {std::cout << "total energy in the begining: " << totalEnergy[t] << std::endl;}
 
         dataManager->printProgress(t, timeSteps);

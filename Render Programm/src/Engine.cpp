@@ -439,7 +439,7 @@ void Engine::renderParticles()
         color.toFloatArray(colorArray);
         glUniform3fv(glGetUniformLocation(shaderProgram, "particleColor"), 1, colorArray);
 
-        glPointSize(5.0f); // Setzen der Punktgröße auf 5 Pixel
+        glPointSize(0.5f); // Setzen der Punktgröße auf 5 Pixel
 
         // Zeichnen Punkt
         glDrawArrays(GL_POINTS, 0, 1);
