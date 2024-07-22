@@ -29,7 +29,6 @@ void Simulation::run()
         totalInternalEnergy.push_back(0);
         totalEnergy.push_back(0);
 
-
         for (int i = 0; i < numberOfParticles; i++)
         {
             for (int j = 0; j < numberOfParticles; j++)
@@ -58,7 +57,6 @@ void Simulation::run()
             totalInternalEnergy[t] += particles[i]->internalEnergy;
             totalEnergy[t] += particles[i]->totalEnergy + particles[i]->potentialEnergy + particles[i]->kineticEnergy;
         }
-
         if(t == 0) {std::cout << "total energy in the begining: " << totalEnergy[t] << std::endl;}
 
         dataManager->printProgress(t, timeSteps);
