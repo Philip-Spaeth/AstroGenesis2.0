@@ -58,6 +58,13 @@ int main()
     
     cout << endl;
 
+    //check if there is a folder in the directory
+    if (!fs::exists("../../Data/"))
+    {
+        //create the Data folder
+        fs::create_directory("../../Data/");
+    }
+
     int i = 1;
     for (const auto& entry : fs::directory_iterator("../../Data/"))
     {
