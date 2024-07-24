@@ -19,7 +19,8 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
 - **Dual Engine Architecture**: Separate Simulation and Render engines for optimized performance.
 - **Video Rendering**: Render high-quality videos of your simulations.
 - **Live Viewer**: Interactively explore simulations in real-time.
-- **C++ Core**: High performance and flexibility.
+- **C++ Based**: High performance and flexibility.
+- **Highly Paralized**: Multithreading integration -> Can be run on a Server
 
 ## Installation
 See the GetttingStarted.md file for further information. 
