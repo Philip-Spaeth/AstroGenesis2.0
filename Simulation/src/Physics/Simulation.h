@@ -41,7 +41,7 @@ private:
 
 
     double deltaTime = 1; //time step length
-    double timeSteps = 200; //number of time steps
+    double timeSteps = 40; //number of time steps
 
     double softening = 1e-3; //softening factor
 
