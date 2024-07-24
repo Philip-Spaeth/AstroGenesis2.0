@@ -35,10 +35,9 @@ Before you begin, ensure you have the following software installed on your syste
 ## Cloning the Repository
 
 First, clone the repository to your local machine:
-
-```sh
-git clone https://github.com/yourusername/astro-genesis-2.0.git
-cd astro-genesis-2.0
+   ```sh
+   git clone https://github.com/yourusername/astro-genesis-2.0.git
+   cd astro-genesis-2.0
 
 
 Navigate to the project directory:
