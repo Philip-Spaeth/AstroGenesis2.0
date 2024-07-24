@@ -45,7 +45,7 @@ int numTimeSteps = 1;
 
 
 std::string dataFolder; // Pfad zum Data-Ordner eine Ebene höher
-DataManager dataManager;
+DataManager dataManager("");
 
 void renderLive();
 void renderVideo();
@@ -268,7 +268,7 @@ void renderVideo()
                 engine.framebuffer_size_callback(engine.window, 1200, 800);
             }
         }
-        dataManager.printProgress((double)counter, (double)numTimeSteps);
+        dataManager.printProgress((double)counter, (double)numTimeSteps, "");
     }
 
     engine.clean();
