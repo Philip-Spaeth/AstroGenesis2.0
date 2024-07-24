@@ -268,6 +268,11 @@ void Engine::window_iconify_callback(GLFWwindow* window, int iconified) {
 
 void Engine::update(int index)
 {
+    if(index == 2)
+    {
+        densityAv = calcDensityAv();
+    }
+
     //calculate the time
     if (isRunning && index != oldIndex && RenderLive)
     {
@@ -372,6 +377,18 @@ void Engine::update(int index)
     oldIndex = index;
 }
 
+double Engine::calcDensityAv()
+{
+    //calc the middle value of the particles densities
+    double densityAv = 0;
+    for (const auto& particle : *particles)
+    {
+        densityAv += particle->density;
+    }
+    densityAv = densityAv / particles->size();
+    return densityAv;
+}
+
 void Engine::renderParticles()
 {
     // Binden des Framebuffers
@@ -425,7 +442,19 @@ void Engine::renderParticles()
 
     for (const auto& particle : *particles)
     {
-        vec3 color = vec3(1, 1, 1);
+        double red = 1;
+        double green = 1;
+        double blue = 1;
+
+        if(densityAv != 0)
+        {
+            //calc the color baes on the density ranging from 1e6 to 1e7
+            red = particle->density / (densityAv);
+            green = 0;
+            blue = (densityAv * 2) / particle->density;
+        }
+        
+        vec3 color = vec3(red, green, blue);
 
         vec3 scaledPosition = particle->position * globalScale; 
 
@@ -609,7 +638,7 @@ void Engine::calcTime(int index)
 
 void Engine::calcTime(vec3 position, int index)
 {
-    passedTime = (index * faktor);
+    passedTime = (index * faktor) * deltaTime;
 
     int passedTimeInSec = passedTime / 86400;
 

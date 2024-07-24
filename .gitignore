@@ -2,7 +2,7 @@
 /Render Programm/build/
 /Simulation/build/
 
-/Render Programm/Video_Output/
+/Render Programm/Video_Output/*
 
 # Ignore binary files
 *.bin

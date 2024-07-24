@@ -21,7 +21,6 @@ bool Simulation::init()
     {
         particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0.1,0.1), random::between(-0.1,0.1), random::between(-0.1,0.1)), vec3(0.0, 0.0, 0.0), 10000000));
     }
-    particles[328]->position.x = 1e100;
     //save the particles data
     dataManager->saveData(particles, 0);
 
@@ -37,6 +36,9 @@ void Simulation::run()
     {   
         //build the tree
         buildTree();
+
+        //calculate the density
+        calcDensity();
 
         //calculate the forces
         calculateForces();
@@ -74,7 +76,6 @@ void Simulation::calculateForces()
     //calculate the gravitational acceleration for each particle
     for (int i = 0; i < numberOfParticles; i++)
     {
-        std::cout << particles[i]->node->depth << std::endl;
         particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
         root->calculateForce(particles[i], softening, theta);
     }
@@ -110,4 +111,15 @@ double Simulation::calcTreeWidth()
         }
     }
     return max;
+}
+
+void Simulation::calcDensity()
+{
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        if (particles[i]->node)
+        {
+            particles[i]->density = particles[i]->node->calcDensity(h);
+        }
+    }
 }

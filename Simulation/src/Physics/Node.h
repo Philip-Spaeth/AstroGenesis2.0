@@ -17,6 +17,9 @@ public:
 
     void calculateForce(std::shared_ptr<Particle> newparticle, double softening, double theta);
 
+    //SPH
+    double calcDensity(double h);
+
     int depth;
     bool isLeaf;
     //if leaf node, the particle is stored here

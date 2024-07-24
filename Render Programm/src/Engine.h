@@ -87,7 +87,11 @@ public:
     //render Tree
     const double theta = 0;
     void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    
+    double dFromCenter = 0;
 private:
+    double calcDensityAv();
+    double densityAv = 0;
     int oldIndex = -1;
     bool BGstars = true;
     int amountOfStars = 1000;

@@ -141,6 +141,12 @@ void renderVideo()
         std::getline(std::cin, input2);
         speed = std::stod(input2);
     }
+
+    //ask about the distance from the center factor
+    std::cout << "\nPlease enter the distance from the center factor (between 0.1-10): ";
+    std::string input;
+    std::getline(std::cin, input);
+    double distance = std::stod(input);
     
     std::cout << "" << std::endl;
     
@@ -166,11 +172,13 @@ void renderVideo()
     engine.cameraSpeed = speed;
     engine.focusedCamera = true;
     
-    engine.cameraPosition = vec3(0, 100, 1000);
+    engine.cameraPosition = vec3(0, 100, 1000* distance);
     engine.cameraFront = vec3(0, 0, -1);
     engine.cameraUp = vec3(0, 1, 0);
     engine.cameraYaw = -90;
     engine.cameraPitch = 0;
+    
+    engine.dFromCenter = distance;
 
 
     while (!glfwWindowShouldClose(engine.window))
@@ -278,6 +286,10 @@ void renderLive()
         std::cerr << "Engine initialization failed." << std::endl;
         return;
     }
+
+    engine.deltaTime = deltaTime;
+    engine.numOfParticles = numOfParticles;
+    engine.numTimeSteps = numTimeSteps;
 
     engine.start();
 

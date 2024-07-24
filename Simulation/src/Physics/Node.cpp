@@ -145,3 +145,25 @@ int Node::getOctant(std::shared_ptr<Particle> newParticle) {
     if (newParticle->position.z > position.z) octant |= 4;
     return octant;
 }
+
+
+double Node::calcDensity(double h) 
+{
+    std::shared_ptr<Node> currentNode = shared_from_this();
+    double targetRadius = 2 * h;
+
+    // Traverse up the tree until the node's radius is closest to 2 * h
+    while (currentNode->parent != nullptr) {
+        if (std::abs(currentNode->radius - targetRadius) <= std::abs(currentNode->parent->radius - targetRadius)) {
+            break;
+        }
+        currentNode = currentNode->parent;
+    }
+
+    // Calculate density: density = mass / volume
+    // Volume of the node is 8 * radius^3 for an octree
+    double volume = 8 * std::pow(currentNode->radius, 3);
+    double density = currentNode->mass / volume;
+
+    return density;
+}

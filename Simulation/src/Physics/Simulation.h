@@ -25,6 +25,10 @@ private:
     void buildTree();
     void calculateForces();
     double calcTreeWidth();
+    void calcDensity();
+
+    //SPH parameters
+    double h = 1; //smoothing length
 
 
     double deltaTime = 1; //time step length
