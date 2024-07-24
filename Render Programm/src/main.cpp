@@ -54,7 +54,7 @@ int main()
 {
 
     //print out all the folders in in the folder "../../Data/" as options to choose from wich data to load
-    std::cout << "Choose a data folder to load: " << std::endl;
+    std::cout << "Choose a data folder to load:  " << std::endl;
     
     cout << endl;
 
