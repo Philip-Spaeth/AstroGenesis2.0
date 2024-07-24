@@ -1,76 +1,113 @@
 #include "Simulation.h"
+#include <numeric>
 
 Simulation::Simulation()
 {
+    //construct the modules
+    timeIntegration = std::make_shared<TimeIntegration>();
+    dataManager = std::make_shared<DataManager>("../../../Data/Test/");
+
     //write the info file
     dataManager->writeInfoFile(deltaTime, timeSteps, numberOfParticles);
-
-    random::setRandomSeed(42);
-
-    for(int i = 0; i < numberOfParticles; i++)
-    {
-        particles.push_back(std::make_shared<Particle>(vec3(random::between(-9,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0,0), random::between(0,0), random::between(0,0)), vec3(0.0, 0.0, 0.0), 1000000));
-    }
-    
-    //save the particles data
-    dataManager->saveData(particles, 0);
 }
 
 Simulation::~Simulation(){}
 
+bool Simulation::init()
+{
+    random::setRandomSeed(8486368);
+
+    for(int i = 0; i < numberOfParticles; i++)
+    {
+        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0.1,0.1), random::between(-0.1,0.1), random::between(-0.1,0.1)), vec3(0.0, 0.0, 0.0), 10000000));
+    }
+    particles[328]->position.x = 1e100;
+    //save the particles data
+    dataManager->saveData(particles, 0);
+
+    std::cout << "Start data successfull initialized\n" << std::endl;
+
+    return true;
+}
+
 void Simulation::run()
 {
-
     //calculate the gravitational acceleration for each particle
     for (int t = 0; t < timeSteps; t++)
-    {
-        totalPotentialEnergy.push_back(0);
-        totalKineticEnergy.push_back(0);
-        totalInternalEnergy.push_back(0);
-        totalEnergy.push_back(0);
+    {   
+        //build the tree
+        buildTree();
+
+        //calculate the forces
+        calculateForces();
 
         for (int i = 0; i < numberOfParticles; i++)
         {
-            for (int j = 0; j < numberOfParticles; j++)
-            {
-                if (i != j)
-                {
-                    //calculate the gravitational force
-                    vec3 distance = particles[j]->position - particles[i]->position;
-                    double r = distance.length() + softening;
-                    vec3 normalized_direction = distance.normalize();
-                    particles[i]->acceleration += normalized_direction * Constants::G * (particles[j]->mass / (r * r));
-
-                    //Energy conservation
-                    particles[i]->potentialEnergy += 0.5 * -Constants::G * (particles[j]->mass * particles[i]->mass) / r;
-                    totalPotentialEnergy[t] += particles[i]->potentialEnergy;
-
-                }
-            }
-            //update the position and velocity of the particle
+            //update the particle position and velocity
             timeIntegration->Euler(particles[i], deltaTime);
-
-            //calculate the kinetic energy
-            particles[i]->kineticEnergy = 0.5 * particles[i]->mass * (particles[i]->velocity.length() * particles[i]->velocity.length());
-            //calculate the total energy
-            totalKineticEnergy[t] += particles[i]->kineticEnergy;
-            totalInternalEnergy[t] += particles[i]->internalEnergy;
-            totalEnergy[t] += particles[i]->totalEnergy + particles[i]->potentialEnergy + particles[i]->kineticEnergy;
         }
-        if(t == 0) {std::cout << "total energy in the begining: " << totalEnergy[t] << std::endl;}
 
-        dataManager->printProgress(t, timeSteps);
-
-        if(t == timeSteps - 1) std::cout << "total energy at the end: " << totalEnergy[t] << std::endl;
-        if(t == timeSteps - 1) std::cout << "difference: " << (totalEnergy[t] - totalEnergy[0])<< std::endl;
-        if(t == timeSteps - 1) std::cout << "difference in percentage: " << ((totalEnergy[t] - totalEnergy[0]) / totalEnergy[0] * 100)<< "%" << std::endl;
-        //reset the acceleration
-        for (int i = 0; i < numberOfParticles; i++)
-        {
-            particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            particles[i]->potentialEnergy = 0.0; // Reset potential energy
-        }
         //save the particles data
         dataManager->saveData(particles, t + 1);
+        dataManager->printProgress(t, timeSteps, "");
     }
+}
+
+void Simulation::buildTree()
+{
+    //create the root node
+    root = std::make_shared<Node>();
+    //setup the root node
+    root->position = vec3(0.0, 0.0, 0.0);
+    root->radius = calcTreeWidth();
+    root->depth = 0;
+
+    //insert the particles in the tree
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        root->insert(particles[i]);
+    }
+}
+
+void Simulation::calculateForces()
+{
+    //calculate the gravitational acceleration for each particle
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        std::cout << particles[i]->node->depth << std::endl;
+        particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
+        root->calculateForce(particles[i], softening, theta);
+    }
+}
+
+double Simulation::calcTreeWidth()
+{
+    //acceptanceRatio times the standard deviation of the distances
+    double acceptanceRatio = 10;
+
+    if (numberOfParticles == 0) return 0;
+
+    std::vector<double> distances(numberOfParticles);
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        distances[i] = particles[i]->position.length();
+    }
+    double sum = std::accumulate(distances.begin(), distances.end(), 0.0);
+    double mean = sum / numberOfParticles;
+
+    double sq_sum = std::inner_product(distances.begin(), distances.end(), distances.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / numberOfParticles - mean * mean);
+
+    double maxAcceptableDistance = mean + acceptanceRatio * stdev;
+
+    double max = 0;
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        double distance = distances[i];
+        if (distance <= maxAcceptableDistance && distance > max)
+        {
+            max = distance;
+        }
+    }
+    return max;
 }

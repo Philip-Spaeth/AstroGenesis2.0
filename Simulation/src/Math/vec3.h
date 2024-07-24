@@ -37,6 +37,10 @@ public:
     // Length (magnitude) of the vector
     double length() const;
 
+    //if statments
+    bool operator==(const vec3& v) const;
+    bool operator!=(const vec3& v) const;
+
     // Normalize the vector
     vec3 normalize() const;
 

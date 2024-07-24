@@ -8,6 +8,10 @@
 #include <filesystem>
 #include <iomanip>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace std;
 namespace fs = std::filesystem;
 
@@ -137,10 +141,19 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
     file.close();
 }
 
-void DataManager::printProgress(double currentStep, double steps) {
+#ifdef _WIN32
+void setConsoleColor(WORD color) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
+}
+#else
+void setConsoleColor(int color) {
+    // No color setting for Linux in this version
+}
+#endif
+void DataManager::printProgress(double currentStep, double steps, std::string text) 
+{
     static const int barWidth = 70;
-    static const int bufferSize = 100; // Adjust buffer size to be large enough for the entire line
-    
 
     if (!timerStarted) {
         std::cout << std::endl;
@@ -148,13 +161,34 @@ void DataManager::printProgress(double currentStep, double steps) {
         timerStarted = true;
     }
 
-    std::cout << "[";
-    int pos = barWidth * (((currentStep + 1) / steps) * 100) / 100.0;
+    double progress = (currentStep + 1) / steps;
+    int pos = static_cast<int>(barWidth * progress);
+    
+    // Set color based on progress
+#ifdef _WIN32
+    WORD progressColor = (currentStep < steps - 1) ? FOREGROUND_RED : FOREGROUND_GREEN;
+#endif
 
+    std::cout << "[";
     for (int i = 0; i < barWidth; ++i) {
+#ifdef _WIN32
+        if (i < pos) {
+            setConsoleColor(progressColor);
+            std::cout << "=";
+        }
+        else if (i == pos && currentStep < steps - 1) {
+            setConsoleColor(FOREGROUND_RED);
+            std::cout << ">";
+        }
+        else {
+            setConsoleColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+            std::cout << " ";
+        }
+#else
         if (i < pos) std::cout << "=";
         else if (i == pos) std::cout << ">";
         else std::cout << " ";
+#endif
     }
 
     double remainingTime = 0;
@@ -180,18 +214,10 @@ void DataManager::printProgress(double currentStep, double steps) {
     timeStream << std::fixed << std::setprecision(1) << remainingTime;
     std::string timeleft = timeStream.str();
 
-    std::ostringstream output;
-    output << "] " << std::fixed << std::setprecision(1) << (((currentStep + 1) / steps) * 100) << " %"
-           << "  Estimated remaining time: " << timeleft << unit;
-
-    // Ensure the entire line is cleared by filling with spaces up to bufferSize
-    std::string outputStr = output.str();
-    if (outputStr.length() < bufferSize) {
-        outputStr.append(bufferSize - outputStr.length(), ' ');
-    }
-
-    std::cout << outputStr << "\r";
-    std::cout.flush();
+#ifdef _WIN32
+    setConsoleColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+#endif
+    std::cout << "] " << int(progress * 100.0) << " %  Estimated remaining time: " << timeleft << unit << "  "<< text << "       " << "\r";
 
     if (currentStep == steps - 1) {
         std::cout << std::endl;

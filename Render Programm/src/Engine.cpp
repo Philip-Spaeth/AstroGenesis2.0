@@ -425,7 +425,7 @@ void Engine::renderParticles()
 
     for (const auto& particle : *particles)
     {
-        vec3 color = vec3(1, 0, 0);
+        vec3 color = vec3(1, 1, 1);
 
         vec3 scaledPosition = particle->position * globalScale; 
 

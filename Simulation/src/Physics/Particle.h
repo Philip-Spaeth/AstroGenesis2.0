@@ -1,6 +1,10 @@
 #pragma once
 
 #include "vec3.h"
+#include <memory>
+#include "Node.h"
+
+class Node;
 
 class Particle
 {
@@ -28,4 +32,7 @@ public:
     double kineticEnergy;
     double potentialEnergy;
     double totalEnergy;
+
+    //Octree properties
+    std::shared_ptr<Node> node;
 };

@@ -97,6 +97,15 @@ vec3 vec3::cross(const vec3& v) const {
 	return vec3(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
 }
 
+//if statments
+bool vec3::operator==(const vec3& v) const {
+    return x == v.x && y == v.y && z == v.z;
+}
+
+bool vec3::operator!=(const vec3& v) const {
+    return x != v.x || y != v.y || z != v.z;
+}
+
 // Output stream operator
 std::ostream& operator<<(std::ostream& os, const vec3& v) {
     os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
