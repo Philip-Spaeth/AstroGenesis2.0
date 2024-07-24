@@ -41,7 +41,7 @@ private:
 
 
     double deltaTime = 1; //time step length
-    double timeSteps = 40; //number of time steps
+    double timeSteps = 1000; //number of time steps
 
     double softening = 1e-3; //softening factor
 
@@ -60,6 +60,6 @@ private:
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
-    double theta = 0.5;
+    double theta = 1;
     std::shared_ptr<Node> root;
 };

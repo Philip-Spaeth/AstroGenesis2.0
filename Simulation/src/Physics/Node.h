@@ -36,5 +36,5 @@ public:
     std::shared_ptr<Node> children[8];
 
     //parent of the node
-    std::shared_ptr<Node> parent;
+    std::weak_ptr<Node> parent;
 };

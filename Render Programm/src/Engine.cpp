@@ -268,7 +268,7 @@ void Engine::window_iconify_callback(GLFWwindow* window, int iconified) {
 
 void Engine::update(int index)
 {
-    if(index == 2)
+    if(index == 0)
     {
         densityAv = calcDensityAv();
     }

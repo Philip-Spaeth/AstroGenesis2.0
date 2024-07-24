@@ -2,7 +2,13 @@
 /Render Programm/build/
 /Simulation/build/
 
+
+# Ignore everything in the /Render Programm/Video_Output/ directory
 /Render Programm/Video_Output/*
+
+# Except for convert_bmp_to_video.bat
+!/Render Programm/Video_Output/convert_bmp_to_video.bat
+
 
 # Ignore binary files
 *.bin

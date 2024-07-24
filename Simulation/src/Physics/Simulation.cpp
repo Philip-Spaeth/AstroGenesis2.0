@@ -142,9 +142,9 @@ void Simulation::calcDensity()
 {
     for (int i = 0; i < numberOfParticles; i++)
     {
-        if (particles[i]->node)
+        if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
         {
-            particles[i]->density = particles[i]->node->calcDensity(h);
+            particles[i]->density = node->calcDensity(h);
         }
     }
 }

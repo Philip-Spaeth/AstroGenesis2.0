@@ -34,5 +34,5 @@ public:
     double totalEnergy;
 
     //Octree properties
-    std::shared_ptr<Node> node;
+    std::weak_ptr<Node> node;
 };

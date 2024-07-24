@@ -11,11 +11,15 @@ Node::Node()
     {
         children[i] = nullptr;
     }
-    parent = nullptr;
+    parent = std::weak_ptr<Node>(); // Set weak_ptr to empty state
 }
 
 Node::~Node()
 {
+    for (int i = 0; i < 8; i++)
+    {
+        children[i].reset(); // Explicitly reset the children to release memory
+    }
 }
 
 void Node::calculateForce(std::shared_ptr<Particle> newparticle, double softening, double theta)
@@ -153,11 +157,12 @@ double Node::calcDensity(double h)
     double targetRadius = 2 * h;
 
     // Traverse up the tree until the node's radius is closest to 2 * h
-    while (currentNode->parent != nullptr) {
-        if (std::abs(currentNode->radius - targetRadius) <= std::abs(currentNode->parent->radius - targetRadius)) {
+    while (!currentNode->parent.expired()) {
+        auto parentPtr = currentNode->parent.lock();
+        if (std::abs(currentNode->radius - targetRadius) <= std::abs(parentPtr->radius - targetRadius)) {
             break;
         }
-        currentNode = currentNode->parent;
+        currentNode = parentPtr;
     }
 
     // Calculate density: density = mass / volume
