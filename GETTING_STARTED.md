@@ -38,11 +38,13 @@ First, clone the repository to your local machine:
    ```sh
    git clone https://github.com/yourusername/astro-genesis-2.0.git
    cd astro-genesis-2.0
+```
 
 
 Navigate to the project directory:
    ```sh
     cd astro-genesis-2.0
+```
 
 Build the project using CMake:
    ```sh
@@ -50,5 +52,6 @@ Build the project using CMake:
    cd build
    cmake ..
    make
+```
 
 If you encounter any issues during the build process, refer to the Troubleshooting section.
