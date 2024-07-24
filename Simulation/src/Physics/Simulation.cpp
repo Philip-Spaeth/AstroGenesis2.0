@@ -15,12 +15,21 @@ Simulation::~Simulation(){}
 
 bool Simulation::init()
 {
+    //setting up multitheading
+    std::cout << "Number of threads: " << std::thread::hardware_concurrency() << std::endl;
+
     random::setRandomSeed(8486368);
 
     for(int i = 0; i < numberOfParticles; i++)
     {
         particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0.1,0.1), random::between(-0.1,0.1), random::between(-0.1,0.1)), vec3(0.0, 0.0, 0.0), 10000000));
     }
+    //build the tree
+    buildTree();
+
+    //calculate the density
+    calcDensity();
+
     //save the particles data
     dataManager->saveData(particles, 0);
 
@@ -71,11 +80,27 @@ void Simulation::buildTree()
     }
 }
 
-void Simulation::calculateForces()
-{
-    //calculate the gravitational acceleration for each particle
-    for (int i = 0; i < numberOfParticles; i++)
-    {
+void Simulation::calculateForces() {
+    const int numThreads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+    currentParticleIndex.store(0); // Initialisiere den Atom-Index
+
+    for (int i = 0; i < numThreads; ++i) {
+        threads.push_back(std::thread(&Simulation::calculateForcesWorker, this));
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
+
+void Simulation::calculateForcesWorker() {
+    while (true) {
+        int i = currentParticleIndex.fetch_add(1);
+        if (i >= numberOfParticles) {
+            break; // Beende, wenn alle Partikel bearbeitet sind
+        }
+        // Berechne die Kräfte für das Partikel
         particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
         root->calculateForce(particles[i], softening, theta);
     }

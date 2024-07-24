@@ -8,6 +8,10 @@
 #include "TimeIntegration.h"
 #include "DataManager.h"
 #include "random.h"
+#include "Node.h"
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 using namespace math;
 
@@ -26,6 +30,11 @@ private:
     void calculateForces();
     double calcTreeWidth();
     void calcDensity();
+
+    //multithreading
+    void calculateForcesWorker();
+    std::atomic<int> currentParticleIndex;
+    std::mutex mutex;
 
     //SPH parameters
     double h = 1; //smoothing length
@@ -47,7 +56,7 @@ private:
     std::shared_ptr<DataManager> dataManager;
 
     //particles
-    double numberOfParticles = 1000;
+    double numberOfParticles = 10000;
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
