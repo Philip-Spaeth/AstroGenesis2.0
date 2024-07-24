@@ -10,6 +10,7 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
   - [Render Engine](#render-engine)
 - [Contributing](#contributing)
 - [License](#license)
+- [Examples](#Examples)
   
 ## Features
 - **Advanced n-body Simulation**: Simulate complex gravitational interactions with high precision.
