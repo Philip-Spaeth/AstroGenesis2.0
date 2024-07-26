@@ -1,11 +1,16 @@
 #include "Simulation.h"
 #include <numeric>
+#include "Galaxy.h"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
 
 Simulation::Simulation()
 {
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
-    dataManager = std::make_shared<DataManager>("../../../Data/Test/");
+    dataManager = std::make_shared<DataManager>("../../../Data/Template1_Merge/");
 
     //write the info file
     dataManager->writeInfoFile(deltaTime, timeSteps, numberOfParticles);
@@ -16,14 +21,12 @@ Simulation::~Simulation(){}
 bool Simulation::init()
 {
     //setting up multitheading
-    std::cout << "Number of threads: " << std::thread::hardware_concurrency() << std::endl;
+    std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
-    random::setRandomSeed(8486368);
+    //read the template
+    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
-    for(int i = 0; i < numberOfParticles; i++)
-    {
-        particles.push_back(std::make_shared<Particle>(vec3(random::between(-10,10), random::between(-10,10), random::between(-10,10)), vec3(random::between(-0.1,0.1), random::between(-0.1,0.1), random::between(-0.1,0.1)), vec3(0.0, 0.0, 0.0), 10000000));
-    }
     //build the tree
     buildTree();
 

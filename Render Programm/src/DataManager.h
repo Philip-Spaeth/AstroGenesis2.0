@@ -14,10 +14,13 @@ public:
     ~DataManager();
     std::string path;
 
-    void writeInfoFile(int deltaTime, int timeSteps, int numberOfParticles);
-    void readInfoFile(int& deltaTime, int& timeSteps, int& numberOfParticles);
+    void writeInfoFile(double deltaTime, double timeSteps, double numberOfParticles);
+    void readInfoFile(double& deltaTime, double& timeSteps, double& numberOfParticles);
     void saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep);
     void loadData(int timeStep, std::vector<std::shared_ptr<Particle>>& particles);
+
+    //templates
+    void readTemplate(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles);
 
     void printProgress(double currentStep, double steps, std::string text);
 

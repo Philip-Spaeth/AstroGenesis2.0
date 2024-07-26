@@ -23,12 +23,12 @@
 
 class Engine {
 public:
-    Engine(std::string dataFolder, int deltaTime, int numOfParticles, int numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles);
+    Engine(std::string dataFolder, double deltaTime, double numOfParticles, double numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles);
     ~Engine();
 
-    int deltaTime;
-    int numOfParticles;
-    int numTimeSteps;
+    double deltaTime;
+    double numOfParticles;
+    double numTimeSteps;
     
     std::vector<std::shared_ptr<Particle>>* particles;
 

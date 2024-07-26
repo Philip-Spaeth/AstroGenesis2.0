@@ -19,7 +19,7 @@ inline float radians(float degrees) {
     return degrees * (M_PI / 180.0f);
 }
 
-Engine::Engine(std::string NewDataFolder, int deltaTime, int numOfParticles, int numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles) : window(nullptr), shaderProgram(0), VAO(0)
+Engine::Engine(std::string NewDataFolder, double deltaTime, double numOfParticles, double numTimeSteps, std::vector<std::shared_ptr<Particle>>* particles) : window(nullptr), shaderProgram(0), VAO(0)
 {
     dataFolder = NewDataFolder;
     this->deltaTime = deltaTime;
@@ -313,7 +313,7 @@ void Engine::update(int index)
     glfwPollEvents();
 
     //if video is rendered
-    if (RenderLive == false && index != oldIndex)
+    if (RenderLive == false && index != oldIndex && index != 0)
     {
         saveAsPicture(dataFolder, index);
         glfwSetWindowIconifyCallback(window, window_iconify_callback);
@@ -449,7 +449,7 @@ void Engine::renderParticles()
         if(densityAv != 0)
         {
             //calc the color baes on the density ranging from 1e6 to 1e7
-            red = particle->density / (densityAv);
+            red = particle->density / (densityAv * 0.001);
             green = 0;
             blue = (densityAv * 2) / particle->density;
         }
@@ -639,6 +639,7 @@ void Engine::calcTime(int index)
 void Engine::calcTime(vec3 position, int index)
 {
     passedTime = (index * faktor) * deltaTime;
+    //std::cout << deltaTime << std::endl;
 
     int passedTimeInSec = passedTime / 86400;
 

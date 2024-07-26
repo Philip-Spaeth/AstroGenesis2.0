@@ -39,9 +39,9 @@ namespace fs = std::filesystem;
 
 
 //get the DataFolder
-int deltaTime = 1;
-int numOfParticles = 1;
-int numTimeSteps = 1;
+double deltaTime = 1;
+double numOfParticles = 1;
+double numTimeSteps = 1;
 
 
 std::string dataFolder; // Pfad zum Data-Ordner eine Ebene höher
