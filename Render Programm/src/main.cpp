@@ -183,13 +183,6 @@ void renderVideo()
 
     while (!glfwWindowShouldClose(engine.window))
     {
-        #ifdef WIN32
-        if (GetAsyncKeyState(27) & 0x8000)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            glfwSetWindowShouldClose(engine.window, true);
-        }
-        #endif
 
         double currentFrameTime = glfwGetTime();
         frameTime = currentFrameTime - lastFrameTime;
@@ -230,14 +223,6 @@ void renderVideo()
             engine.playSpeed = 0;
         }
 
-        #ifdef WIN32
-        if (GetAsyncKeyState(82) & 0x8000)
-        {
-            counter = 0;
-            engine.playSpeed = 0;
-        }
-        #endif
-
         frameCount++;
         secondCounter += frameTime;
 
@@ -255,19 +240,6 @@ void renderVideo()
             secondCounter = 0.0;
         }
 
-        if (glfwGetKey(engine.window, GLFW_KEY_F11) == GLFW_PRESS) 
-        {
-            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-            if (glfwGetWindowMonitor(engine.window) == NULL) {
-                glfwSetWindowMonitor(engine.window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                engine.framebuffer_size_callback(engine.window, mode->width, mode->height);
-            }
-            else {
-                glfwSetWindowMonitor(engine.window, NULL, 100, 100, 1200, 800, mode->refreshRate);
-                engine.framebuffer_size_callback(engine.window, 1200, 800);
-            }
-        }
         dataManager.printProgress((double)counter, (double)numTimeSteps, "");
     }
 
