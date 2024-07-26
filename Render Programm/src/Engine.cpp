@@ -64,7 +64,14 @@ bool Engine::init(double physicsFaktor)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
     // Ein GLFW-Fenster erstellen
-    window = glfwCreateWindow(1200, 800, "Particle Rendering", nullptr, nullptr);
+    double width = 1200;
+    double height = 800;
+    if(RenderLive == false)
+    {
+        width = 1920;
+        height = 1080;
+    }
+    window = glfwCreateWindow(width, height, "Particle Rendering", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
