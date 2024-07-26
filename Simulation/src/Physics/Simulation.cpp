@@ -10,7 +10,7 @@ Simulation::Simulation()
 {
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
-    dataManager = std::make_shared<DataManager>("../../../Data/Template1_Merge/");
+    dataManager = std::make_shared<DataManager>("../../../Data/test/");
 
     //write the info file
     dataManager->writeInfoFile(deltaTime, timeSteps, numberOfParticles);
@@ -54,6 +54,9 @@ void Simulation::run()
 
         //calculate the forces
         calculateForces();
+
+        //apply the hubble expansion
+        applyHubbleExpansion();
 
         for (int i = 0; i < numberOfParticles; i++)
         {
@@ -106,6 +109,19 @@ void Simulation::calculateForcesWorker() {
         // Berechne die Kräfte für das Partikel
         particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
         root->calculateForce(particles[i], softening, theta);
+    }
+}
+
+void Simulation::applyHubbleExpansion()
+{
+    //convert hubble constant to SI units
+    double kmToMeter = 1e-3;
+    double mpcToMeter = 3.086e22;
+    double hubbleConstantSI = (hubleConstant * kmToMeter) / mpcToMeter;
+
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        particles[i]->velocity += particles[i]->position * hubbleConstantSI;
     }
 }
 

@@ -25,10 +25,14 @@ public:
     void run();
 
 private:
+    //calculations with the octree
     void buildTree();
     void calculateForces();
     double calcTreeWidth();
     void calcDensity();
+
+    //calculations without the octree
+    void applyHubbleExpansion();
 
     //for the templates
     void readTemplate();
@@ -41,10 +45,14 @@ private:
     //SPH parameters
     double h = 1; //smoothing length
 
+    //dark energy
+    double hubleConstant = 70; //Hubble constant in km/s/Mpc
 
+    //time integration
     double deltaTime = 1e14; //time step length
-    double timeSteps = 10000; //number of time steps
+    double timeSteps = 200; //number of time steps
 
+    //gravitational softening, adapt it to the size of the system
     double softening = 7.715e18; //softening factor
 
     //Total Energy of the system
