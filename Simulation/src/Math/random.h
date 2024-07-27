@@ -1,17 +1,12 @@
-#ifndef MATHFUNCTIONS_H
-#define MATHFUNCTIONS_H
+#pragma once
 
 #include "vec3.h"
 
-namespace math
+class random
 {
-	class random
-	{
-	public:
-		//random Functions
-		static void setRandomSeed(unsigned int seed);
-		static double between(double min, double max);
-		static double gaussianRandom(double mean = 0.0, double stddev = 1.0);
-	};
+public:
+	//random Functions
+	static void setRandomSeed(unsigned int seed);
+	static double between(double min, double max);
+	static double gaussianRandom(double mean = 0.0, double stddev = 1.0);
 };
-#endif

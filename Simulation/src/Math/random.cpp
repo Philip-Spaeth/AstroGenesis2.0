@@ -4,9 +4,6 @@
 #include <cmath>
 #include <cstdlib>
 
-namespace math
-{
-
 double random::gaussianRandom(double mean, double stddev)
 {
     // Erstellen eines Zufallszahlengenerators
@@ -33,5 +30,4 @@ double random::between(double min, double max)
     double randomFloat = min + static_cast<double>(rand()) / static_cast<double>(RAND_MAX) * (max - min);
 
     return randomFloat;
-}
 }

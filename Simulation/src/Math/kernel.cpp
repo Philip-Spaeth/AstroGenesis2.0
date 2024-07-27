@@ -1,8 +1,5 @@
 #include "kernel.h"
 
-namespace math
-{
-
 double kernel::cubicSplineKernel(double r, double h)
 {
     const double pi = 3.14159265359;
@@ -50,6 +47,4 @@ vec3 kernel::gradientCubicSplineKernel(const vec3& r, double h)
     }
     */
     return vec3(0,0,0);
-}
-
 }

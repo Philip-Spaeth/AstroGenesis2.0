@@ -456,14 +456,21 @@ void Engine::renderParticles()
         if(densityAv != 0)
         {
             //calc the color baes on the density ranging from 1e6 to 1e7
-            red = particle->density / (densityAv * 0.001);
+            red = particle->density / (densityAv * 0.00005);
             green = 0;
-            blue = (densityAv * 2) / particle->density;
+            blue = (densityAv) / particle->density;
+
+            if(densityAv * 0.01 < particle->density)
+            {
+                red = 1;
+                green = 1;
+                blue = 1;
+            }
         }
         
         vec3 color = vec3(red, green, blue);
 
-        vec3 scaledPosition = particle->position * globalScale; 
+        vec3 scaledPosition = particle->position * globalScale;
 
         // Setzen Position im Shader
         float scaledPosArray[3];

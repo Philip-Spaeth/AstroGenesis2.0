@@ -13,8 +13,6 @@
 #include <mutex>
 #include <atomic>
 
-using namespace math;
-
 class Simulation
 {
 public:
@@ -50,7 +48,7 @@ private:
 
     //time integration
     double deltaTime = 1e14; //time step length
-    double timeSteps = 200; //number of time steps
+    double timeSteps = 10000; //number of time steps
 
     //gravitational softening, adapt it to the size of the system
     double softening = 7.715e18; //softening factor

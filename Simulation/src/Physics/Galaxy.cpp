@@ -2,7 +2,6 @@
 #include "random.h"
 #include "Constants.h"
 
-using namespace math;
 
 Galaxy::Galaxy(std::vector<std::shared_ptr<Particle>>& particles, int start, int end, double mass, double radius)
 {
