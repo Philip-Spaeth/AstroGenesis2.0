@@ -31,3 +31,12 @@
 *.avi
 *.mp4
 *.mov
+
+# Ignoriere den doku ornder
+*
+
+# Ausnahme für den bestimmten Ordner
+!Documentation/
+
+# Optional: Ausnahme für alle Inhalte des bestimmten Ordners
+!Documentation/**
