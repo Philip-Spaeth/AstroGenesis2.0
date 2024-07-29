@@ -1,0 +1,390 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{binney2008galactic}{book}{}{}
+      \name{author}{2}{}{%
+        {{hash=7cb5734fc29a879adeda19d8fde85fc6}{%
+           family={Binney},
+           familyi={B\bibinitperiod},
+           given={James},
+           giveni={J\bibinitperiod}}}%
+        {{hash=1eb728ea8648b5eaf5ef61846f262239}{%
+           family={Tremaine},
+           familyi={T\bibinitperiod},
+           given={Scott},
+           giveni={S\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Princeton University Press}%
+      }
+      \strng{namehash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{fullhash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{fullhashraw}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{bibnamehash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{authorbibnamehash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{authornamehash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{authorfullhash}{e5912b094b9fa1213446f34603bd2f7e}
+      \strng{authorfullhashraw}{e5912b094b9fa1213446f34603bd2f7e}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Galactic Dynamics}
+      \field{year}{2008}
+    \endentry
+    \entry{friedmann1922}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=93320e7ae1c20dfda23b269aaf816d9d}{%
+           family={Friedmann},
+           familyi={F\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer}%
+      }
+      \strng{namehash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{fullhash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{fullhashraw}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{bibnamehash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{authorbibnamehash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{authornamehash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{authorfullhash}{93320e7ae1c20dfda23b269aaf816d9d}
+      \strng{authorfullhashraw}{93320e7ae1c20dfda23b269aaf816d9d}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Zeitschrift für Physik}
+      \field{number}{1}
+      \field{title}{Über die Krümmung des Raumes}
+      \field{volume}{10}
+      \field{year}{1922}
+      \field{pages}{377\bibrangedash 386}
+      \range{pages}{10}
+    \endentry
+    \entry{harris2020array}{article}{}{}
+      \true{moreauthor}
+      \true{morelabelname}
+      \name{author}{10}{}{%
+        {{hash=db2b4761cc46be347b418e68660c9554}{%
+           family={Harris},
+           familyi={H\bibinitperiod},
+           given={Charles\bibnamedelima R},
+           giveni={C\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=b053969d2c6a9ec8689980fb6463cd56}{%
+           family={Millman},
+           familyi={M\bibinitperiod},
+           given={K\bibnamedelima Jarrod},
+           giveni={K\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=9a5a65a789013a8d1e8035ec28df9b6e}{%
+           family={Walt},
+           familyi={W\bibinitperiod},
+           given={Stéfan\bibnamedelima J},
+           giveni={S\bibinitperiod\bibinitdelim J\bibinitperiod},
+           prefix={van\bibnamedelima der},
+           prefixi={v\bibinitperiod\bibinitdelim d\bibinitperiod}}}%
+        {{hash=646fbfe08374cc41c2f9bd971d8c4725}{%
+           family={Gommers},
+           familyi={G\bibinitperiod},
+           given={Ralf},
+           giveni={R\bibinitperiod}}}%
+        {{hash=18703a2bb6a62484483c193a212da2f8}{%
+           family={Virtanen},
+           familyi={V\bibinitperiod},
+           given={Pauli},
+           giveni={P\bibinitperiod}}}%
+        {{hash=9fd9ed8466bbb96364ae008f2a665e6e}{%
+           family={Cournapeau},
+           familyi={C\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=4321feefe3d5715c6fe12639d2a1f7f1}{%
+           family={Wieser},
+           familyi={W\bibinitperiod},
+           given={Eric},
+           giveni={E\bibinitperiod}}}%
+        {{hash=e8d1b0c2bff88b6bf54e2e934e2853f6}{%
+           family={Taylor},
+           familyi={T\bibinitperiod},
+           given={Julian},
+           giveni={J\bibinitperiod}}}%
+        {{hash=265437a4424f0b845118651d7d04ab93}{%
+           family={Berg},
+           familyi={B\bibinitperiod},
+           given={Sebastian},
+           giveni={S\bibinitperiod}}}%
+        {{hash=e4d23819637a961e0e598e1c82a8f10d}{%
+           family={Smith},
+           familyi={S\bibinitperiod},
+           given={Nathaniel\bibnamedelima J},
+           giveni={N\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Nature Publishing Group}%
+      }
+      \strng{namehash}{754b3dec5e203c19b9a5798bbb902222}
+      \strng{fullhash}{54b2b39d82aab2ae9a052d9234e72469}
+      \strng{fullhashraw}{54b2b39d82aab2ae9a052d9234e72469}
+      \strng{bibnamehash}{754b3dec5e203c19b9a5798bbb902222}
+      \strng{authorbibnamehash}{754b3dec5e203c19b9a5798bbb902222}
+      \strng{authornamehash}{754b3dec5e203c19b9a5798bbb902222}
+      \strng{authorfullhash}{54b2b39d82aab2ae9a052d9234e72469}
+      \strng{authorfullhashraw}{54b2b39d82aab2ae9a052d9234e72469}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Nature}
+      \field{number}{7825}
+      \field{title}{Array programming with NumPy}
+      \field{volume}{585}
+      \field{year}{2020}
+      \field{pages}{357\bibrangedash 362}
+      \range{pages}{6}
+    \endentry
+    \entry{hubble1929}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=095a52969f0b95a9824841c15cc59106}{%
+           family={Hubble},
+           familyi={H\bibinitperiod},
+           given={Edwin},
+           giveni={E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {National Academy of Sciences}%
+      }
+      \strng{namehash}{095a52969f0b95a9824841c15cc59106}
+      \strng{fullhash}{095a52969f0b95a9824841c15cc59106}
+      \strng{fullhashraw}{095a52969f0b95a9824841c15cc59106}
+      \strng{bibnamehash}{095a52969f0b95a9824841c15cc59106}
+      \strng{authorbibnamehash}{095a52969f0b95a9824841c15cc59106}
+      \strng{authornamehash}{095a52969f0b95a9824841c15cc59106}
+      \strng{authorfullhash}{095a52969f0b95a9824841c15cc59106}
+      \strng{authorfullhashraw}{095a52969f0b95a9824841c15cc59106}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Proceedings of the National Academy of Sciences}
+      \field{number}{3}
+      \field{title}{A relation between distance and radial velocity among extra-galactic nebulae}
+      \field{volume}{15}
+      \field{year}{1929}
+      \field{pages}{168\bibrangedash 173}
+      \range{pages}{6}
+    \endentry
+    \entry{hunter2007matplotlib}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=a2f53dcc6bb05a06b8ad94176f80fe26}{%
+           family={Hunter},
+           familyi={H\bibinitperiod},
+           given={John\bibnamedelima D},
+           giveni={J\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{fullhash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{fullhashraw}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{bibnamehash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{authorbibnamehash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{authornamehash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{authorfullhash}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \strng{authorfullhashraw}{a2f53dcc6bb05a06b8ad94176f80fe26}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Computing in science \& engineering}
+      \field{number}{3}
+      \field{title}{Matplotlib: A 2D graphics environment}
+      \field{volume}{9}
+      \field{year}{2007}
+      \field{pages}{90\bibrangedash 95}
+      \range{pages}{6}
+    \endentry
+    \entry{newton1687principia}{book}{}{}
+      \name{author}{1}{}{%
+        {{hash=7a621e01239c1fe6557cf9c9d2f85bd3}{%
+           family={Newton},
+           familyi={N\bibinitperiod},
+           given={Isaac},
+           giveni={I\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Royal Society}%
+      }
+      \strng{namehash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{fullhash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{fullhashraw}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{bibnamehash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{authorbibnamehash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{authornamehash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{authorfullhash}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \strng{authorfullhashraw}{7a621e01239c1fe6557cf9c9d2f85bd3}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Philosophi{æ} Naturalis Principia Mathematica}
+      \field{year}{1687}
+    \endentry
+    \entry{peebles1993principles}{book}{}{}
+      \name{author}{1}{}{%
+        {{hash=dd71b2b0e5f00721bd0cdf4a474674df}{%
+           family={Peebles},
+           familyi={P\bibinitperiod},
+           given={P.\bibnamedelimi J.\bibnamedelimi E.},
+           giveni={P\bibinitperiod\bibinitdelim J\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Princeton University Press}%
+      }
+      \strng{namehash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{fullhash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{fullhashraw}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{bibnamehash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{authorbibnamehash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{authornamehash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{authorfullhash}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \strng{authorfullhashraw}{dd71b2b0e5f00721bd0cdf4a474674df}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Principles of Physical Cosmology}
+      \field{year}{1993}
+    \endentry
+    \entry{press1992numerical}{book}{}{}
+      \name{author}{4}{}{%
+        {{hash=0eab1ccd4d6c57a2ff6794a4724ccafb}{%
+           family={Press},
+           familyi={P\bibinitperiod},
+           given={William\bibnamedelima H},
+           giveni={W\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=ff8354846900d7ef6c94cb025f7e938c}{%
+           family={Teukolsky},
+           familyi={T\bibinitperiod},
+           given={Saul\bibnamedelima A},
+           giveni={S\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=0bb298496cc38e45b21c576a005078a0}{%
+           family={Vetterling},
+           familyi={V\bibinitperiod},
+           given={William\bibnamedelima T},
+           giveni={W\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+        {{hash=f40726c661611c8a024d53294b6e0ad0}{%
+           family={Flannery},
+           familyi={F\bibinitperiod},
+           given={Brian\bibnamedelima P},
+           giveni={B\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge University Press}%
+      }
+      \strng{namehash}{618fa62f030076edf2937faa1b1684fb}
+      \strng{fullhash}{f75c24a04994b574cb620c685a1f8229}
+      \strng{fullhashraw}{f75c24a04994b574cb620c685a1f8229}
+      \strng{bibnamehash}{618fa62f030076edf2937faa1b1684fb}
+      \strng{authorbibnamehash}{618fa62f030076edf2937faa1b1684fb}
+      \strng{authornamehash}{618fa62f030076edf2937faa1b1684fb}
+      \strng{authorfullhash}{f75c24a04994b574cb620c685a1f8229}
+      \strng{authorfullhashraw}{f75c24a04994b574cb620c685a1f8229}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Numerical Recipes in C: The Art of Scientific Computing}
+      \field{year}{1992}
+    \endentry
+    \entry{springel2005cosmological}{article}{}{}
+      \true{moreauthor}
+      \true{morelabelname}
+      \name{author}{1}{}{%
+        {{hash=d673f4b06bc18145fb87123390b4948f}{%
+           family={Springel},
+           familyi={S\bibinitperiod},
+           given={Volker},
+           giveni={V\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Nature Publishing Group}%
+      }
+      \strng{namehash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{fullhash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{fullhashraw}{6310651d925c6f9bd6334da82082fecd}
+      \strng{bibnamehash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{authorbibnamehash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{authornamehash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{authorfullhash}{6310651d925c6f9bd6334da82082fecd}
+      \strng{authorfullhashraw}{6310651d925c6f9bd6334da82082fecd}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Nature}
+      \field{number}{7042}
+      \field{title}{Cosmological simulations of the formation, evolution and clustering of galaxies and quasars}
+      \field{volume}{435}
+      \field{year}{2005}
+      \field{pages}{629\bibrangedash 636}
+      \range{pages}{8}
+    \endentry
+    \entry{toomre1972}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=9c0d4732fbb0545b6aefde58eb6b699f}{%
+           family={Toomre},
+           familyi={T\bibinitperiod},
+           given={Alar},
+           giveni={A\bibinitperiod}}}%
+        {{hash=a8d1698dcfda2a5ef6f2a71b149c721e}{%
+           family={Toomre},
+           familyi={T\bibinitperiod},
+           given={Juri},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IOP Publishing}%
+      }
+      \strng{namehash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{fullhash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{fullhashraw}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{bibnamehash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{authorbibnamehash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{authornamehash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{authorfullhash}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \strng{authorfullhashraw}{977038eb8bf3ffbfd8dbdf4e9f0d30fa}
+      \field{sortinit}{T}
+      \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{The Astrophysical Journal}
+      \field{title}{Galactic Bridges and Tails}
+      \field{volume}{178}
+      \field{year}{1972}
+      \field{pages}{623\bibrangedash 666}
+      \range{pages}{44}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

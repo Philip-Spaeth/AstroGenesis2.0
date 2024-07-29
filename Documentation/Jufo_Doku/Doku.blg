@@ -1,0 +1,15 @@
+[0] Config.pm:308> INFO - This is Biber 2.20
+[1] Config.pm:311> INFO - Logfile is 'Doku.blg'
+[239] biber-MSWIN64:340> INFO - === 
+[325] Biber.pm:420> INFO - Reading 'Doku.bcf'
+[605] Biber.pm:994> INFO - Found 10 citekeys in bib section 0
+[639] Biber.pm:4463> INFO - Processing section 0
+[661] Biber.pm:4654> INFO - Looking for bibtex file 'references.bib' for section 0
+[768] bibtex.pm:1713> INFO - LaTeX decoding ...
+[800] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[979] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[979] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[981] Biber.pm:4283> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'en-US'
+[981] Biber.pm:4289> INFO - No sort tailoring available for locale 'en-US'
+[996] bbl.pm:676> INFO - Writing 'Doku.bbl' with encoding 'UTF-8'
+[1006] bbl.pm:779> INFO - Output to Doku.bbl

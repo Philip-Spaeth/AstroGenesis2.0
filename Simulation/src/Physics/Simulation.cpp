@@ -24,8 +24,18 @@ bool Simulation::init()
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
     //read the template
-    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    //dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+
+    for(int i = 0; i < 1000; i++)
+    {
+        particles.push_back(std::make_shared<Particle>());
+        //random position
+        particles[i]->position = vec3(random::between(0, box_size), random::between(0, box_size), random::between(0, box_size));
+        //random velocity
+        //particles[i]->velocity = vec3(random::between(-1e3, 1e3), random::between(-1e3, 1e3), random::between(-1e3, 1e3));
+        particles[i]->mass = 1e40;
+    }
 
     //build the tree
     buildTree();
@@ -56,7 +66,8 @@ void Simulation::run()
         calculateForces();
 
         //apply the hubble expansion
-        applyHubbleExpansion();
+        //applyHubbleExpansion();
+        //apply_cosmological_expansion();
 
         for (int i = 0; i < numberOfParticles; i++)
         {
@@ -115,14 +126,37 @@ void Simulation::calculateForcesWorker() {
 void Simulation::applyHubbleExpansion()
 {
     //convert hubble constant to SI units
-    double kmToMeter = 1e-3;
+    double kmToMeter = 1e3;
     double mpcToMeter = 3.086e22;
-    double hubbleConstantSI = (hubleConstant * kmToMeter) / mpcToMeter;
+    double hubbleConstantSI = (H0 * kmToMeter) / mpcToMeter;
 
     for (int i = 0; i < numberOfParticles; i++)
     {
         particles[i]->velocity += particles[i]->position * hubbleConstantSI;
     }
+}
+
+double Simulation::H(double z) 
+{
+    return ((H0 * 1e3) / 3.086e22) * std::sqrt(Omega_m * std::pow(1 + z, 3) + Omega_Lambda);
+}
+
+// Funktion zur Anwendung der kosmologischen Expansion
+void Simulation::apply_cosmological_expansion() 
+{
+    double expansion_factor = H(z); // * deltaTime;
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        particles[i]->velocity += particles[i]->position * expansion_factor;
+    }
+
+    // Update der Rotverschiebung
+    a = 1.0 / (1.0 + z);
+    double da_dt = H(z) * a;
+    z = (1.0 / (a + da_dt * deltaTime)) - 1.0;
+
+    //update the box size
+    box_size = 1e20 * a;
 }
 
 double Simulation::calcTreeWidth()

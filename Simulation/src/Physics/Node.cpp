@@ -37,6 +37,24 @@ void Node::calculateForce(std::shared_ptr<Particle> newparticle, double softenin
     {
         if (this->particle && newparticle != this->particle)
         {
+            //use PBC for the distance to simulate an infinite universe
+            double boxsize = 1e20;
+            vec3 pbc = vec3(0.0, 0.0, 0.0);
+            if (std::abs(d.x) > 0.5 * boxsize)
+            {
+                pbc.x = -1.0 * boxsize * (d.x / std::abs(d.x));
+            }
+            if (std::abs(d.y) > 0.5 * boxsize)
+            {
+                pbc.y = -1.0 * boxsize * (d.y / std::abs(d.y));
+            }
+            if (std::abs(d.z) > 0.5 * boxsize)
+            {
+                pbc.z = -1.0 * boxsize * (d.z / std::abs(d.z));
+            }
+            d = d + pbc;
+            r = d.length();
+
             double newAcceleration = Constants::G * mass / ((r * r) + (softening * softening));
             newparticle->acceleration = newparticle->acceleration + d.normalize() * newAcceleration;
         }
@@ -47,6 +65,24 @@ void Node::calculateForce(std::shared_ptr<Particle> newparticle, double softenin
         double s = radius / r;
         if (s < theta)
         {
+            //use PBC for the distance to simulate an infinite universe
+            double boxsize = 1e20;
+            vec3 pbc = vec3(0.0, 0.0, 0.0);
+            if (std::abs(d.x) > 0.5 * boxsize)
+            {
+                pbc.x = -1.0 * boxsize * (d.x / std::abs(d.x));
+            }
+            if (std::abs(d.y) > 0.5 * boxsize)
+            {
+                pbc.y = -1.0 * boxsize * (d.y / std::abs(d.y));
+            }
+            if (std::abs(d.z) > 0.5 * boxsize)
+            {
+                pbc.z = -1.0 * boxsize * (d.z / std::abs(d.z));
+            }
+            d = d + pbc;
+            r = d.length();
+            
             double newAcceleration = Constants::G * mass / ((r * r) + (softening * softening));
             newparticle->acceleration += d.normalize() * newAcceleration;
         }
