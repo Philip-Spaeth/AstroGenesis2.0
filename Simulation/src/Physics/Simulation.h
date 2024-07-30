@@ -30,6 +30,9 @@ private:
     void calcDensity();
 
     //calculations without the octree
+    void calculateForcesWithoutOctree();
+
+    //calculations without the octree
     void applyHubbleExpansion();
 
     //for the templates
@@ -47,8 +50,8 @@ private:
     double H0 = 70; //Hubble constant in km/s/Mpc
 
     //time integration
-    double deltaTime = 1e12; //time step length
-    double timeSteps = 100; //number of time steps
+    double deltaTime = 1e14; //time step length
+    double timeSteps = 1000; //number of time steps
 
     //gravitational softening, adapt it to the size of the system
     double softening = 7.715e17; //softening factor
@@ -68,6 +71,6 @@ private:
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
-    double theta = 0.5;
+    double theta = 1;
     std::shared_ptr<Node> root;
 };

@@ -37,8 +37,8 @@ void Node::calculateForce(std::shared_ptr<Particle> newparticle, double softenin
     {
         if (this->particle && newparticle != this->particle)
         {
-            double newAcceleration = Constants::G * mass / ((r * r) + (softening * softening));
-            newparticle->acceleration = newparticle->acceleration + d.normalize() * newAcceleration;
+            vec3 newAcceleration = d * (Constants::G * mass / std::pow(((r * r) + (softening * softening)), 1.5));
+            newparticle->acceleration += newAcceleration;
         }
     }
     else
@@ -46,9 +46,9 @@ void Node::calculateForce(std::shared_ptr<Particle> newparticle, double softenin
   
         double s = radius / r;
         if (s < theta)
-        {   
-            double newAcceleration = Constants::G * mass / ((r * r) + (softening * softening));
-            newparticle->acceleration += d.normalize() * newAcceleration;
+        { 
+            vec3 newAcceleration = d * (Constants::G * mass / std::pow(((r * r) + (softening * softening)), 1.5));
+            newparticle->acceleration += newAcceleration;
         }
         else
         { 

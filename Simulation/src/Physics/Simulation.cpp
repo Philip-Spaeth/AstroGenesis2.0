@@ -58,10 +58,25 @@ void Simulation::run()
         //apply the hubble expansion
         applyHubbleExpansion();
 
+        //kick and drift
         for (int i = 0; i < numberOfParticles; i++)
         {
-            //update the particle position and velocity
-            timeIntegration->Euler(particles[i], deltaTime);
+            //update the particle position and velocity with the KDK Leapfrog scheme
+            timeIntegration->Kick(particles[i], deltaTime);
+            timeIntegration->Drift(particles[i], deltaTime);
+        }
+
+        //kick
+        //build the tree
+        buildTree();
+
+        //calculate the forces
+        calculateForces();
+
+        for (int i = 0; i < numberOfParticles; i++)
+        {
+            //update the particle velocity with the KDK Leapfrog scheme
+            timeIntegration->Kick(particles[i], deltaTime);
         }
 
         //save the particles data
@@ -164,6 +179,24 @@ void Simulation::calcDensity()
         if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
         {
             particles[i]->density = node->calcDensity(h);
+        }
+    }
+}
+
+void Simulation::calculateForcesWithoutOctree()
+{
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
+        for (int j = 0; j < numberOfParticles; j++)
+        {
+            if (i != j)
+            {
+                vec3 d = particles[j]->position - particles[i]->position;
+                double r = d.length();
+                vec3 newAcceleration = d * (Constants::G * particles[i]->mass / std::pow(((r * r) + (softening * softening)), 1.5));
+                particles[i]->acceleration += newAcceleration;
+            }
         }
     }
 }

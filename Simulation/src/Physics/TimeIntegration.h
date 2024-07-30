@@ -13,4 +13,8 @@ public:
 
     //Semi implicit Euler
     void Euler(std::shared_ptr<Particle> particle, double deltaTime);
+
+    //Leapfrog
+    void Kick(std::shared_ptr<Particle> particle, double deltaTime);
+    void Drift(std::shared_ptr<Particle> particle, double deltaTime);
 };
