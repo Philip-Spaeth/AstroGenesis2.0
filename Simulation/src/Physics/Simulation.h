@@ -31,8 +31,6 @@ private:
 
     //calculations without the octree
     void applyHubbleExpansion();
-    void apply_cosmological_expansion();
-    double H(double z);
 
     //for the templates
     void readTemplate();
@@ -46,21 +44,14 @@ private:
     double h = 1e20; //smoothing length
 
     //dark energy
-    double H0 = 1e-7; //Hubble constant in km/s/Mpc
-    double Omega_m = 0.3; //matter density
-    double Omega_Lambda = 0.7; //dark energy density
-    double z = 1; //redshift
-    double a = 1 / (1 + z); //scale factor
-
-    //for the periodic boundary conditions
-    double box_size = 1e24;
+    double H0 = 70; //Hubble constant in km/s/Mpc
 
     //time integration
-    double deltaTime = 5e15; //time step length
-    double timeSteps = 1000; //number of time steps
+    double deltaTime = 1e12; //time step length
+    double timeSteps = 100; //number of time steps
 
     //gravitational softening, adapt it to the size of the system
-    double softening = 7.715e22; //softening factor
+    double softening = 7.715e17; //softening factor
 
     //Total Energy of the system
     std::vector<double> totalPotentialEnergy;
@@ -73,7 +64,7 @@ private:
     std::shared_ptr<DataManager> dataManager;
 
     //particles
-    double numberOfParticles = 10000;
+    double numberOfParticles = 2500;
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree

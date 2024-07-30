@@ -24,18 +24,8 @@ bool Simulation::init()
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
     //read the template
-    //dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
-
-    for(int i = 0; i < numberOfParticles; i++)
-    {
-        particles.push_back(std::make_shared<Particle>());
-        //random position
-        particles[i]->position = vec3(random::between(0, box_size), random::between(0, box_size), random::between(0, box_size));
-        //Zel’dovich approximation
-        particles[i]->velocity = vec3(random::between(-(box_size / 3e19), (box_size / 3e19)), random::between(-(box_size / 3e19), (box_size / 3e19)), random::between(-(box_size / 3e19), (box_size / 3e19)));
-        particles[i]->mass = 1e45 / numberOfParticles;
-    }
+    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
     //build the tree
     buildTree();
@@ -66,8 +56,7 @@ void Simulation::run()
         calculateForces();
 
         //apply the hubble expansion
-        //applyHubbleExpansion();
-        //apply_cosmological_expansion();
+        applyHubbleExpansion();
 
         for (int i = 0; i < numberOfParticles; i++)
         {
@@ -134,29 +123,6 @@ void Simulation::applyHubbleExpansion()
     {
         particles[i]->velocity += particles[i]->position * hubbleConstantSI;
     }
-}
-
-double Simulation::H(double z) 
-{
-    return ((H0 * 1e3) / 3.086e22) * std::sqrt(Omega_m * std::pow(1 + z, 3) + Omega_Lambda);
-}
-
-// Funktion zur Anwendung der kosmologischen Expansion
-void Simulation::apply_cosmological_expansion() 
-{
-    double expansion_factor = H(z); // * deltaTime;
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        particles[i]->velocity += particles[i]->position * expansion_factor;
-    }
-
-    // Update der Rotverschiebung
-    a = 1.0 / (1.0 + z);
-    double da_dt = H(z) * a;
-    z = (1.0 / (a + da_dt * deltaTime)) - 1.0;
-
-    //update the box size
-    box_size = 1e20 * a;
 }
 
 double Simulation::calcTreeWidth()
