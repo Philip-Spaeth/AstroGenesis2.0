@@ -115,7 +115,7 @@ void Simulation::calculateForcesWorker() {
 void Simulation::applyHubbleExpansion()
 {
     //convert hubble constant to SI units
-    double kmToMeter = 1e3;
+    double kmToMeter = 1e-3;
     double mpcToMeter = 3.086e22;
     double hubbleConstantSI = (H0 * kmToMeter) / mpcToMeter;
 
