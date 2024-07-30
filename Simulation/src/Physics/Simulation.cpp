@@ -27,14 +27,14 @@ bool Simulation::init()
     //dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
     //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
-    for(int i = 0; i < 1000; i++)
+    for(int i = 0; i < numberOfParticles; i++)
     {
         particles.push_back(std::make_shared<Particle>());
         //random position
         particles[i]->position = vec3(random::between(0, box_size), random::between(0, box_size), random::between(0, box_size));
-        //random velocity
-        //particles[i]->velocity = vec3(random::between(-1e3, 1e3), random::between(-1e3, 1e3), random::between(-1e3, 1e3));
-        particles[i]->mass = 1e40;
+        //Zel’dovich approximation
+        particles[i]->velocity = vec3(random::between(-(box_size / 3e19), (box_size / 3e19)), random::between(-(box_size / 3e19), (box_size / 3e19)), random::between(-(box_size / 3e19), (box_size / 3e19)));
+        particles[i]->mass = 1e45 / numberOfParticles;
     }
 
     //build the tree

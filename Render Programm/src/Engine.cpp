@@ -455,16 +455,15 @@ void Engine::renderParticles()
 
         if(densityAv != 0)
         {
-            //calc the color baes on the density ranging from 1e6 to 1e7
-            red = particle->density / (densityAv * 0.00005);
+            red = particle->density / (densityAv);
             green = 0;
             blue = (densityAv) / particle->density;
 
-            if(densityAv * 0.01 < particle->density)
+            if(densityAv * 10 < particle->density)
             {
-                red = 1;
-                green = 1;
-                blue = 1;
+                red += 0.2;
+                green += 1;
+                blue += 1;
             }
         }
         
