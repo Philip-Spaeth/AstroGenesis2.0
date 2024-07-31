@@ -49,7 +49,7 @@ private:
     //octree
     double theta = 0.5;
     std::shared_ptr<Node> root;
-
+    
     //particles
     std::vector<std::shared_ptr<Particle>> particles;
 
