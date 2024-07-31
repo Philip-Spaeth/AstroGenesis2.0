@@ -70,7 +70,7 @@ void Simulation::run()
     {
         double accelMag = particles[i]->acceleration.length();
         double timeStep = eta * std::sqrt(softening / accelMag);
-        particles[i]->timeStep = std::min(timeStep, maxTimeStep);
+        particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
 
         // Round the time step down to the nearest power of two
         particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));
@@ -87,7 +87,7 @@ void Simulation::run()
             {
                 double accelMag = particles[i]->acceleration.length();
                 double timeStep = eta * std::sqrt(softening / accelMag);
-                particles[i]->timeStep = std::min(timeStep, maxTimeStep);
+                particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
 
                 // Round the time step down to the nearest power of two
                 particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));

@@ -44,7 +44,7 @@ private:
     std::mutex mutex;
 
     //SPH parameters
-    const double h = 5; //smoothing length
+    const double h = 20; //smoothing length
 
     //dark energy
     const double H0 = 70; //Hubble constant in km/s/Mpc
@@ -52,6 +52,7 @@ private:
     //adaptive time integration
     const double eta = 0.1;      // Accuracy parameter for adaptive time step
     const double maxTimeStep = 1; // Maximum allowed time step
+    const double minTimeStep = 1; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
     const double endTime = 100; //end time of the simulation in s
