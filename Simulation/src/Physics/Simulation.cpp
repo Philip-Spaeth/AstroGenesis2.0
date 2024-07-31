@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 
 
 Simulation::Simulation()
@@ -13,7 +15,7 @@ Simulation::Simulation()
     dataManager = std::make_shared<DataManager>("../../../Data/test/");
 
     //write the info file
-    dataManager->writeInfoFile(deltaTime, timeSteps, numberOfParticles);
+    dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 }
 
 Simulation::~Simulation(){}
@@ -24,14 +26,23 @@ bool Simulation::init()
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
     //read the template
-    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    //dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+
+    //box with 20 particles
+    for(int i = 0; i < numberOfParticles; i++)
+    {
+        particles.push_back(std::make_shared<Particle>());
+        particles[i]->position = vec3(random::between(-100, 100), random::between(-100, 100), random::between(-100, 100));
+        particles[i]->velocity = vec3(random::between(-1, 1), random::between(-1, 1), random::between(-1, 1));
+        particles[i]->mass = 1e12;
+    }
 
     //build the tree
-    buildTree();
+    //buildTree();
 
     //calculate the density
-    calcDensity();
+    //calcDensity();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -43,47 +54,100 @@ bool Simulation::init()
 
 void Simulation::run()
 {
-    //calculate the gravitational acceleration for each particle
-    for (int t = 0; t < timeSteps; t++)
-    {   
-        //build the tree
-        buildTree();
+    double globalTime = 0.0;
+    double nextSaveTime = fixedStep;
 
-        //calculate the density
-        calcDensity();
+    // Initial force calculation
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        calculateForcesWithoutOctree(particles[i]);
+    }
 
-        //calculate the forces
-        calculateForces();
+    // Initialize particles' time steps and next integration times
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        double accelMag = particles[i]->acceleration.length();
+        double timeStep = eta * std::sqrt(softening / accelMag);
+        particles[i]->timeStep = std::min(timeStep, maxTimeStep);
 
-        //apply the hubble expansion
-        applyHubbleExpansion();
+        // Round the time step down to the nearest power of two
+        particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));
+        particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+    }
 
-        //kick and drift
+    // Main simulation loop
+    while (globalTime < endTime)
+    {
+        // Determine the next integration time for each particle
         for (int i = 0; i < numberOfParticles; i++)
         {
-            //update the particle position and velocity with the KDK Leapfrog scheme
-            timeIntegration->Kick(particles[i], deltaTime);
-            timeIntegration->Drift(particles[i], deltaTime);
+            if (globalTime >= particles[i]->nextIntegrationTime)
+            {
+                double accelMag = particles[i]->acceleration.length();
+                double timeStep = eta * std::sqrt(softening / accelMag);
+                particles[i]->timeStep = std::min(timeStep, maxTimeStep);
+
+                // Round the time step down to the nearest power of two
+                particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));
+                particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+            }
         }
 
-        //kick
-        //build the tree
-        buildTree();
-
-        //calculate the forces
-        calculateForces();
-
+        // Find the smallest next integration time among all particles
+        double minIntegrationTime = std::numeric_limits<double>::max();
         for (int i = 0; i < numberOfParticles; i++)
         {
-            //update the particle velocity with the KDK Leapfrog scheme
-            timeIntegration->Kick(particles[i], deltaTime);
+            if (particles[i]->nextIntegrationTime < minIntegrationTime)
+            {
+                minIntegrationTime = particles[i]->nextIntegrationTime;
+            }
         }
 
-        //save the particles data
-        dataManager->saveData(particles, t + 1);
-        dataManager->printProgress(t, timeSteps, "");
+        // Advance global time by the smallest integration time
+        globalTime = minIntegrationTime;
+
+        // Update positions and velocities using the KDK Leapfrog scheme for particles due to be integrated
+        for (int i = 0; i < numberOfParticles; i++)
+        {
+            if (globalTime == particles[i]->nextIntegrationTime)
+            {
+                //std::cout << particles[i]->timeStep << std::endl;
+                timeIntegration->Kick(particles[i], particles[i]->timeStep);
+                timeIntegration->Drift(particles[i], particles[i]->timeStep);
+            }
+        }
+
+        // Recalculate forces
+        for(int i = 0; i < numberOfParticles; i++)
+        {
+            if (globalTime == particles[i]->nextIntegrationTime)
+            {
+                calculateForcesWithoutOctree(particles[i]);
+            }
+        }
+
+        // Second kick
+        for (int i = 0; i < numberOfParticles; i++)
+        {
+            if (globalTime == particles[i]->nextIntegrationTime)
+            {
+                timeIntegration->Kick(particles[i], particles[i]->timeStep);
+                // Schedule the next integration time for this particle
+                particles[i]->nextIntegrationTime += particles[i]->timeStep;
+            }
+        }
+
+        // Save data at regular intervals defined by fixedStep
+        if (globalTime >= nextSaveTime)
+        {
+            dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep));
+            dataManager->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
+            nextSaveTime += fixedStep;
+        }
     }
 }
+
+
 
 void Simulation::buildTree()
 {
@@ -183,20 +247,18 @@ void Simulation::calcDensity()
     }
 }
 
-void Simulation::calculateForcesWithoutOctree()
+void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
 {
-    for (int i = 0; i < numberOfParticles; i++)
+    p->acceleration = vec3(0.0, 0.0, 0.0);
+
+    for (int j = 0; j < numberOfParticles; j++)
     {
-        particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-        for (int j = 0; j < numberOfParticles; j++)
+        if (p != particles[j])
         {
-            if (i != j)
-            {
-                vec3 d = particles[j]->position - particles[i]->position;
-                double r = d.length();
-                vec3 newAcceleration = d * (Constants::G * particles[i]->mass / std::pow(((r * r) + (softening * softening)), 1.5));
-                particles[i]->acceleration += newAcceleration;
-            }
+            vec3 d = particles[j]->position -p->position;
+            double r = d.length();
+            vec3 newAcceleration = d * (Constants::G * particles[j]->mass / (r * r * r));
+           p->acceleration += newAcceleration;
         }
     }
 }

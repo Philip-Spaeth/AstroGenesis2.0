@@ -20,6 +20,10 @@ public:
     vec3 acceleration;
     double mass;
 
+    //adaptive time integration
+    double timeStep = 0;
+    double nextIntegrationTime = 0;
+
     // Fluid properties (SPH)
     double density;
     double pressure;

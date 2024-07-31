@@ -24,5 +24,5 @@ void TimeIntegration::Kick(std::shared_ptr<Particle> particle, double deltaTime)
 void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime)
 {
     // Leapfrog Drift
-    particle->position = particle->position + particle->velocity * deltaTime / 2;
+    particle->position = particle->position + particle->velocity * deltaTime;
 }

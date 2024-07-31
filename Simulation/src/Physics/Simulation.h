@@ -30,7 +30,7 @@ private:
     void calcDensity();
 
     //calculations without the octree
-    void calculateForcesWithoutOctree();
+    void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
 
     //calculations without the octree
     void applyHubbleExpansion();
@@ -44,17 +44,24 @@ private:
     std::mutex mutex;
 
     //SPH parameters
-    double h = 1e20; //smoothing length
+    const double h = 1e20; //smoothing length
 
     //dark energy
-    double H0 = 70; //Hubble constant in km/s/Mpc
+    const double H0 = 70; //Hubble constant in km/s/Mpc
 
-    //time integration
-    double deltaTime = 1e14; //time step length
-    double timeSteps = 1000; //number of time steps
+    //adaptive time integration
+    const double eta = 0.1;      // Accuracy parameter for adaptive time step
+    const double maxTimeStep = 1; // Maximum allowed time step
+
+    double globalTime = 0.0; // global time of the simulation in s
+    const double endTime = 100; //end time of the simulation in s
+
+    //save data at each maxTimeStep
+    const double fixedTimeSteps = 100; //number of fixed maxtime steps
+    const double fixedStep = endTime / fixedTimeSteps; //time step in s
 
     //gravitational softening, adapt it to the size of the system
-    double softening = 7.715e17; //softening factor
+    const double softening = 1; //softening factor
 
     //Total Energy of the system
     std::vector<double> totalPotentialEnergy;
@@ -67,7 +74,7 @@ private:
     std::shared_ptr<DataManager> dataManager;
 
     //particles
-    double numberOfParticles = 2500;
+    double numberOfParticles = 20;
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
