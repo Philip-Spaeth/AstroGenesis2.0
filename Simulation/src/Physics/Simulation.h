@@ -22,7 +22,7 @@ public:
 
 private:
 
-    //particles
+    //simulation parameters
     double numberOfParticles = 1000;
 
     //adaptive time integration
@@ -46,11 +46,12 @@ private:
     //dark energy
     const double H0 = 70; //Hubble constant in km/s/Mpc
 
-    std::vector<std::shared_ptr<Particle>> particles;
-
     //octree
     double theta = 0.5;
     std::shared_ptr<Node> root;
+
+    //particles
+    std::vector<std::shared_ptr<Particle>> particles;
 
     //Total Energy of the system
     std::vector<double> totalPotentialEnergy;
