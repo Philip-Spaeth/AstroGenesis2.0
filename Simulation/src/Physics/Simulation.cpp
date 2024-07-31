@@ -35,14 +35,14 @@ bool Simulation::init()
         particles.push_back(std::make_shared<Particle>());
         particles[i]->position = vec3(random::between(-100, 100), random::between(-100, 100), random::between(-100, 100));
         particles[i]->velocity = vec3(random::between(-1, 1), random::between(-1, 1), random::between(-1, 1));
-        particles[i]->mass = 1e12;
+        particles[i]->mass = 2e10;
     }
 
     //build the tree
-    //buildTree();
+    buildTree();
 
     //calculate the density
-    //calcDensity();
+    calcDensity();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -54,14 +54,16 @@ bool Simulation::init()
 
 void Simulation::run()
 {
-    double globalTime = 0.0;
+    globalTime = 0.0;
     double nextSaveTime = fixedStep;
 
-    // Initial force calculation
+    //set the next integration time for each particle to 0.0 to ensure that the force is calculated in the first iteration
     for (int i = 0; i < numberOfParticles; i++)
     {
-        calculateForcesWithoutOctree(particles[i]);
+        particles[i]->nextIntegrationTime = 0.0;
     }
+    // Initial force calculation
+    calculateForces();
 
     // Initialize particles' time steps and next integration times
     for (int i = 0; i < numberOfParticles; i++)
@@ -117,14 +119,11 @@ void Simulation::run()
             }
         }
 
+        // Build the octree
+        buildTree();
+
         // Recalculate forces
-        for(int i = 0; i < numberOfParticles; i++)
-        {
-            if (globalTime == particles[i]->nextIntegrationTime)
-            {
-                calculateForcesWithoutOctree(particles[i]);
-            }
-        }
+        calculateForces();
 
         // Second kick
         for (int i = 0; i < numberOfParticles; i++)
@@ -165,7 +164,8 @@ void Simulation::buildTree()
     }
 }
 
-void Simulation::calculateForces() {
+void Simulation::calculateForces() 
+{
     const int numThreads = std::thread::hardware_concurrency();
     std::vector<std::thread> threads;
     currentParticleIndex.store(0); // Initialisiere den Atom-Index
@@ -185,9 +185,14 @@ void Simulation::calculateForcesWorker() {
         if (i >= numberOfParticles) {
             break; // Beende, wenn alle Partikel bearbeitet sind
         }
-        // Berechne die Kräfte für das Partikel
-        particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-        root->calculateForce(particles[i], softening, theta);
+
+        //only calculate the forces for the particles that are due to be integrated
+        if (globalTime == particles[i]->nextIntegrationTime)
+        {
+            // Berechne die Kräfte für das Partikel
+            particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
+            root->calculateForce(particles[i], softening, theta);
+        }
     }
 }
 

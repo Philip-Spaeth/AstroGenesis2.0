@@ -44,7 +44,7 @@ private:
     std::mutex mutex;
 
     //SPH parameters
-    const double h = 1e20; //smoothing length
+    const double h = 5; //smoothing length
 
     //dark energy
     const double H0 = 70; //Hubble constant in km/s/Mpc
@@ -74,7 +74,7 @@ private:
     std::shared_ptr<DataManager> dataManager;
 
     //particles
-    double numberOfParticles = 20;
+    double numberOfParticles = 500;
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
