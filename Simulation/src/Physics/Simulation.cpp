@@ -34,8 +34,8 @@ bool Simulation::init()
     {
         particles.push_back(std::make_shared<Particle>());
         particles[i]->position = vec3(random::between(-100, 100), random::between(-100, 100), random::between(-100, 100));
-        particles[i]->velocity = vec3(random::between(-1, 1), random::between(-1, 1), random::between(-1, 1));
-        particles[i]->mass = 2e10;
+        particles[i]->velocity = vec3(random::between(0, 0), random::between(0, 0), random::between(0, 0));
+        particles[i]->mass = 2e9;
     }
 
     //build the tree
@@ -121,6 +121,9 @@ void Simulation::run()
 
         // Build the octree
         buildTree();
+
+        //calculate the density
+        calcDensity();
 
         // Recalculate forces
         calculateForces();

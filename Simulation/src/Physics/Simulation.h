@@ -52,13 +52,13 @@ private:
     //adaptive time integration
     const double eta = 0.1;      // Accuracy parameter for adaptive time step
     const double maxTimeStep = 1; // Maximum allowed time step
-    const double minTimeStep = 1; // Minimum allowed time step
+    const double minTimeStep = 1e-3; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 100; //end time of the simulation in s
+    const double endTime = 1000; //end time of the simulation in s
 
     //save data at each maxTimeStep
-    const double fixedTimeSteps = 100; //number of fixed maxtime steps
+    const double fixedTimeSteps = 1000; //number of fixed maxtime steps
     const double fixedStep = endTime / fixedTimeSteps; //time step in s
 
     //gravitational softening, adapt it to the size of the system
@@ -75,10 +75,10 @@ private:
     std::shared_ptr<DataManager> dataManager;
 
     //particles
-    double numberOfParticles = 500;
+    double numberOfParticles = 1000;
     std::vector<std::shared_ptr<Particle>> particles;
 
     //octree
-    double theta = 1;
+    double theta = 0.5;
     std::shared_ptr<Node> root;
 };
