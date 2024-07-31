@@ -1,5 +1,4 @@
 #pragma once
-
 #include <iostream>
 #include "Particle.h"
 #include <memory>
@@ -8,7 +7,7 @@
 #include "TimeIntegration.h"
 #include "DataManager.h"
 #include "random.h"
-#include "Node.h"
+#include "Tree\Node.h"
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -18,11 +17,51 @@ class Simulation
 public:
     Simulation();
     ~Simulation();
-
     bool init();
     void run();
 
 private:
+
+    //particles
+    double numberOfParticles = 1000;
+
+    //adaptive time integration
+    const double eta = 0.1;      // Accuracy parameter for adaptive time step
+    const double maxTimeStep = 1; // Maximum allowed time step
+    const double minTimeStep = 1e-3; // Minimum allowed time step
+
+    double globalTime = 0.0; // global time of the simulation in s
+    const double endTime = 1000; //end time of the simulation in s
+
+    //save data at each maxTimeStep
+    const double fixedTimeSteps = 1000; //number of fixed maxtime steps
+    const double fixedStep = endTime / fixedTimeSteps; //time step in s
+
+    //gravitational softening, adapt it to the size of the system
+    const double softening = 1; //softening factor
+    
+    //SPH parameters
+    const double h = 20; //smoothing length
+
+    //dark energy
+    const double H0 = 70; //Hubble constant in km/s/Mpc
+
+    std::vector<std::shared_ptr<Particle>> particles;
+
+    //octree
+    double theta = 0.5;
+    std::shared_ptr<Node> root;
+
+    //Total Energy of the system
+    std::vector<double> totalPotentialEnergy;
+    std::vector<double> totalKineticEnergy;
+    std::vector<double> totalInternalEnergy;
+    std::vector<double> totalEnergy;
+
+    //pointers to modules
+    std::shared_ptr<TimeIntegration> timeIntegration;
+    std::shared_ptr<DataManager> dataManager;
+
     //calculations with the octree
     void buildTree();
     void calculateForces();
@@ -42,43 +81,4 @@ private:
     void calculateForcesWorker();
     std::atomic<int> currentParticleIndex;
     std::mutex mutex;
-
-    //SPH parameters
-    const double h = 20; //smoothing length
-
-    //dark energy
-    const double H0 = 70; //Hubble constant in km/s/Mpc
-
-    //adaptive time integration
-    const double eta = 0.1;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1; // Maximum allowed time step
-    const double minTimeStep = 1e-3; // Minimum allowed time step
-
-    double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1000; //end time of the simulation in s
-
-    //save data at each maxTimeStep
-    const double fixedTimeSteps = 1000; //number of fixed maxtime steps
-    const double fixedStep = endTime / fixedTimeSteps; //time step in s
-
-    //gravitational softening, adapt it to the size of the system
-    const double softening = 1; //softening factor
-
-    //Total Energy of the system
-    std::vector<double> totalPotentialEnergy;
-    std::vector<double> totalKineticEnergy;
-    std::vector<double> totalInternalEnergy;
-    std::vector<double> totalEnergy;
-
-    //pointers to modules
-    std::shared_ptr<TimeIntegration> timeIntegration;
-    std::shared_ptr<DataManager> dataManager;
-
-    //particles
-    double numberOfParticles = 1000;
-    std::vector<std::shared_ptr<Particle>> particles;
-
-    //octree
-    double theta = 0.5;
-    std::shared_ptr<Node> root;
 };

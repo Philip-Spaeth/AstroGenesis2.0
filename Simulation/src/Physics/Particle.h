@@ -2,7 +2,7 @@
 
 #include "vec3.h"
 #include <memory>
-#include "Node.h"
+#include "Tree\Node.h"
 
 class Node;
 
