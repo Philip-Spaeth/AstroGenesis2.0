@@ -26,17 +26,9 @@ bool Simulation::init()
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
     //read the template
-    //dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
     //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
-    //box with 20 particles
-    for(int i = 0; i < numberOfParticles; i++)
-    {
-        particles.push_back(std::make_shared<Particle>());
-        particles[i]->position = vec3(random::between(-100, 100), random::between(-100, 100), random::between(-100, 100));
-        particles[i]->velocity = vec3(random::between(0, 0), random::between(0, 0), random::between(0, 0));
-        particles[i]->mass = 2e9;
-    }
 
     //build the tree
     buildTree();
@@ -246,11 +238,25 @@ double Simulation::calcTreeWidth()
 
 void Simulation::calcDensity()
 {
+    //set h to 0 for all particles
     for (int i = 0; i < numberOfParticles; i++)
     {
         if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
         {
-            particles[i]->density = node->calcDensity(h);
+            particles[i]->h = 0;
+        }
+    }
+
+    //calculate the h and density for all particles in the tree
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+        {
+            if(particles[i]->h == 0)
+            {
+                node->calcDensity(massInH);
+            }
+            //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
         }
     }
 }
@@ -266,7 +272,7 @@ void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
             vec3 d = particles[j]->position -p->position;
             double r = d.length();
             vec3 newAcceleration = d * (Constants::G * particles[j]->mass / (r * r * r));
-           p->acceleration += newAcceleration;
+            p->acceleration += newAcceleration;
         }
     }
 }

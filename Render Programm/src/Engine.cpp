@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <filesystem>
+#include <algorithm>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -396,6 +397,17 @@ double Engine::calcDensityAv()
     return densityAv;
 }
 
+vec3 jetColorMap(double value) 
+{
+    double r = value < 0.5 ? 0.0 : 2.0 * value - 1.0;
+    double g = value < 0.25 ? 0.0 : value < 0.75 ? 1.0 : 1.0 - 4.0 * (value - 0.75);
+    double b = value < 0.5 ? 1.0 : 1.0 - 2.0 * value;
+
+    return vec3(r, g, b);
+}
+
+
+
 void Engine::renderParticles()
 {
     // Binden des Framebuffers
@@ -453,21 +465,13 @@ void Engine::renderParticles()
         double green = 1;
         double blue = 1;
 
-        if(densityAv != 0)
-        {
-            red = particle->density / (densityAv);
-            green = 0;
-            blue = (densityAv) / particle->density;
-
-            if(densityAv * 10 < particle->density)
-            {
-                red += 0.2;
-                green += 1;
-                blue += 1;
-            }
-        }
-        
         vec3 color = vec3(red, green, blue);
+
+        if (densityAv != 0) 
+        {
+           double factor = particle->density * 10 / densityAv;
+           color = jetColorMap(factor);
+        }
 
         vec3 scaledPosition = particle->position * globalScale;
 

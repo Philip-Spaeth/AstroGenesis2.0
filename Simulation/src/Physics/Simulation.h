@@ -23,25 +23,25 @@ public:
 private:
 
     //simulation parameters
-    double numberOfParticles = 1000;
+    double numberOfParticles = 1250;
 
     //adaptive time integration
     const double eta = 0.1;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1; // Maximum allowed time step
-    const double minTimeStep = 1e-3; // Minimum allowed time step
+    const double maxTimeStep = 1e13; // Maximum allowed time step
+    const double minTimeStep = 1e11; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1000; //end time of the simulation in s
+    const double endTime = 5e15; //end time of the simulation in s
 
     //save data at each maxTimeStep
-    const double fixedTimeSteps = 1000; //number of fixed maxtime steps
+    const double fixedTimeSteps = 200; //number of fixed maxtime steps
     const double fixedStep = endTime / fixedTimeSteps; //time step in s
 
     //gravitational softening, adapt it to the size of the system
-    const double softening = 1; //softening factor
+    const double softening = 7e17; //softening factor
     
     //SPH parameters
-    const double h = 20; //smoothing length
+    const double massInH = 1e18; //in kg
 
     //dark energy
     const double H0 = 70; //Hubble constant in km/s/Mpc

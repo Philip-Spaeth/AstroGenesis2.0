@@ -299,6 +299,7 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
 
             // Create a new Particle object and add it to the particles vector at the correct position
             auto particle = std::make_shared<Particle>(position, velocity, vec3(0.0, 0.0, 0.0), mass);
+            particle->type = 1; // Set the type to 1 (star)
 
             // Insert the particle at the correct index
             particles[particleIndex] = particle;
