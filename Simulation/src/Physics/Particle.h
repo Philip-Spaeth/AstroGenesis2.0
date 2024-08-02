@@ -25,17 +25,23 @@ public:
     double nextIntegrationTime = 0;
 
     //SPH only for gas particles, Stars and dark matter particles are not affected
-    bool type = 1; // 1 = star, 2 = gas, 3 = dark matter
+    int type = 1; // 1 = star, 2 = gas, 3 = dark matter
 
-    // Fluid properties (SPH)
+    // Fluid properties (SPH) only for gas particles
+    //calculated by the Tree
     double h;
     double density;
+
+    //for all particles, just for visualization
+    double visualDensity = 0;
+
+    //calcualted with the forces
     double pressure;
     double temperature;
-    double viscosity;
+    double totalViscosityTensor;
+    double internalEnergy;
 
     // Energy properties
-    double internalEnergy;
     double kineticEnergy;
     double potentialEnergy;
     double totalEnergy;

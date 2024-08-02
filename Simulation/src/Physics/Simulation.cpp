@@ -33,8 +33,10 @@ bool Simulation::init()
     //build the tree
     buildTree();
 
-    //calculate the density
-    calcDensity();
+    //calculate the visualDensity, just for visualization
+    calcVisualDensity();
+    //calculate the gas density for SPH
+    //calcGasDensity();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -114,8 +116,10 @@ void Simulation::run()
         // Build the octree
         buildTree();
 
-        //calculate the density
-        calcDensity();
+        //calculate the visual density, just for visualization
+        calcVisualDensity();
+        //calculate the gas density for SPH
+        //calcGasDensity();
 
         // Recalculate forces
         calculateForces();
@@ -186,7 +190,7 @@ void Simulation::calculateForcesWorker() {
         {
             // Berechne die Kräfte für das Partikel
             particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            root->calculateForce(particles[i], softening, theta);
+            root->calculateGravityForce(particles[i], softening, theta);
         }
     }
 }
@@ -236,27 +240,49 @@ double Simulation::calcTreeWidth()
     return max;
 }
 
-void Simulation::calcDensity()
+void Simulation::calcGasDensity()
 {
     //set h to 0 for all particles
     for (int i = 0; i < numberOfParticles; i++)
     {
-        if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+        if(particles[i]->type == 2)
         {
-            particles[i]->h = 0;
+            if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+            {
+                
+                particles[i]->h = 0;
+            }
         }
     }
 
     //calculate the h and density for all particles in the tree
     for (int i = 0; i < numberOfParticles; i++)
     {
+        if(particles[i]->type == 2)
+        {
+            if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+            {
+                if(particles[i]->h == 0)
+                {
+                    node->calcGasDensity(massInH);
+                }
+                //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
+            }
+        }
+    }
+
+    //calculate the median smoothing length and density for all nodes
+    root->calcSPHNodeMedians();
+}
+
+void Simulation::calcVisualDensity()
+{
+    //calculate the density for all particles in the tree
+    for (int i = 0; i < numberOfParticles; i++)
+    {
         if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
         {
-            if(particles[i]->h == 0)
-            {
-                node->calcDensity(massInH);
-            }
-            //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
+            node->calcVisualDensity(visualDensityRadius);
         }
     }
 }

@@ -27,26 +27,29 @@ private:
 
     //adaptive time integration
     const double eta = 0.1;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1e13; // Maximum allowed time step
+    const double maxTimeStep = 5e13; // Maximum allowed time step
     const double minTimeStep = 1e11; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 5e15; //end time of the simulation in s
+    const double endTime = 1e16; //end time of the simulation in s
 
     //save data at each maxTimeStep
-    const double fixedTimeSteps = 200; //number of fixed maxtime steps
+    const double fixedTimeSteps = 1000; //number of fixed maxtime steps
     const double fixedStep = endTime / fixedTimeSteps; //time step in s
 
     //gravitational softening, adapt it to the size of the system
     const double softening = 7e17; //softening factor
     
     //SPH parameters
-    const double massInH = 1e18; //in kg
+    const double massInH = 1e40; //in kg
+
+    //Visual density, for all particles, just for visualization, has no physical meaning
+    const double visualDensityRadius = 1e19; //in m
 
     //dark energy
     const double H0 = 70; //Hubble constant in km/s/Mpc
 
-    //octree
+    //octree with all particles
     double theta = 0.5;
     std::shared_ptr<Node> root;
     
@@ -67,7 +70,8 @@ private:
     void buildTree();
     void calculateForces();
     double calcTreeWidth();
-    void calcDensity();
+    void calcVisualDensity();
+    void calcGasDensity();
 
     //calculations without the octree
     void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);

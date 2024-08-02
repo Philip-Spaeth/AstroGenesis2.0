@@ -4,7 +4,7 @@
 int main()
 {
     //Tittle of the Programm with information
-    std::cout << std::endl << "<------------------------------------------------  Astro Genesis 2.1  ------------------------------------------------>"  << std::endl<< std::endl;
+    std::cout << std::endl << "<------------------------------------------------  Astro Genesis 2.0  ------------------------------------------------>"  << std::endl<< std::endl;
 
     //contrebutors and ownersion information
     std::cout << "developed by: Philip Spaeth and Kimi Sickinger" << std::endl<< std::endl;

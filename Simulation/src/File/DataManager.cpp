@@ -121,8 +121,8 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->temperature, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->pressure, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->density, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->viscosity, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->totalViscosityTensor, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
         }
         file.write(buffer, totalSize);
@@ -160,7 +160,7 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
         file.read(reinterpret_cast<char*>(&particle->temperature), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->pressure), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->density), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->viscosity), sizeof(double));
+        file.read(reinterpret_cast<char*>(&particle->totalViscosityTensor), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->type), sizeof(int));
 
         particles.push_back(particle);
