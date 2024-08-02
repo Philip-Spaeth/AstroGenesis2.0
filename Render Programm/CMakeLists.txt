@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(MeinProjekt)
+project(AstroGenesis_Render_Programm)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -58,5 +58,5 @@ if(WIN32)
     add_custom_command(TARGET MeinProgramm POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/External Libraries/GLEW/bin/Release/x64/glew32.dll"
-        $<TARGET_FILE_DIR:MeinProgramm>)
+        $<TARGET_FILE_DIR:AstroGenesis_Render_Programm>)
 endif()
