@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_AND_EXE_NAME "Astro_Genesis")
 project(${PROJECT_AND_EXE_NAME})
 
-# Setzen Sie den Ausgabeordner für ausführbare Dateien
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Setzen Sie den Ausgabeordner für Bibliotheken
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

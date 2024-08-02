@@ -12,7 +12,7 @@ Simulation::Simulation()
 {
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
-    dataManager = std::make_shared<DataManager>("../../../Data/test/");
+    dataManager = std::make_shared<DataManager>("../../Data/test/");
 
     //write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
@@ -36,7 +36,7 @@ bool Simulation::init()
     //calculate the visualDensity, just for visualization
     calcVisualDensity();
     //calculate the gas density for SPH
-    //calcGasDensity();
+    calcGasDensity();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -119,7 +119,7 @@ void Simulation::run()
         //calculate the visual density, just for visualization
         calcVisualDensity();
         //calculate the gas density for SPH
-        //calcGasDensity();
+        calcGasDensity();
 
         // Recalculate forces
         calculateForces();

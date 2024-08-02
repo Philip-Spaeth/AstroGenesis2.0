@@ -104,7 +104,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     std::string filename = this->path + std::to_string(timeStep) + ".bin";
     std::ofstream file(filename, std::ios::out | std::ios::binary);
     if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
+        std::cerr << "Error opening datafile: " << filename << std::endl;
         return;
     }
 
@@ -137,7 +137,7 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
     std::string filename = this->path + std::to_string(timeStep) + ".bin";
     std::ifstream file(filename, std::ios::in | std::ios::binary);
     if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
+        std::cerr << "Error opening datafile: " << filename << std::endl;
         return;
     }
 
@@ -255,7 +255,7 @@ void DataManager::printProgress(double currentStep, double steps, std::string te
 
 void DataManager::readTemplate(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
 {
-    std::string filePath = "../../Templates/" + fileName;
+    std::string filePath = "../Templates/" + fileName;
 
     // Ensure the particles vector is large enough to hold the new particles
     if (particles.size() < static_cast<size_t>(end)) {
@@ -267,7 +267,7 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
     for (int i = start; i < end; i += 1250) {
         std::ifstream file(filePath);
         if (!file) {
-            std::cerr << "Could not open the file!" << std::endl;
+            std::cerr << "Could not open the template file!" << std::endl;
             return;
         }
 
@@ -299,7 +299,7 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
 
             // Create a new Particle object and add it to the particles vector at the correct position
             auto particle = std::make_shared<Particle>(position, velocity, vec3(0.0, 0.0, 0.0), mass);
-            particle->type = 1; // Set the type to 1 (star)
+            particle->type = 2; // Set the type to 1 (star)
 
             // Insert the particle at the correct index
             particles[particleIndex] = particle;
