@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(AstroGenesis_Render_Programm)
+project(AstroGenesis_Render_Project)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -44,18 +44,18 @@ set(SOURCE_FILES
 
 include_directories(${CMAKE_SOURCE_DIR}/src/)
 
-add_executable(MeinProgramm ${MAIN_SOURCE} ${HEADER_FILES} ${SOURCE_FILES})
+add_executable(AstroGenesis_Render_Programm ${MAIN_SOURCE} ${HEADER_FILES} ${SOURCE_FILES})
 
 # Link libraries
-target_link_libraries(MeinProgramm PRIVATE ${OPENGL_LIBRARIES} ${ADDITIONAL_LIBRARIES} pthread)
+target_link_libraries(AstroGenesis_Render_Programm PRIVATE ${OPENGL_LIBRARIES} ${ADDITIONAL_LIBRARIES} pthread)
 
 # Hinzufügen der DLLs zum Ausführungsverzeichnis
 if(WIN32)
-    add_custom_command(TARGET MeinProgramm POST_BUILD
+    add_custom_command(TARGET AstroGenesis_Render_Programm POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/External Libraries/GLFW/lib-mingw-w64/glfw3.dll"
-        $<TARGET_FILE_DIR:MeinProgramm>)
-    add_custom_command(TARGET MeinProgramm POST_BUILD
+        $<TARGET_FILE_DIR:AstroGenesis_Render_Programm>)
+    add_custom_command(TARGET AstroGenesis_Render_Programm POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/External Libraries/GLEW/bin/Release/x64/glew32.dll"
         $<TARGET_FILE_DIR:AstroGenesis_Render_Programm>)
