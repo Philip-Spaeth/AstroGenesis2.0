@@ -309,7 +309,7 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
             particles[particleIndex]->velocity = velocity;
             particles[particleIndex]->mass = mass;
             particles[particleIndex]->type = 2;
-            particles[particleIndex]->T = 1e10;
+            particles[particleIndex]->T = 1e15;
             
             particleIndex++;
             currentIndex++;

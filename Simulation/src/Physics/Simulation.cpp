@@ -363,6 +363,9 @@ void Simulation::initGasParticleProperties()
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
     }
+
+    //calc Median Pressure
+    root->calcMedianPressure();
 }
 
 void Simulation::updateGasParticleProperties()
@@ -378,6 +381,9 @@ void Simulation::updateGasParticleProperties()
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
     }
+    
+    //calc Median Pressure
+    root->calcMedianPressure();
 }
 
 void Simulation::calcVisualDensity()
