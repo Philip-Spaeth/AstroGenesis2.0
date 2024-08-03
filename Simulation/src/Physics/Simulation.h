@@ -31,7 +31,7 @@ private:
     const double minTimeStep = 1e13; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1e15; //end time of the simulation in s
+    const double endTime = 1e16; //end time of the simulation in s
 
     //save data at each maxTimeStep
     const double fixedTimeSteps = 100; //number of fixed maxtime steps
@@ -41,7 +41,7 @@ private:
     const double softening = 7e17; //softening factor
     
     //SPH parameters
-    const double massInH = 1e41; //in kg
+    const double massInH = 1e40; //in kg
 
     //Visual density, for all particles, just for visualization, has no physical meaning
     const double visualDensityRadius = 1e19; //in m
