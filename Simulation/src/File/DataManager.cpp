@@ -291,7 +291,7 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
                 std::cerr << "Error parsing line: " << line << std::endl;
                 continue;
             }
-
+            //// depends on the units of the template file
             // Convert the units: data units: kpc, km/s, 1e10 Msun -> internal units: m, m/s, kg
             position *= 3.086e19;
             velocity *= 1e3;
@@ -301,14 +301,16 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
             position += pos;
             velocity += vel;
 
-            // Create a new Particle object and add it to the particles vector at the correct position
-            auto particle = std::make_shared<Particle>(position, velocity, vec3(0.0, 0.0, 0.0), mass);
-            particle->type = 1; // Set the type to 1 (star)
-            //set the start temperature at typical values for intersellar gas in the Bulge
-            //particle->T = 1e10;
-
             // Insert the particle at the correct index
-            particles[particleIndex] = particle;
+            particles[particleIndex] = std::make_shared<Particle>();
+
+            //set the particle properties
+            particles[particleIndex]->position = position;
+            particles[particleIndex]->velocity = velocity;
+            particles[particleIndex]->mass = mass;
+            particles[particleIndex]->type = 2;
+            particles[particleIndex]->T = 1e10;
+            
             particleIndex++;
             currentIndex++;
         }

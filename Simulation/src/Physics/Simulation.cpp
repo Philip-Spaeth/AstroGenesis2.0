@@ -85,7 +85,7 @@ void Simulation::run()
     }
 
     // Initial force calculation
-    calculateForces();
+    //calculateForces();
 
     // Initialize particles' time steps and next integration times
     for (int i = 0; i < numberOfParticles; i++)
@@ -193,6 +193,7 @@ void Simulation::run()
                 {
                     // Integrate the entropy
                     timeIntegration->EntropyEuler(particles[i], particles[i]->timeStep);
+                    //std::cout << "Particle " << i << " entropy: " << particles[i]->A << std::endl;
                 }
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 // Schedule the next integration time for this particle
@@ -329,13 +330,13 @@ void Simulation::calcGasDensity()
         {
             if(particles[i]->type == 2)
             {
+            
                 if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
                 {
                     if(particles[i]->h == 0)
                     {
                         node->calcGasDensity(massInH);
                     }
-                    //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
                 }
             }
         }
@@ -357,6 +358,7 @@ void Simulation::initGasParticleProperties()
             particles[i]->U = particles[i]->T / (Constants::GAMMA - 1.0) * Constants::prtn * Constants::meanMolWeight / Constants::BK;
             //calc A from U, U = (A / (gamma-1)) * rho^(gamma-1) => A = (U * (gamma-1)) / rho^(1-gamma)
             particles[i]->A = (particles[i]->U * (Constants::GAMMA - 1.0)) / std::pow(particles[i]->rho, 1.0 - Constants::GAMMA);
+            //std::cout << "Particle " << particles[i]->rho << std::endl;
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }

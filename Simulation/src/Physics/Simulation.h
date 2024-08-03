@@ -41,7 +41,7 @@ private:
     const double softening = 7e17; //softening factor
     
     //SPH parameters
-    const double massInH = 1e40; //in kg
+    const double massInH = 1e39; //in kg
 
     //Visual density, for all particles, just for visualization, has no physical meaning
     const double visualDensityRadius = 1e19; //in m
