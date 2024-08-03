@@ -21,7 +21,20 @@ Simulation::Simulation()
 Simulation::~Simulation(){}
 
 bool Simulation::init()
-{
+{   
+    //check if minTimeStep is smaller or equal to maxTimeStep
+    if (minTimeStep > maxTimeStep)
+    {
+        std::cerr << "Error: minTimeStep is greater than maxTimeStep." << std::endl;
+        return false;
+    }
+    //ckeck if the end time  / minTimeStep is < fixedTimeSteps
+    if (endTime / minTimeStep < fixedTimeSteps)
+    {
+        std::cerr << "Error: endTime / minTimeStep is smaller than fixedTimeSteps." << std::endl;
+        return false;
+    }
+
     //setting up multitheading
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
@@ -29,6 +42,15 @@ bool Simulation::init()
     dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
     //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
+    //check if there are null pointers in the particles vector
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        if (!particles[i]) 
+        {
+            std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+            return false;
+        }
+    }
 
     //build the tree
     buildTree();
@@ -37,11 +59,11 @@ bool Simulation::init()
     calcVisualDensity();
     //calculate the gas density for SPH
     calcGasDensity();
+    //the first time after the temprature is set and rho is calculated
+    initGasParticleProperties();
 
     //save the particles data
     dataManager->saveData(particles, 0);
-
-    std::cout << "Start data successfull initialized\n" << std::endl;
 
     return true;
 }
@@ -51,24 +73,38 @@ void Simulation::run()
     globalTime = 0.0;
     double nextSaveTime = fixedStep;
 
-    //set the next integration time for each particle to 0.0 to ensure that the force is calculated in the first iteration
+    // Set the next integration time for each particle to 0.0 to ensure that the force is calculated in the first iteration
     for (int i = 0; i < numberOfParticles; i++)
     {
+        if (!particles[i]) 
+        {
+            std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+            continue;
+        }
         particles[i]->nextIntegrationTime = 0.0;
     }
+
     // Initial force calculation
     calculateForces();
 
     // Initialize particles' time steps and next integration times
     for (int i = 0; i < numberOfParticles; i++)
     {
+        if (!particles[i]) 
+        {
+            std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+            continue;
+        }
         double accelMag = particles[i]->acceleration.length();
-        double timeStep = eta * std::sqrt(softening / accelMag);
-        particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
-
-        // Round the time step down to the nearest power of two
-        particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));
-        particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+        if (accelMag > 0) {
+            double timeStep = eta * std::sqrt(softening / accelMag);
+            particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
+            particles[i]->timeStep = std::max(std::pow(2, std::floor(std::log2(particles[i]->timeStep))), minTimeStep);
+            particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+        } else {
+            particles[i]->timeStep = minTimeStep;
+            particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+        }
     }
 
     // Main simulation loop
@@ -77,15 +113,23 @@ void Simulation::run()
         // Determine the next integration time for each particle
         for (int i = 0; i < numberOfParticles; i++)
         {
+            if (!particles[i]) 
+            {
+                std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+                continue;
+            }
             if (globalTime >= particles[i]->nextIntegrationTime)
             {
                 double accelMag = particles[i]->acceleration.length();
-                double timeStep = eta * std::sqrt(softening / accelMag);
-                particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
-
-                // Round the time step down to the nearest power of two
-                particles[i]->timeStep = std::pow(2, std::floor(std::log2(particles[i]->timeStep)));
-                particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+                if (accelMag > 0) {
+                    double timeStep = eta * std::sqrt(softening / accelMag);
+                    particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
+                    particles[i]->timeStep = std::max(std::pow(2, std::floor(std::log2(particles[i]->timeStep))), minTimeStep);
+                    particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+                } else {
+                    particles[i]->timeStep = minTimeStep;
+                    particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
+                }
             }
         }
 
@@ -93,6 +137,11 @@ void Simulation::run()
         double minIntegrationTime = std::numeric_limits<double>::max();
         for (int i = 0; i < numberOfParticles; i++)
         {
+            if (!particles[i]) 
+            {
+                std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+                continue;
+            }
             if (particles[i]->nextIntegrationTime < minIntegrationTime)
             {
                 minIntegrationTime = particles[i]->nextIntegrationTime;
@@ -105,9 +154,13 @@ void Simulation::run()
         // Update positions and velocities using the KDK Leapfrog scheme for particles due to be integrated
         for (int i = 0; i < numberOfParticles; i++)
         {
+            if (!particles[i]) 
+            {
+                std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+                continue;
+            }
             if (globalTime == particles[i]->nextIntegrationTime)
             {
-                //std::cout << particles[i]->timeStep << std::endl;
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 timeIntegration->Drift(particles[i], particles[i]->timeStep);
             }
@@ -116,10 +169,12 @@ void Simulation::run()
         // Build the octree
         buildTree();
 
-        //calculate the visual density, just for visualization
+        // Calculate the visual density, just for visualization
         calcVisualDensity();
-        //calculate the gas density for SPH
+
+        // Calculate the gas density for SPH
         calcGasDensity();
+        updateGasParticleProperties();
 
         // Recalculate forces
         calculateForces();
@@ -127,8 +182,18 @@ void Simulation::run()
         // Second kick
         for (int i = 0; i < numberOfParticles; i++)
         {
+            if (!particles[i]) 
+            {
+                std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
+                continue;
+            }
             if (globalTime == particles[i]->nextIntegrationTime)
             {
+                if(particles[i]->type == 2)
+                {
+                    // Integrate the entropy
+                    timeIntegration->EntropyEuler(particles[i], particles[i]->timeStep);
+                }
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 // Schedule the next integration time for this particle
                 particles[i]->nextIntegrationTime += particles[i]->timeStep;
@@ -144,7 +209,6 @@ void Simulation::run()
         }
     }
 }
-
 
 
 void Simulation::buildTree()
@@ -190,6 +254,10 @@ void Simulation::calculateForcesWorker() {
         {
             // Berechne die Kräfte für das Partikel
             particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
+            //if(particles[i]->type == 2)
+            {
+                particles[i]->dAdt = 0;
+            }
             root->calculateGravityForce(particles[i], softening, theta);
         }
     }
@@ -244,12 +312,11 @@ void Simulation::calcGasDensity()
 {
     //set h to 0 for all particles
     for (int i = 0; i < numberOfParticles; i++)
-    {
-        if(particles[i]->type == 2)
+    { 
+        if(particles[i] != nullptr)
         {
-            if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+            if(particles[i]->type == 2)
             {
-                
                 particles[i]->h = 0;
             }
         }
@@ -258,21 +325,57 @@ void Simulation::calcGasDensity()
     //calculate the h and density for all particles in the tree
     for (int i = 0; i < numberOfParticles; i++)
     {
-        if(particles[i]->type == 2)
+        if(particles[i] != nullptr)
         {
-            if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
+            if(particles[i]->type == 2)
             {
-                if(particles[i]->h == 0)
+                if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
                 {
-                    node->calcGasDensity(massInH);
+                    if(particles[i]->h == 0)
+                    {
+                        node->calcGasDensity(massInH);
+                    }
+                    //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
                 }
-                //std::cout << "Particle " << i << " h: " << particles[i]->h << " density: " << particles[i]->density << std::endl;
             }
         }
     }
 
     //calculate the median smoothing length and density for all nodes
     root->calcSPHNodeMedians();
+}
+
+void Simulation::initGasParticleProperties()
+{
+    //update the properties of the gas particles
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        if(particles[i]->type == 2)
+        {
+            
+            //calc U from T, u = T / (gamma-1) * prtn * mean_mol_weight / bk, all in SI units
+            particles[i]->U = particles[i]->T / (Constants::GAMMA - 1.0) * Constants::prtn * Constants::meanMolWeight / Constants::BK;
+            //calc A from U, U = (A / (gamma-1)) * rho^(gamma-1) => A = (U * (gamma-1)) / rho^(1-gamma)
+            particles[i]->A = (particles[i]->U * (Constants::GAMMA - 1.0)) / std::pow(particles[i]->rho, 1.0 - Constants::GAMMA);
+            //calc P, P = (gamma-1)*u*rho
+            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
+        }
+    }
+}
+
+void Simulation::updateGasParticleProperties()
+{
+    //update the properties of the gas particles
+    for (int i = 0; i < numberOfParticles; i++)
+    {
+        if(particles[i]->type == 2)
+        {
+            //calc U from A, U = (A / (gamma-1)) * rho^(gamma-1)
+            particles[i]->U = (particles[i]->A / (Constants::GAMMA - 1.0)) * std::pow(particles[i]->rho, Constants::GAMMA - 1.0);
+            //calc P, P = (gamma-1)*u*rho
+            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
+        }
+    }
 }
 
 void Simulation::calcVisualDensity()

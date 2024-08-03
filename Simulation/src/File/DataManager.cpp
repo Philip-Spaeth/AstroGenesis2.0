@@ -7,6 +7,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <iomanip>
+#include <chrono>
+#include "Particle.h"
+#include "vec3.h"
+#include "Constants.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -119,10 +123,10 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             memcpy(ptr, &particle->position, sizeof(vec3)); ptr += sizeof(vec3);
             memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
             memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->temperature, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->pressure, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->totalViscosityTensor, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->P, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+            memcpy(ptr, &particle->A, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
         }
         file.write(buffer, totalSize);
@@ -157,10 +161,10 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
         }
 
         file.read(reinterpret_cast<char*>(&particle->mass), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->temperature), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->pressure), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->density), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->totalViscosityTensor), sizeof(double));
+        file.read(reinterpret_cast<char*>(&particle->T), sizeof(double));
+        file.read(reinterpret_cast<char*>(&particle->P), sizeof(double));
+        file.read(reinterpret_cast<char*>(&particle->rho), sizeof(double));
+        file.read(reinterpret_cast<char*>(&particle->A), sizeof(double));  
         file.read(reinterpret_cast<char*>(&particle->type), sizeof(int));
 
         particles.push_back(particle);
@@ -299,7 +303,9 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
 
             // Create a new Particle object and add it to the particles vector at the correct position
             auto particle = std::make_shared<Particle>(position, velocity, vec3(0.0, 0.0, 0.0), mass);
-            particle->type = 2; // Set the type to 1 (star)
+            particle->type = 1; // Set the type to 1 (star)
+            //set the start temperature at typical values for intersellar gas in the Bulge
+            //particle->T = 1e10;
 
             // Insert the particle at the correct index
             particles[particleIndex] = particle;

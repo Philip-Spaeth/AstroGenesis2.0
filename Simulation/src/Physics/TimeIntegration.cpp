@@ -1,13 +1,5 @@
 #include "TimeIntegration.h"
 
-TimeIntegration::TimeIntegration()
-{
-}
-
-TimeIntegration::~TimeIntegration()
-{
-}
-
 void TimeIntegration::Euler(std::shared_ptr<Particle> particle, double deltaTime)
 {
     // Semi implicit Euler
@@ -25,4 +17,11 @@ void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime
 {
     // Leapfrog Drift
     particle->position = particle->position + particle->velocity * deltaTime;
+}
+
+//integrate the entropy
+void TimeIntegration::EntropyEuler(std::shared_ptr<Particle> particle, double deltaTime)
+{
+    // Entropy Euler
+    particle->A = particle->A + particle->dAdt * deltaTime;
 }

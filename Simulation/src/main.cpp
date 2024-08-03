@@ -13,8 +13,14 @@ int main()
     
     //The main function of the programm
     Simulation* simulation = new Simulation();
-    simulation->init();
-    simulation->run();
+    if(simulation->init())
+    {
+        simulation->run();
+    }
+    else
+    {
+        std::cout << "Simulation could not be initialized" << std::endl;
+    }
     delete simulation;
     return 0;
 }

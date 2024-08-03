@@ -27,11 +27,11 @@ private:
 
     //adaptive time integration
     const double eta = 0.1;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 5e13; // Maximum allowed time step
-    const double minTimeStep = 1e11; // Minimum allowed time step
+    const double maxTimeStep = 5e14; // Maximum allowed time step
+    const double minTimeStep = 1e14; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1e16; //end time of the simulation in s
+    const double endTime = 1e17; //end time of the simulation in s
 
     //save data at each maxTimeStep
     const double fixedTimeSteps = 1000; //number of fixed maxtime steps
@@ -71,6 +71,9 @@ private:
     void calculateForces();
     double calcTreeWidth();
     void calcVisualDensity();
+    //SPH
+    void initGasParticleProperties(); // update A, U, P after the tree is built and rho is calculated
+    void updateGasParticleProperties(); // update A, T, U, P
     void calcGasDensity();
 
     //calculations without the octree
@@ -78,9 +81,6 @@ private:
 
     //calculations without the octree
     void applyHubbleExpansion();
-
-    //for the templates
-    void readTemplate();
 
     //multithreading
     void calculateForcesWorker();
