@@ -246,8 +246,8 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     // calculate the acceleration due to the pressure force
                     vec3 pressureAcceleration = newparticle->mass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
                     newparticle->acceleration += pressureAcceleration;
-
                     /*
+                    
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
                     double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
