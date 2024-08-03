@@ -53,7 +53,7 @@ void renderVideo();
 int main()
 {
     //Tittle of the Programm with information
-    std::cout << std::endl << "<--------------------------------------------  Astro Genesis Render Programm -------------------------------------------->"  << std::endl<< std::endl;
+    std::cout << std::endl << "<--------------------------------------------  Astro Genesis Render Programm ------------------------------------------>"  << std::endl<< std::endl;
 
     //contrebutors and ownersion information
     std::cout << "this Render Engine is part of the Astro Genesis Project" << std::endl<< std::endl;

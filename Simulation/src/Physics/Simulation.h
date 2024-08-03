@@ -27,11 +27,11 @@ private:
 
     //adaptive time integration
     const double eta = 10;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1e13; // Maximum allowed time step
-    const double minTimeStep = 1e12; // Minimum allowed time step
+    const double maxTimeStep = 1e14; // Maximum allowed time step
+    const double minTimeStep = 1e13; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1e15; //end time of the simulation in s
+    const double endTime = 1e16; //end time of the simulation in s
 
     //save data at each maxTimeStep
     const double fixedTimeSteps = 1000; //number of fixed maxtime steps
