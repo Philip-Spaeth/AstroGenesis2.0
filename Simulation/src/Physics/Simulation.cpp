@@ -379,7 +379,6 @@ void Simulation::updateGasParticleProperties()
             particles[i]->U = (particles[i]->A / (Constants::GAMMA - 1.0)) * std::pow(particles[i]->rho, Constants::GAMMA - 1.0);
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
-            if(i == 1000) std::cout << "Particle " << particles[i]->A << std::endl;
         }
     }
     
