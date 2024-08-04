@@ -22,6 +22,7 @@ void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime
 //integrate the entropy
 void TimeIntegration::EntropyEuler(std::shared_ptr<Particle> particle, double deltaTime)
 {
+    //std::cout << particle->dAdt << std::endl;
     // Entropy Euler
     particle->A = particle->A + particle->dAdt * deltaTime;
 }

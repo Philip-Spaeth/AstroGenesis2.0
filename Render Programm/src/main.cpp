@@ -70,14 +70,14 @@ int main()
     cout << endl;
 
     //check if there is a folder in the directory
-    if (!fs::exists("../../Data/"))
+    if (!fs::exists("../../output_data/"))
     {
         //create the Data folder
-        fs::create_directory("../../Data/");
+        fs::create_directory("../../output_data/");
     }
 
     int i = 1;
-    for (const auto& entry : fs::directory_iterator("../../Data/"))
+    for (const auto& entry : fs::directory_iterator("../../output_data/"))
     {
         std::cout << "["<< i << "]   " << entry.path().filename() << std::endl;
         i++;
@@ -89,7 +89,7 @@ int main()
 
     //get the folder name from the input
     i = 1;
-    for (const auto& entry : fs::directory_iterator("../../Data/"))
+    for (const auto& entry : fs::directory_iterator("../../output_data/"))
     {
         if (i == folderIndex)
         {

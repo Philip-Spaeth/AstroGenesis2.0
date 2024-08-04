@@ -15,10 +15,7 @@ namespace Constants
     constexpr double GAMMA = 5.0/3.0; //adiabatic index for ideal gas
     constexpr double BK = 1.38064852e-23; //Boltzmann constant
     constexpr double prtn = 1.6726219e-27; //proton mass in kg
-    constexpr double meanMolWeight = 0.588235; //mean molecular weight of the gas
-    constexpr double MOLARMASS = 0.0289644; //molar mass of air in kg/mol
-    constexpr double R = 8.3144598; //universal gas constant
-    constexpr double PK = 6.626070040e-34; //Planck constant
+    constexpr double meanMolWeight = 0.000588235; //mean molecular weight of the gas
 
     //lenghts units from meters
     constexpr double AU = 149597870700.0;

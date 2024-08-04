@@ -12,7 +12,7 @@ Simulation::Simulation()
 {
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
-    dataManager = std::make_shared<DataManager>("../../Data/test/");
+    dataManager = std::make_shared<DataManager>("../../output_data/test/");
 
     //write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
@@ -192,8 +192,7 @@ void Simulation::run()
                 if(particles[i]->type == 2)
                 {
                     // Integrate the entropy
-                    timeIntegration->EntropyEuler(particles[i], particles[i]->timeStep);
-                    //std::cout << "Particle " << i << " entropy: " << particles[i]->A << std::endl;
+                    //timeIntegration->EntropyEuler(particles[i], particles[i]->timeStep);
                 }
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 // Schedule the next integration time for this particle
@@ -255,6 +254,7 @@ void Simulation::calculateForcesWorker() {
         {
             // Berechne die Kräfte für das Partikel
             particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
+            particles[i]->dAdt = 0;
             //if(particles[i]->type == 2)
             {
                 particles[i]->dAdt = 0;
@@ -360,7 +360,7 @@ void Simulation::initGasParticleProperties()
             particles[i]->A = (particles[i]->U * (Constants::GAMMA - 1.0)) / std::pow(particles[i]->rho, 1.0 - Constants::GAMMA);
             //std::cout << "Particle " << particles[i]->rho << std::endl;
             //calc P, P = (gamma-1)*u*rho
-            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
+            //particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
     }
 
@@ -379,6 +379,7 @@ void Simulation::updateGasParticleProperties()
             particles[i]->U = (particles[i]->A / (Constants::GAMMA - 1.0)) * std::pow(particles[i]->rho, Constants::GAMMA - 1.0);
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
+            if(i == 1000) std::cout << "Particle " << particles[i]->A << std::endl;
         }
     }
     
@@ -401,6 +402,7 @@ void Simulation::calcVisualDensity()
 void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
 {
     p->acceleration = vec3(0.0, 0.0, 0.0);
+    p->dAdt = 0;
 
     for (int j = 0; j < numberOfParticles; j++)
     {
