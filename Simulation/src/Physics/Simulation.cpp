@@ -1,6 +1,5 @@
 #include "Simulation.h"
 #include <numeric>
-#include "Galaxy.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>

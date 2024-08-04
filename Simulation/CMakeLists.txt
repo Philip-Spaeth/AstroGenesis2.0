@@ -39,7 +39,7 @@ add_executable(${PROJECT_AND_EXE_NAME} ${USER_SOURCE_FILES})
 # Compiler-Optionen und Link-Bibliotheken
 target_compile_options(${PROJECT_AND_EXE_NAME} PRIVATE -Wall)
 
-target_link_libraries(${PROJECT_AND_EXE_NAME} ws2_32 gdi32)
+#target_link_libraries(${PROJECT_AND_EXE_NAME} ws2_32 gdi32)
 
 # Define custom target to clean build directory
 add_custom_target(clean-build

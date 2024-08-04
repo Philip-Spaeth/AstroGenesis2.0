@@ -1,30 +1,32 @@
-#pragma once
+#ifndef DATAMANAGER_H
+#define DATAMANAGER_H
 
-#include <iostream>
-#include <memory>
+#include <string>
 #include <vector>
-#include <chrono>
+#include <memory>
 #include "Particle.h"
 #include "vec3.h"
+#include <chrono>
+#include <iostream>
 
-class DataManager
-{
+using namespace std;
+
+class DataManager {
 public:
     DataManager(std::string path);
-    ~DataManager();
-    std::string path;
+    ~DataManager(){}
 
     void writeInfoFile(double deltaTime, double timeSteps, double numberOfParticles);
     void readInfoFile(double& deltaTime, double& timeSteps, double& numberOfParticles);
     void saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep);
     void loadData(int timeStep, std::vector<std::shared_ptr<Particle>>& particles);
-
-    //templates
+    void printProgress(double currentStep, double steps, std::string text);
     void readTemplate(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles);
 
-    void printProgress(double currentStep, double steps, std::string text);
-
 private:
-    std::chrono::_V2::system_clock::time_point startTime;
-    bool timerStarted = false;
+    std::string path;
+    bool timerStarted;
+    std::chrono::high_resolution_clock::time_point startTime;
 };
+
+#endif // DATAMANAGER_H

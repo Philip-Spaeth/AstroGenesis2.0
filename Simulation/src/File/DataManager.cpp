@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <chrono>
+#include <cstring>  // Fügt den Header für memcpy hinzu
 #include "Particle.h"
 #include "vec3.h"
 #include "Constants.h"
@@ -21,11 +22,7 @@ namespace fs = std::filesystem;
 
 DataManager::DataManager(std::string path)
 {
-    this->path = path;
-}
-
-DataManager::~DataManager()
-{
+  this->path = path;
 }
 
 void DataManager::writeInfoFile(double deltaTime, double timeSteps, double numberOfParticles)
