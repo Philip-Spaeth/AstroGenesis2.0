@@ -2,7 +2,12 @@
 
 #include "vec3.h"
 #include <memory>
+//check if windows or linux
+#ifdef _WIN32
+#include "Tree\Node.h"
+#else
 #include "Tree/Node.h"
+#endif
 
 class Node;
 
