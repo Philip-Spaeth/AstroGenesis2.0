@@ -19,7 +19,7 @@ int main()
     }
     else
     {
-        std::cout << "Simulation could not be initialized" << std::endl;
+        std::cout << "Simulation could not be initialized " << std::endl;
     }
     delete simulation;
     return 0;
