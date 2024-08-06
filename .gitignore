@@ -40,3 +40,8 @@
 
 # Optional: Ausnahme für alle Inhalte des bestimmten Ordners
 !Documentation/**
+
+# Ausnahme für .vscode
+!.vscode/
+!.vscode/*
+
