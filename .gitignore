@@ -2,13 +2,11 @@
 /Render Programm/build/
 /Simulation/build/
 
-
 # Ignore everything in the /Render Programm/Video_Output/ directory
 /Render Programm/Video_Output/*
 
 # Except for convert_bmp_to_video.bat
 !/Render Programm/Video_Output/convert_bmp_to_video.bat
-
 
 # Ignore binary files
 *.bin
@@ -19,11 +17,11 @@
 # Ignore temporary files
 *.tmp
 
-#ignore object files
+# Ignore object files
 *.obj
 *.o
 
-# ignore render output files, pictures and videos
+# Ignore render output files, pictures and videos
 *.png
 *.bmp
 *.jpg
@@ -32,18 +30,8 @@
 *.mp4
 *.mov
 
-# Ignoriere den doku ornder
-*
-
-# Ausnahme für den bestimmten Ordner
-!Documentation/
-
-# Optional: Ausnahme für alle Inhalte des bestimmten Ordners
-!Documentation/**
-
-# Ausnahme für .vscode
-!/Simulation/.vscode/
-!/Simulation/.vscode/*
+# Ausnahme für .vscode Verzeichnisse
+!/.vscode/
 !/Render Programm/.vscode/
-!/Render Programm/.vscode/*
+!/Simulation/.vscode/
 
