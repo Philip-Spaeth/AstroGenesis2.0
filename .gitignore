@@ -42,6 +42,8 @@
 !Documentation/**
 
 # Ausnahme für .vscode
-!.vscode/
-!.vscode/*
+!/Simulation/.vscode/
+!/Simulation/.vscode/*
+!/Render Programm/.vscode/
+!/Render Programm/.vscode/*
 
