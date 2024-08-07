@@ -21,6 +21,7 @@ Simulation::~Simulation(){}
 
 bool Simulation::init()
 {   
+//catch errors 
     //check if minTimeStep is smaller or equal to maxTimeStep
     if (minTimeStep > maxTimeStep)
     {
@@ -37,9 +38,10 @@ bool Simulation::init()
     //setting up multitheading
     std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
 
-    //read the template
-    dataManager->readTemplate("Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    //dataManager->readTemplate("Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    //dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    //dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+
+    dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
 
     //check if there are null pointers in the particles vector
     for (int i = 0; i < numberOfParticles; i++)

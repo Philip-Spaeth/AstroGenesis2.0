@@ -96,6 +96,69 @@ void DataManager::readInfoFile(double& deltaTime, double& timeSteps, double& num
     file.close();
 }
 
+void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
+{
+    std::string fileDir = "input_data/";
+    std::filesystem::path filePath = "../..";
+    filePath = filePath / fileDir / fileName;
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        std::cerr << "Could not open the data file: " << filePath << std::endl;
+        return;
+    }
+
+    std::cout << "Reading file: " << filePath << std::endl;
+
+    // Anzahl der Partikel berechnen
+    uint32_t numParticles = 3000;
+    std::cout << "Number of particles: " << numParticles << std::endl;
+
+    // Speicher für Partikeldaten reservieren
+    particles.resize(numParticles);
+    for (int i = 0; i < numParticles; ++i) 
+    {
+        particles[i] = std::make_shared<Particle>();
+    }
+
+    // Lese die Partikelpositionen
+    for (uint32_t i = 0; i < numParticles; ++i) 
+    {
+        float pos[3];
+        file.read(reinterpret_cast<char*>(&pos), sizeof(pos));
+        //transform to internal units
+        particles[i]->position = vec3(pos[0], pos[1], pos[2]);
+        particles[i]->position *= Constants::PC;
+    }
+
+    // Lese die Partikelgeschwindigkeiten
+    for (uint32_t i = 0; i < numParticles; ++i) 
+    {
+        float vel[3];
+        file.read(reinterpret_cast<char*>(&vel), sizeof(vel));
+        //transform to internal units
+        particles[i]->velocity = vec3(vel[0], vel[1], vel[2]);
+        particles[i]->velocity *= 1000;
+    }
+
+    // Lese die Partikel-Massen
+    for (uint32_t i = 0; i < numParticles; ++i) 
+    {
+        float mass;
+        file.read(reinterpret_cast<char*>(&mass), sizeof(mass));
+        //transform to internal units
+        particles[i]->mass = 1;
+    }
+
+    // Lese die Partikel-IDs
+    for (uint32_t i = 0; i < numParticles; ++i) {
+        uint64_t id;
+        file.read(reinterpret_cast<char*>(&id), sizeof(id));
+    }
+
+    file.close();
+}
+
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep)
 {
     if (!fs::exists(this->path))
@@ -254,9 +317,16 @@ void DataManager::printProgress(double currentStep, double steps, std::string te
     }
 }
 
-void DataManager::readTemplate(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
+void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
 {
-    std::string filePath = "../Templates/" + fileName;
+    fileName = "Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt";
+
+    std::string fileDir = "input_data/";
+    std::filesystem::path filePath = fileDir;
+    filePath = "../.." / filePath;
+
+    filePath = filePath / fileName;
+
 
     // Ensure the particles vector is large enough to hold the new particles
     if (particles.size() < static_cast<size_t>(end)) {
@@ -268,7 +338,8 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
     for (int i = start; i < end; i += 1250) {
         std::ifstream file(filePath);
         if (!file) {
-            std::cerr << "Could not open the template file!" << std::endl;
+            std::cout << "Reading file: " << filePath << std::endl;
+            std::cerr << "Could not open the data file!" << std::endl;
             return;
         }
 
@@ -315,5 +386,5 @@ void DataManager::readTemplate(std::string fileName, int start, int end, vec3 po
         file.close();
     }
 
-    std::cout << "Created template: " << fileName << " with particles from index " << start << " to " << (particleIndex - 1) << std::endl;
+    std::cout << "Initial Condition: " << fileName << " with particles from index " << start << " to " << (particleIndex - 1) << std::endl;
 }
