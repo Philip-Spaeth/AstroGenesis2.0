@@ -284,8 +284,6 @@ void DataManager::printProgress(double currentStep, double steps, std::string te
 
 void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
 {
-    fileName = "Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt";
-
     std::string fileDir = "input_data/";
     std::filesystem::path filePath = fileDir;
     filePath = "../.." / filePath;

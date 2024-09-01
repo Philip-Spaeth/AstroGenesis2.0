@@ -5,6 +5,8 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <filesystem>
+#include <iomanip>
 
 
 Simulation::Simulation()
@@ -38,14 +40,14 @@ bool Simulation::init()
     //print the general information aboput the simulation
     std::cout << "\nSimulation parameters:" << std::endl;
     std::cout << "  Number of particles: " << numberOfParticles << std::endl;
-    std::cout << "  End time: " << endTime << " s" << std::endl;
+    std::cout << "  End time: " << std::scientific << std::setprecision(0) << (double)endTime / (double)3600.0 << " years" << std::endl;
 
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     DataManager::printSystemInfo();
 
 
-    dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
     //dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
 
