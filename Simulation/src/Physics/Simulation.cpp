@@ -35,13 +35,25 @@ bool Simulation::init()
         return false;
     }
 
-    //setting up multitheading
-    std::cout << "Number of threads: " << std::thread::hardware_concurrency() <<"\n"<<std::endl;
+    //print the general information aboput the simulation
+    std::cout << "\nSimulation parameters:" << std::endl;
+    std::cout << "  Number of particles: " << numberOfParticles << std::endl;
+    std::cout << "  End time: " << endTime << " s" << std::endl;
 
-    //dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    //dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    //print the computers / server computational parameters like number of threads, ram, cpu, etc.
+    DataManager::printSystemInfo();
 
-    dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
+
+    dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    dataManager->readASCII("Dolag_Example_Galaxy_1_ASCII/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+
+    //dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
+
+    if(numberOfParticles != particles.size())
+    {
+        std::cerr << "Error: Number of particles in the simulation does not match the number of particles in the data file." << std::endl;
+        return false;
+    }
 
     //check if there are null pointers in the particles vector
     for (int i = 0; i < numberOfParticles; i++)
@@ -62,6 +74,9 @@ bool Simulation::init()
     calcGasDensity();
     //the first time after the temprature is set and rho is calculated
     initGasParticleProperties();
+
+    // Initial force calculation
+    calculateForces();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -84,9 +99,6 @@ void Simulation::run()
         }
         particles[i]->nextIntegrationTime = 0.0;
     }
-
-    // Initial force calculation
-    //calculateForces();
 
     // Initialize particles' time steps and next integration times
     for (int i = 0; i < numberOfParticles; i++)

@@ -8,13 +8,16 @@
 #include <filesystem>
 #include <iomanip>
 #include <chrono>
-#include <cstring>  // Fügt den Header für memcpy hinzu
+#include <cstring>
 #include "Particle.h"
 #include "vec3.h"
 #include "Constants.h"
 
 #ifdef _WIN32
 #include <windows.h>
+#include <intrin.h>
+#else
+#include <unistd.h>
 #endif
 
 using namespace std;
@@ -110,51 +113,13 @@ void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::sha
 
     std::cout << "Reading file: " << filePath << std::endl;
 
-    // Anzahl der Partikel berechnen
-    uint32_t numParticles = 3000;
-    std::cout << "Number of particles: " << numParticles << std::endl;
+    /*
+    ... read the header ...
+    */
 
-    // Speicher für Partikeldaten reservieren
-    particles.resize(numParticles);
-    for (int i = 0; i < numParticles; ++i) 
-    {
-        particles[i] = std::make_shared<Particle>();
-    }
+    // Read the number of particles
 
-    // Lese die Partikelpositionen
-    for (uint32_t i = 0; i < numParticles; ++i) 
-    {
-        float pos[3];
-        file.read(reinterpret_cast<char*>(&pos), sizeof(pos));
-        //transform to internal units
-        particles[i]->position = vec3(pos[0], pos[1], pos[2]);
-        particles[i]->position *= Constants::PC;
-    }
-
-    // Lese die Partikelgeschwindigkeiten
-    for (uint32_t i = 0; i < numParticles; ++i) 
-    {
-        float vel[3];
-        file.read(reinterpret_cast<char*>(&vel), sizeof(vel));
-        //transform to internal units
-        particles[i]->velocity = vec3(vel[0], vel[1], vel[2]);
-        particles[i]->velocity *= 1000;
-    }
-
-    // Lese die Partikel-Massen
-    for (uint32_t i = 0; i < numParticles; ++i) 
-    {
-        float mass;
-        file.read(reinterpret_cast<char*>(&mass), sizeof(mass));
-        //transform to internal units
-        particles[i]->mass = 1;
-    }
-
-    // Lese die Partikel-IDs
-    for (uint32_t i = 0; i < numParticles; ++i) {
-        uint64_t id;
-        file.read(reinterpret_cast<char*>(&id), sizeof(id));
-    }
+    // Read the particle properties
 
     file.close();
 }
@@ -376,7 +341,7 @@ void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, 
             particles[particleIndex]->position = position;
             particles[particleIndex]->velocity = velocity;
             particles[particleIndex]->mass = mass;
-            particles[particleIndex]->type = 2;
+            particles[particleIndex]->type = 1;
             particles[particleIndex]->T = 1e27;
             
             particleIndex++;
@@ -387,4 +352,89 @@ void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, 
     }
 
     std::cout << "Initial Condition: " << fileName << " with particles from index " << start << " to " << (particleIndex - 1) << std::endl;
+}
+
+void DataManager::printSystemInfo()
+{
+    std::cout << "\nComputational parameters:" << std::endl;
+    // Number of CPU cores
+    int numCores = 0;
+    #ifdef _WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    numCores = sysinfo.dwNumberOfProcessors;
+    #else
+    numCores = sysconf(_SC_NPROCESSORS_ONLN);
+    #endif
+
+    std::cout << "  Number of CPU Cores: " << numCores << std::endl;
+
+    // CPU Clock Speed
+    double cpuFrequency = 0.0;
+    #ifdef _WIN32
+    HKEY hKey;
+    LONG lError = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                               0, KEY_READ, &hKey);
+    if (lError == ERROR_SUCCESS) {
+        DWORD dwMHz;
+        DWORD bufferSize = sizeof(dwMHz);
+        lError = RegQueryValueEx(hKey, "~MHz", NULL, NULL, (LPBYTE)&dwMHz, &bufferSize);
+        if (lError == ERROR_SUCCESS) {
+            cpuFrequency = dwMHz;
+        }
+        RegCloseKey(hKey);
+    }
+    #else
+    std::ifstream cpuinfo("/proc/cpuinfo");
+    std::string line;
+    while (std::getline(cpuinfo, line)) {
+        if (line.find("cpu MHz") != std::string::npos) {
+            cpuFrequency = std::stod(line.substr(line.find(":") + 1));
+            break;
+        }
+    }
+    #endif
+
+    //display the frequency in GHz iwth 2 decimal places
+    std::cout << "  CPU Clock Speed: " << std::fixed << std::setprecision(2) << cpuFrequency / 1000 << " GHz" << std::endl;
+
+    // Available RAM
+    size_t totalRam = 0;
+    #ifdef _WIN32
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    GlobalMemoryStatusEx(&statex);
+    totalRam = statex.ullTotalPhys / (1024 * 1024); // in MB
+    #else
+    std::ifstream meminfo("/proc/meminfo");
+    while (std::getline(meminfo, line)) {
+        if (line.find("MemTotal") != std::string::npos) {
+            totalRam = std::stoul(line.substr(line.find(":") + 1)) / 1024; // in MB
+            break;
+        }
+    }
+    #endif
+
+    std::cout << "  Available RAM: " << std::fixed << std::setprecision(1) << (double)totalRam / 1000.0 << " GB" << std::endl;
+
+    // Storage Write Speed
+    const size_t fileSize = 100 * 1024 * 1024; // 100 MB
+    char *buffer = new char[fileSize];
+    std::fill(buffer, buffer + fileSize, 'A');
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::ofstream file("test_file.bin", std::ios::binary);
+    file.write(buffer, fileSize);
+    file.close();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+
+    double writeSpeed = fileSize / duration.count() / (1024 * 1024); // MB/s
+
+    std::cout << "  Storage Write Speed: " << writeSpeed << " MB/s \n" << std::endl;
+
+    delete[] buffer;
 }

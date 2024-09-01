@@ -28,7 +28,7 @@ public:
 private:
 
     //simulation parameters
-    double numberOfParticles = 1250;
+    double numberOfParticles = 2500;
 
     //adaptive time integration
     const double eta = 10;      // Accuracy parameter for adaptive time step
