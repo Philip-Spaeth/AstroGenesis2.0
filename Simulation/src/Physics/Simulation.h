@@ -27,7 +27,7 @@ public:
 
 private:
 
-    //simulation parameters
+    //simulation parameters, has to the same as in the input dataset(ICs)
     double numberOfParticles = 2500;
 
     //adaptive time integration
@@ -42,16 +42,20 @@ private:
     const double fixedTimeSteps = 100; //number of fixed maxtime steps
     const double fixedStep = endTime / fixedTimeSteps; //time step in s
 
-    //gravitational softening, adapt it to the size of the system
-    const double softening = 7e17; //softening factor
+    //periodic boundary conditions for a better representation of infinite space
+    const bool PBC = false; //periodic boundary conditions
+    double boxSize = 1e23; //size of the box in m
+
+    //gravitational softening, adapt it to the size of the system, osftening beginns at 2.8 * e0
+    const double e0 = 1e20; //softening factor
     
     //SPH parameters
     const double massInH = 1e40; //in kg
 
-    //Visual density, for all particles, just for visualization, has no physical meaning
+    //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning
     const double visualDensityRadius = 1e19; //in m
 
-    //dark energy
+    //Constant hubble expansion
     const double H0 = 70; //Hubble constant in km/s/Mpc
 
     //octree with all particles

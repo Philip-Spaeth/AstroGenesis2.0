@@ -12,6 +12,8 @@
 #include "Particle.h"
 #include "vec3.h"
 #include "Constants.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -101,27 +103,56 @@ void DataManager::readInfoFile(double& deltaTime, double& timeSteps, double& num
 
 void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
+    // Annahme: Die Partikeldatenstrukturen sind wie folgt definiert:
+    typedef struct {
+        double Pos[3];
+        double Vel[3];
+        double Mass;
+        double Entropy;   // Für SPH-Teilchen
+        double Density;   // Für SPH-Teilchen
+        double Temperature; // Für SPH-Teilchen, optional
+    } Particle;
+
     std::string fileDir = "input_data/";
     std::filesystem::path filePath = "../..";
     filePath = filePath / fileDir / fileName;
 
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file) {
-        std::cerr << "Could not open the data file: " << filePath << std::endl;
+    // Datei öffnen
+    FILE *fd = fopen(filePath.c_str(), "rb");
+    if (fd == NULL) {
+        std::cerr << "Error: Unable to open file " << filePath << " - " << strerror(errno) << std::endl;
         return;
     }
 
     std::cout << "Reading file: " << filePath << std::endl;
 
-    /*
-    ... read the header ...
-    */
+    // Anzahl der Partikel bestimmen (dies muss angepasst werden, je nachdem, wie viele Partikel es gibt)
+    // Angenommen, wir wissen, dass es z.B. 10000 Partikel gibt
+    const int numParticles = 10000;  // Dies muss an die tatsächliche Anzahl der Partikel angepasst werden
 
-    // Read the number of particles
+    std::vector<Particle> particlesVec(numParticles);
 
-    // Read the particle properties
+    // Partikeldaten lesen
+    size_t readCount = fread(particlesVec.data(), sizeof(Particle), numParticles, fd);
+    if (readCount != numParticles) {
+        std::cerr << "Error: fread() read " << readCount << " of " << numParticles << " particles" << std::endl;
+    }
 
-    file.close();
+    // Partikeldaten ausgeben
+    std::cout << "Particle data:" << std::endl;
+    for (int i = 0; i < numParticles; ++i) {
+        std::cout << "Particle " << i << ": Pos[";
+        for (int j = 0; j < 3; ++j) std::cout << particlesVec[i].Pos[j] << (j < 2 ? ", " : "]");
+        std::cout << ", Vel[";
+        for (int j = 0; j < 3; ++j) std::cout << particlesVec[i].Vel[j] << (j < 2 ? ", " : "]");
+        std::cout << ", Mass[" << particlesVec[i].Mass
+                  << "], Entropy[" << particlesVec[i].Entropy
+                  << "], Density[" << particlesVec[i].Density
+                  << "], Temperature[" << particlesVec[i].Temperature << "]\n";
+    }
+
+    // Ressourcen freigeben
+    fclose(fd);
 }
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep)

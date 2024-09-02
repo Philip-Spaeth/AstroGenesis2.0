@@ -46,6 +46,7 @@ bool Simulation::init()
     DataManager::printSystemInfo();
 
 
+    //dataManager->readGadget2Snapshot("Gadget2-ICs/galaxy_littleendian.dat", particles);
     dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
     dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
@@ -112,7 +113,7 @@ void Simulation::run()
         }
         double accelMag = particles[i]->acceleration.length();
         if (accelMag > 0) {
-            double timeStep = eta * std::sqrt(softening / accelMag);
+            double timeStep = eta * std::sqrt(e0 / accelMag);
             particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
             particles[i]->timeStep = std::max(std::pow(2, std::floor(std::log2(particles[i]->timeStep))), minTimeStep);
             particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
@@ -137,7 +138,7 @@ void Simulation::run()
             {
                 double accelMag = particles[i]->acceleration.length();
                 if (accelMag > 0) {
-                    double timeStep = eta * std::sqrt(softening / accelMag);
+                    double timeStep = eta * std::sqrt(e0 / accelMag);
                     particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
                     particles[i]->timeStep = std::max(std::pow(2, std::floor(std::log2(particles[i]->timeStep))), minTimeStep);
                     particles[i]->nextIntegrationTime = globalTime + particles[i]->timeStep;
@@ -274,7 +275,7 @@ void Simulation::calculateForcesWorker() {
             {
                 particles[i]->dAdt = 0;
             }
-            root->calculateGravityForce(particles[i], softening, theta);
+            root->calculateGravityForce(particles[i], e0, theta);
         }
     }
 }

@@ -29,3 +29,20 @@ vec3 kernel::gradientCubicSplineKernel(const vec3& r, double h)
 
     return gradW;
 }
+
+double kernel::softeningKernel(double u)
+{
+    if (u >= 0 && u < 1.0/2.0)
+    {
+        return (16.0/3.0) *std::pow(u, 2) - (48.0/5.0) * std::pow(u, 4) + (32.0/5.0) * std::pow(u, 5) - (14.0/5.0);
+    }
+    else if (u >= 1.0/2.0 && u < 1.0)
+    {
+        return (1.0/(15.0 * u)) + (32.0/3.0) * std::pow(u, 2) - (16.0) * std::pow(u, 3) - (48.0/5.0) * std::pow(u, 4) - (32.0/15.0) * std::pow(u, 5) - (16.0/5.0);
+    }
+    else if (u >= 1.0)
+    {
+        return -1.0 / u;
+    }
+    return 0.0;
+}
