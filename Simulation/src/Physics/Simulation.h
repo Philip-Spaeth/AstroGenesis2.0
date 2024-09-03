@@ -50,7 +50,7 @@ private:
     const double e0 = 1e19; //softening factor
     
     //SPH parameters
-    const double massInH = 1e40; //in kg
+    const double massInH = 1e38; //in kg
 
     //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning
     const double visualDensityRadius = 1e19; //in m

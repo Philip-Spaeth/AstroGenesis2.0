@@ -189,7 +189,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
                     double c_ij = (c_i + c_j) / 2;
                     vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij,2));
+                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
                     double MU_ij = 0;
     	            if(v_ij.dot(d) < 0)
                     {
@@ -199,8 +199,10 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     }
                     
                     // calculate the acceleration due to the artificial viscosity
-                    vec3 viscosityAcceleration = -newparticle->mass * MU_ij * grad_ij * 1;
-                    //newparticle->acceleration += viscosityAcceleration;
+                    vec3 viscosityAcceleration = -newparticle->mass * MU_ij * grad_ij;
+                    newparticle->acceleration += viscosityAcceleration;
+
+
                     //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
                     newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
                 }
@@ -258,7 +260,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
                     double c_ij = (c_i + c_j) / 2;
                     vec3 v_ij = newparticle->velocity - medianVelocity;
-                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij,2));
+                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
                     double MU_ij = 0;
     	            if(v_ij.dot(d) < 0)
                     {
@@ -268,8 +270,9 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                         MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
                     }
                     // calculate the acceleration due to the artificial viscosity
-                    vec3 viscosityAcceleration = -gasMass * MU_ij * grad_ij * 1;
-                    //newparticle->acceleration += viscosityAcceleration;
+                    vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
+                    newparticle->acceleration += viscosityAcceleration;
+
 
                     //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
                     newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
