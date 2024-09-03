@@ -63,6 +63,7 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "ranges": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "cinttypes": "cpp"
     }
 }

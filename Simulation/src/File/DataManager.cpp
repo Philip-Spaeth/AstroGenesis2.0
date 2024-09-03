@@ -132,7 +132,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->P, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
-            memcpy(ptr, &particle->A, sizeof(double)); ptr += sizeof(double);
+            memcpy(ptr, &particle->U, sizeof(double)); ptr += sizeof(double);
             memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
         }
         file.write(buffer, totalSize);
@@ -170,7 +170,7 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
         file.read(reinterpret_cast<char*>(&particle->T), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->P), sizeof(double));
         file.read(reinterpret_cast<char*>(&particle->rho), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->A), sizeof(double));  
+        file.read(reinterpret_cast<char*>(&particle->U), sizeof(double));  
         file.read(reinterpret_cast<char*>(&particle->type), sizeof(int));
 
         particles.push_back(particle);
@@ -322,8 +322,8 @@ void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, 
             particles[particleIndex]->position = position;
             particles[particleIndex]->velocity = velocity;
             particles[particleIndex]->mass = mass;
-            particles[particleIndex]->type = 1;
-            particles[particleIndex]->T = 1e27;
+            particles[particleIndex]->type = 2;
+            particles[particleIndex]->T = 1e4;
             
             particleIndex++;
             currentIndex++;

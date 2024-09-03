@@ -39,9 +39,8 @@ public:
     //calcualted with the forces
     double P = 0; //pressure in Pascal
     double T = 0; //temperature in Kelvin
-    double A = 0; //entropy in J/K
     //derivative of A for the time integration of the entropy
-    double dAdt = 0;
+    double dUdt = 0;
     double U = 0; //internal energy in J
 
     //double totalViscosityTensor;

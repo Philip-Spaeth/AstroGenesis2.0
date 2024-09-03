@@ -208,7 +208,7 @@ void Simulation::run()
                 if(particles[i]->type == 2)
                 {
                     // Integrate the entropy
-                    //timeIntegration->EntropyEuler(particles[i], particles[i]->timeStep);
+                    timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
                 }
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 // Schedule the next integration time for this particle
@@ -270,10 +270,10 @@ void Simulation::calculateForcesWorker() {
         {
             // Berechne die Kräfte für das Partikel
             particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            particles[i]->dAdt = 0;
-            //if(particles[i]->type == 2)
+            particles[i]->dUdt = 0;
+            if(particles[i]->type == 2)
             {
-                particles[i]->dAdt = 0;
+                particles[i]->dUdt = 0;
             }
             root->calculateGravityForce(particles[i], e0, theta);
         }
@@ -370,13 +370,11 @@ void Simulation::initGasParticleProperties()
         if(particles[i]->type == 2)
         {
             
-            //calc U from T, u = T / (gamma-1) * prtn * mean_mol_weight / bk, all in SI units
-            particles[i]->U = particles[i]->T / (Constants::GAMMA - 1.0) * Constants::prtn * Constants::meanMolWeight / Constants::BK;
-            //calc A from U, U = (A / (gamma-1)) * rho^(gamma-1) => A = (U * (gamma-1)) / rho^(1-gamma)
-            particles[i]->A = (particles[i]->U * (Constants::GAMMA - 1.0)) / std::pow(particles[i]->rho, 1.0 - Constants::GAMMA);
+            //calc U from T, u = 1 / (gamma-1) * bk * T / (meanMolWeight* prtn)
+            particles[i]->U = (1.0 / (Constants::GAMMA - 1.0)) * Constants::BK * particles[i]->T / (Constants::meanMolWeight * Constants::prtn);
             //std::cout << "Particle " << particles[i]->rho << std::endl;
             //calc P, P = (gamma-1)*u*rho
-            //particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
+            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
     }
 
@@ -391,8 +389,7 @@ void Simulation::updateGasParticleProperties()
     {
         if(particles[i]->type == 2)
         {
-            //calc U from A, U = (A / (gamma-1)) * rho^(gamma-1)
-            particles[i]->U = (particles[i]->A / (Constants::GAMMA - 1.0)) * std::pow(particles[i]->rho, Constants::GAMMA - 1.0);
+            //if(i == 100) std::cout << particles[i]->U << std::endl;
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
@@ -417,7 +414,7 @@ void Simulation::calcVisualDensity()
 void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
 {
     p->acceleration = vec3(0.0, 0.0, 0.0);
-    p->dAdt = 0;
+    p->dUdt = 0;
 
     for (int j = 0; j < numberOfParticles; j++)
     {

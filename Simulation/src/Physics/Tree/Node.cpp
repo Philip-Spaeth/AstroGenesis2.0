@@ -182,8 +182,8 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
         
                     // calculate the acceleration due to the pressure force
                     vec3 pressureAcceleration = - newparticle->mass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
-                    //std::cout << pressureAcceleration << std::endl; 
-                    //newparticle->acceleration += pressureAcceleration;
+                    if(pressureAcceleration.length() < 1e10) newparticle->acceleration += pressureAcceleration;
+                    //std::cout << newparticle->rho << std::endl;
 
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
@@ -202,9 +202,8 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     // calculate the acceleration due to the artificial viscosity
                     vec3 viscosityAcceleration = -newparticle->mass * MU_ij * grad_ij * 1;
                     //newparticle->acceleration += viscosityAcceleration;
-                    //calc the change of entropy 
-                    //newparticle->dAdt += 0.5 * (Constants::GAMMA - 1) / (pow(rho_i, Constants::GAMMA -1)) * gasMass * mu_ij * v_ij.dot(grad_ij);
-                    
+                    //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
+                    newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
                 }
             }
         }
@@ -253,7 +252,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     
                     // calculate the acceleration due to the pressure force
                     vec3 pressureAcceleration = gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
-                    //newparticle->acceleration += pressureAcceleration;
+                    if(pressureAcceleration.length() < 1e10) newparticle->acceleration += pressureAcceleration;
                     
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
@@ -272,9 +271,9 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     // calculate the acceleration due to the artificial viscosity
                     vec3 viscosityAcceleration = -gasMass * MU_ij * grad_ij * 1;
                     //newparticle->acceleration += viscosityAcceleration;
-                    //calc the change of entropy 
-                    //newparticle->dAdt += 0.5 * (Constants::GAMMA - 1) / (pow(rho_i, Constants::GAMMA -1)) * gasMass * mu_ij * v_ij.dot(grad_ij);
-                    
+
+                    //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
+                    newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
                 }
             }
         }
@@ -436,7 +435,6 @@ void Node::calcGasDensity(double massInH)
                 {
                     double drho = childParticles[i]->mass * kernel::cubicSplineKernel(vec3(childParticles[i]->position - centerOfMass).length(), childParticles[i]->h);
                     rho += drho;
-                    
                 }
             }
 

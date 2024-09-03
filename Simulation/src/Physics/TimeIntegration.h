@@ -18,6 +18,6 @@ public:
     void Kick(std::shared_ptr<Particle> particle, double deltaTime);
     void Drift(std::shared_ptr<Particle> particle, double deltaTime);
 
-    //integrate the entropy
-    void EntropyEuler(std::shared_ptr<Particle> particle, double deltaTime);
+    //integrate the internal energy
+    void Ueuler(std::shared_ptr<Particle> particle, double deltaTime);
 };
