@@ -150,7 +150,6 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             //gravity calculation
             vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
             newparticle->acceleration += gravityAcceleration;
-            //std::cout << e << std::endl;
 
             //SPH calculation
             if(r < newparticle->h * 2)
@@ -179,11 +178,11 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     vec3 grad_i = kernel::gradientCubicSplineKernel(d, h_i);
                     vec3 grad_j = kernel::gradientCubicSplineKernel(d, h_j);
                     vec3 grad_ij = (grad_i + grad_j) / 2;
-        
+
                     // calculate the acceleration due to the pressure force
                     vec3 pressureAcceleration = - newparticle->mass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
-                    if(pressureAcceleration.length() < 1e10) newparticle->acceleration += pressureAcceleration;
-                    //std::cout << newparticle->rho << std::endl;
+                    newparticle->acceleration += pressureAcceleration;
+                    //std::cout << std::scientific << pressureAcceleration.length() << std::endl;
 
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
@@ -252,7 +251,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     
                     // calculate the acceleration due to the pressure force
                     vec3 pressureAcceleration = gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
-                    if(pressureAcceleration.length() < 1e10) newparticle->acceleration += pressureAcceleration;
+                    newparticle->acceleration += pressureAcceleration;
                     
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);

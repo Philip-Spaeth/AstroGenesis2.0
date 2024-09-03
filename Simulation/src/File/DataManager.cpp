@@ -322,8 +322,14 @@ void DataManager::readASCII(std::string fileName, int start, int end, vec3 pos, 
             particles[particleIndex]->position = position;
             particles[particleIndex]->velocity = velocity;
             particles[particleIndex]->mass = mass;
-            particles[particleIndex]->type = 2;
-            particles[particleIndex]->T = 1e4;
+            //one of 10 particles is a gas particle
+            if (currentIndex % 10 == 0) {
+                particles[particleIndex]->type = 2;
+            }
+            else {
+                particles[particleIndex]->type = 1;
+            }
+            particles[particleIndex]->T = 1e5;
             
             particleIndex++;
             currentIndex++;
