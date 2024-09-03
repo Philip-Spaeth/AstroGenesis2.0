@@ -147,11 +147,10 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             double e0 = softening;
             //softening described by Springel, Yoshida & White (2001) eq. 71
             double e = -(2.8 * e0) / kernel::softeningKernel(r / (2.8 * e0)) - r;
-            r = r + e;
             //gravity calculation
-            vec3 gravityAcceleration = Constants::G * mass / (r * r) * d.normalize();
+            vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
             newparticle->acceleration += gravityAcceleration;
-            std::cout << e << std::endl;
+            //std::cout << e << std::endl;
 
             //SPH calculation
             if(r < newparticle->h * 2)
@@ -219,10 +218,10 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             double e0 = softening;
             //softening described by Springel, Yoshida & White (2001) eq. 71
             double e = -(2.8 * e0) / kernel::softeningKernel(r / (2.8 * e0)) - r;
-            r = r + e;
             //gravity calculation
-            vec3 gravityAcceleration = Constants::G * mass / (r * r) * d.normalize();
+            vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
             newparticle->acceleration += gravityAcceleration;
+            //std::cout << e << std::endl;
 
             //SPH calculation
             if(r < newparticle->h * 2)

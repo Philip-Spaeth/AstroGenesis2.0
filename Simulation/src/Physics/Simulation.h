@@ -32,8 +32,8 @@ private:
 
     //adaptive time integration
     const double eta = 10;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1e13; // Maximum allowed time step
-    const double minTimeStep = 1e13; // Minimum allowed time step
+    const double maxTimeStep = 1e14; // Maximum allowed time step
+    const double minTimeStep = 1e14; // Minimum allowed time step
 
     double globalTime = 0.0; // global time of the simulation in s
     const double endTime = 1e16; //end time of the simulation in s
@@ -47,7 +47,7 @@ private:
     double boxSize = 1e23; //size of the box in m
 
     //gravitational softening, adapt it to the size of the system, osftening beginns at 2.8 * e0
-    const double e0 = 1e20; //softening factor
+    const double e0 = 1e19; //softening factor
     
     //SPH parameters
     const double massInH = 1e40; //in kg

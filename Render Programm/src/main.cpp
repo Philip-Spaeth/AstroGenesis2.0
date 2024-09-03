@@ -102,6 +102,14 @@ int main()
     cout << endl;
 
     dataManager.path = dataFolder;
+
+    std::string filename = dataManager.path + "info.txt";
+    std::ifstream file(filename);
+    if (!file) {
+        std::cerr << "Could not open the file!" << std::endl;
+        return 0;
+    }
+
     dataManager.readInfoFile(deltaTime, numTimeSteps, numOfParticles);
     //std::cout << "deltaTime: " << deltaTime << std::endl;
     //std::cout << "numOfParticles: " << numOfParticles << std::endl;

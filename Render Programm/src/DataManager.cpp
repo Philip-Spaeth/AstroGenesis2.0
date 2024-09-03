@@ -47,14 +47,9 @@ void DataManager::writeInfoFile(double deltaTime, double timeSteps, double numbe
 
 void DataManager::readInfoFile(double& deltaTime, double& timeSteps, double& numberOfParticles)
 {
+    std::string line;
     std::string filename = this->path + "info.txt";
     std::ifstream file(filename);
-    if (!file) {
-        std::cerr << "Could not open the file!" << std::endl;
-        return;
-    }
-
-    std::string line;
 
     // Read deltaTime from the first line
     if (std::getline(file, line)) {
