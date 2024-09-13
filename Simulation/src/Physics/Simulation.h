@@ -28,7 +28,7 @@ public:
 private:
 
     //simulation parameters, has to the same as in the input dataset(ICs)
-    double numberOfParticles = 2500;
+    double numberOfParticles = 3909;
 
     //adaptive time integration
     const double eta = 10;      // Accuracy parameter for adaptive time step

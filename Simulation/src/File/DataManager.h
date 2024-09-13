@@ -42,6 +42,7 @@ public:
     static void printSystemInfo();
 
 private:
+    void readBlock(std::ifstream& file, char* buffer, size_t size);
     std::chrono::_V2::system_clock::time_point startTime;
     bool timerStarted = false;
 };

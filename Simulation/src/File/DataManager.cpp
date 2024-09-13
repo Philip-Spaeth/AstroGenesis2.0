@@ -101,8 +101,158 @@ void DataManager::readInfoFile(double& deltaTime, double& timeSteps, double& num
     file.close();
 }
 
-void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
-{
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <cstdint>
+
+struct GadgetHeader {
+    int32_t npart[6];           // Anzahl der Partikel pro Typ
+    double mass[6];             // Massen der Partikeltypen
+    double time;                // Simulationszeit
+    double redshift;            // Rotverschiebung
+    int32_t flag_sfr;           // Sternentstehungsflag
+    int32_t flag_feedback;      // Feedbackflag
+    uint32_t npartTotal[6];     // Gesamtanzahl der Partikel pro Typ
+    int32_t flag_cooling;       // Abkühlungsflag
+    int32_t num_files;          // Anzahl der Dateien
+    double boxsize;             // Boxgröße der Simulation
+    double omega0;              // Dichteparameter Omega_0
+    double omegaLambda;         // Dichteparameter Omega_Lambda
+    double hubbleParam;         // Hubble-Parameter
+    int32_t flag_stellarage;    // Sternalter-Flag
+    int32_t flag_metals;        // Metallizität-Flag
+    uint32_t npartTotalHighWord[6];  // High Word für Partikelanzahl
+    int32_t flag_entropy_instead_u;  // Flag für Entropie
+    char fill[60];              // Auffüllen auf 256 Bytes
+};
+
+void DataManager::readBlock(std::ifstream& file, char* buffer, size_t size) {
+    int32_t blockSize;
+    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
+    file.read(buffer, size);
+    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
+}
+
+void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles) {
+    GadgetHeader header;
+
+    std::string fileDir = "input_data/";
+    std::filesystem::path filePath = fileDir;
+    filePath = "../.." / filePath;
+    filePath = filePath / fileName;
+    
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file) {
+        std::cerr << "Fehler beim Öffnen der Datei: " << filePath << std::endl;
+        return;
+    }
+
+    // Lese den Header-Block
+    readBlock(file, reinterpret_cast<char*>(&header), sizeof(GadgetHeader));
+
+    // Ausgabe der Gesamtanzahl der Partikel pro Typ
+    std::cout << "Gesamtanzahl der Partikel pro Typ: " << std::endl;
+    for (int i = 0; i < 6; ++i) {
+        std::cout << "  Typ " << i << ": " << header.npartTotal[i] << std::endl;
+    }
+
+    // Berechnung der Gesamtanzahl der Partikel
+    int totalParticles = 0;
+    for (int i = 0; i < 6; ++i) {
+        if (header.npartTotal[i] > 0) {
+            totalParticles += header.npartTotal[i];
+        }
+    }
+    
+    std::cout << "Gesamtanzahl der zu lesenden Partikel: " << totalParticles << std::endl;
+    
+    if (totalParticles <= 0) {
+        std::cerr << "Fehler: Keine Partikel zum Lesen vorhanden." << std::endl;
+        file.close();
+        return;
+    }
+
+    // Speicher für Positionen, Geschwindigkeiten und IDs reservieren
+    std::vector<float> positions(3 * totalParticles);
+    std::vector<float> velocities(3 * totalParticles);
+    std::vector<int32_t> particleIDs(totalParticles);
+
+    // Initialisiere Partikel-Vektor
+    particles.clear();
+    particles.reserve(totalParticles);
+
+    // Lese Partikelpositionen
+    std::cout << "Lese Partikelpositionen..." << std::endl;
+    readBlock(file, reinterpret_cast<char*>(positions.data()), sizeof(float) * 3 * totalParticles);
+
+    // Lese Partikelgeschwindigkeiten
+    std::cout << "Lese Partikelgeschwindigkeiten..." << std::endl;
+    readBlock(file, reinterpret_cast<char*>(velocities.data()), sizeof(float) * 3 * totalParticles);
+
+    // Lese Partikel-IDs (optional, kann übersprungen werden)
+    std::cout << "Lese Partikel IDs..." << std::endl;
+    readBlock(file, reinterpret_cast<char*>(particleIDs.data()), sizeof(int32_t) * totalParticles);
+
+    // Lese Massen (falls sie nicht im Header stehen)
+    std::vector<float> masses(totalParticles, 0.0f);
+    bool hasIndividualMasses = false;
+    for (int i = 0; i < 6; ++i) {
+        if (header.mass[i] == 0 && header.npart[i] > 0) {
+            hasIndividualMasses = true;
+            break;
+        }
+    }
+
+    if (hasIndividualMasses) {
+        std::cout << "Lese Partikelmassen..." << std::endl;
+        readBlock(file, reinterpret_cast<char*>(masses.data()), sizeof(float) * totalParticles);
+    } else {
+        std::cout << "Setze Massen aus dem Header..." << std::endl;
+        int particleOffset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < header.npart[i]; ++j) {
+                masses[particleOffset + j] = header.mass[i];
+            }
+            particleOffset += header.npart[i];
+        }
+    }
+
+    // Falls Gas-Partikel existieren (Typ 0), lese interne Energie (Temperatur)
+    std::vector<float> internalEnergies(header.npart[0], 0.0f);
+    if (header.npart[0] > 0) {
+        std::cout << "Lese interne Energie der Gas-Partikel..." << std::endl;
+        readBlock(file, reinterpret_cast<char*>(internalEnergies.data()), sizeof(float) * header.npart[0]);
+    }
+
+    // Füge alle Partikel zum Vektor hinzu
+    std::cout << "Füge Partikel zum Vektor hinzu..." << std::endl;
+    int particleOffset = 0;
+    for (int i = 0; i < totalParticles; ++i) 
+    {
+        auto particle = std::make_shared<Particle>();
+
+        particle->position.x = positions[3 * i] * 3.086e19; // kpc -> m
+        particle->position.y = positions[3 * i + 1] * 3.086e19; // kpc -> m
+        particle->position.z = positions[3 * i + 2] * 3.086e19; // kpc -> m
+
+        particle->velocity.x = velocities[3 * i] * 1e3; // km/s -> m/s
+        particle->velocity.y = velocities[3 * i + 1] *  1e3; // km/s -> m/s
+        particle->velocity.z = velocities[3 * i + 2] *  1e3; // km/s -> m/s
+
+        particle->mass = masses[i] * 1.989e30; // 1e10 M_sun -> kg
+        //particle->id = particleIDs[i];
+
+        if (i < header.npart[0]) {  // Nur Gas-Partikel haben interne Energie
+            particle->U = internalEnergies[i] * 1e6;
+        }
+
+        particles.push_back(particle);
+    }
+
+    std::cout << "Snapshot wurde erfolgreich gelesen." << std::endl;
+
+    file.close();
 }
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep)

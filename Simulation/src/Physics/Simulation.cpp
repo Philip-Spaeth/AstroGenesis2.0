@@ -46,9 +46,9 @@ bool Simulation::init()
     DataManager::printSystemInfo();
 
 
-    //dataManager->readGadget2Snapshot("Gadget2-ICs/galaxy_littleendian.dat", particles);
-    dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    dataManager->readGadget2Snapshot("galaxy/Galaxy_Test.gal", particles);
+    //dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    //dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
     //dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
 
