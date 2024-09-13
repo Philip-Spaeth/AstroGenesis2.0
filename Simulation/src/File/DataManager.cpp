@@ -227,7 +227,6 @@ void DataManager::readGadget2Snapshot(std::string fileName, std::vector<std::sha
 
     // Füge alle Partikel zum Vektor hinzu
     std::cout << "Füge Partikel zum Vektor hinzu..." << std::endl;
-    int particleOffset = 0;
     for (int i = 0; i < totalParticles; ++i) 
     {
         auto particle = std::make_shared<Particle>();
