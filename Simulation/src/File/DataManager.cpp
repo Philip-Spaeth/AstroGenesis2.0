@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <cstring>
 #include <cstdint>
+#include <cctype>
+#include <locale>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -176,4 +178,74 @@ void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>&
     }
 
     file.close();
+}
+
+bool parseKeyValue(const std::string& line, std::string& key, std::string& value) {
+    std::size_t pos = line.find('=');
+    if (pos == std::string::npos) return false;
+
+    key = line.substr(0, pos);
+    value = line.substr(pos + 1);
+
+    // Entferne Leerzeichen
+    key.erase(key.find_last_not_of(" \n\r\t") + 1);
+    value.erase(0, value.find_first_not_of(" \n\r\t"));
+
+    return !key.empty() && !value.empty();
+}
+
+
+// Hilfsfunktion zum Entfernen von Leerzeichen am Anfang und Ende eines Strings
+std::string trim(const std::string& str) {
+    std::string trimmed = str;
+    trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+    trimmed.erase(std::find_if(trimmed.rbegin(), trimmed.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), trimmed.end());
+    return trimmed;
+}
+
+bool DataManager::loadConfig(const std::string& filename, Simulation* simulation) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Fehler beim Öffnen der Konfigurationsdatei: " << filename << std::endl;
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        // Ignoriere leere Zeilen und Kommentare
+        if (line.empty() || line[0] == '#') continue;
+
+        std::string key, value;
+        if (parseKeyValue(line, key, value)) {
+            // Entferne führende und nachfolgende Leerzeichen
+            key = trim(key);
+            value = trim(value);
+            try {
+                if (key == "numberOfParticles") simulation->numberOfParticles = std::stod(value);
+                else if (key == "eta") simulation->eta = std::stod(value);
+                else if (key == "maxTimeStep") simulation->maxTimeStep = std::stod(value);
+                else if (key == "minTimeStep") simulation->minTimeStep = std::stod(value);
+                else if (key == "globalTime") simulation->globalTime = std::stod(value);
+                else if (key == "endTime") simulation->endTime = std::stod(value);
+                else if (key == "fixedTimeSteps") simulation->fixedTimeSteps = std::stod(value);
+                else if (key == "e0") simulation->e0 = std::stod(value);
+                else if (key == "massInH") simulation->massInH = std::stod(value);
+                else if (key == "visualDensityRadius") simulation->visualDensityRadius = std::stod(value);
+                else if (key == "H0") simulation->H0 = std::stod(value);
+                else if (key == "theta") simulation->theta = std::stod(value);
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "Ungültiger Wert für " << key << ": " << value << std::endl;
+                return false;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "Wert für " << key << " ist außerhalb des gültigen Bereichs: " << value << std::endl;
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

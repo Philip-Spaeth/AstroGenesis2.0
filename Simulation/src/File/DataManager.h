@@ -6,6 +6,9 @@
 #include <chrono>
 #include "Particle.h"
 #include "vec3.h"
+#include "Simulation.h"
+
+class Simulation;
 
 class DataManager
 {
@@ -15,6 +18,9 @@ public:
 
     //path to the folder where the simulation data is saved
     std::string path;
+
+//read the Config.ini file
+    bool loadConfig(const std::string& filename, Simulation* simulation);
 
     //info file with simulation parameters
     //write when saving simulation data

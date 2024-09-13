@@ -22,6 +22,8 @@
 #include <atomic>
 
 class Tree;
+class DataManager;
+
 class Simulation
 {
 public:
@@ -31,38 +33,34 @@ public:
     void run();
 
     //simulation parameters, has to the same as in the input dataset(ICs)
-    double numberOfParticles = 3909;
+    double numberOfParticles;
 
     //adaptive time integration
-    const double eta = 10;      // Accuracy parameter for adaptive time step
-    const double maxTimeStep = 1e14; // Maximum allowed time step
-    const double minTimeStep = 1e14; // Minimum allowed time step
+    double eta;      // Accuracy parameter for adaptive time step
+    double maxTimeStep; // Maximum allowed time step
+    double minTimeStep; // Minimum allowed time step
 
-    double globalTime = 0.0; // global time of the simulation in s
-    const double endTime = 1e16; //end time of the simulation in s
+    double globalTime; // global time of the simulation in s
+    double endTime; //end time of the simulation in s
 
     //save data at each maxTimeStep
-    const double fixedTimeSteps = 100; //number of fixed maxtime steps
-    const double fixedStep = endTime / fixedTimeSteps; //time step in s
-
-    //periodic boundary conditions for a better representation of infinite space
-    const bool PBC = false; //periodic boundary conditions
-    double boxSize = 1e23; //size of the box in m
+    double fixedTimeSteps; //number of fixed maxtime steps
+    double fixedStep; //time step in s
 
     //gravitational softening, adapt it to the size of the system, osftening beginns at 2.8 * e0
-    const double e0 = 1e19; //softening factor
+    double e0; //softening factor
     
     //SPH parameters
-    const double massInH = 1e39; //in kg
+    double massInH; //in kg
 
     //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning
-    const double visualDensityRadius = 1e19; //in m
+    double visualDensityRadius; //in m
 
     //Constant hubble expansion
-    const double H0 = 70; //Hubble constant in km/s/Mpc
+    double H0; //Hubble constant in km/s/Mpc
 
     //octree with all particles
-    double theta = 0.5;
+    double theta;
     
     //particles
     std::vector<std::shared_ptr<Particle>> particles;

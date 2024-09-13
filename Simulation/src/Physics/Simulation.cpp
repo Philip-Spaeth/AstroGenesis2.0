@@ -21,7 +21,19 @@ Simulation::Simulation()
 Simulation::~Simulation(){}
 
 bool Simulation::init()
-{   
+{
+    //load the config file
+    if (!dataManager->loadConfig("../Config.ini", this))
+    {
+        std::cerr << "Error: Could not load the config file." << std::endl;
+        return false;
+    }
+    
+    fixedStep = endTime / fixedTimeSteps;
+
+    std::cout << "Total Number of Particles in the Config.ini file: " << numberOfParticles << std::endl;
+
+
 //catch errors 
     //check if minTimeStep is smaller or equal to maxTimeStep
     if (minTimeStep > maxTimeStep)
