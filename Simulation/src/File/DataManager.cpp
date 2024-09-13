@@ -237,6 +237,12 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "visualDensityRadius") simulation->visualDensityRadius = std::stod(value);
                 else if (key == "H0") simulation->H0 = std::stod(value);
                 else if (key == "theta") simulation->theta = std::stod(value);
+                else if (key == "filePath") simulation->ICFileName = value;
+                else if (key == "format") simulation->ICFileFormat = value;
+                else {
+                    std::cerr << "unknown key: " << key << std::endl;
+                    return false;
+                }
             } catch (const std::invalid_argument& e) {
                 std::cerr << "Ungültiger Wert für " << key << ": " << value << std::endl;
                 return false;

@@ -2369,21 +2369,8 @@
   <!-- CITATION DATA -->
   <!-- SECTION 0 -->
   <bcf:bibdata section="0">
-    <bcf:datasource type="file" datatype="bibtex" glob="false">references.bib</bcf:datasource>
   </bcf:bibdata>
   <bcf:section number="0">
-    <bcf:citekey order="1" intorder="1">binney2008galactic</bcf:citekey>
-    <bcf:citekey order="2" intorder="1">harris2020array</bcf:citekey>
-    <bcf:citekey order="3" intorder="1">newton1687principia</bcf:citekey>
-    <bcf:citekey order="4" intorder="1">hunter2007matplotlib</bcf:citekey>
-    <bcf:citekey order="5" intorder="1">friedmann1922</bcf:citekey>
-    <bcf:citekey order="6" intorder="1">hubble1929</bcf:citekey>
-    <bcf:citekey order="7" intorder="1">peebles1993principles</bcf:citekey>
-    <bcf:citekey order="8" intorder="1">newton1687principia</bcf:citekey>
-    <bcf:citekey order="9" intorder="1">press1992numerical</bcf:citekey>
-    <bcf:citekey order="10" intorder="1">binney2008galactic</bcf:citekey>
-    <bcf:citekey order="11" intorder="1">toomre1972</bcf:citekey>
-    <bcf:citekey order="12" intorder="1">springel2005cosmological</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="nty">
@@ -2415,14 +2402,4 @@
     </bcf:sort>
   </bcf:sortingtemplate>
   <!-- DATALISTS -->
-  <bcf:datalist section="0"
-                name="nty/global//global/global/global"
-                type="entry"
-                sortingtemplatename="nty"
-                sortingnamekeytemplatename="global"
-                labelprefix=""
-                uniquenametemplatename="global"
-                labelalphanametemplatename="global"
-                namehashtemplatename="global">
-  </bcf:datalist>
 </bcf:controlfile>

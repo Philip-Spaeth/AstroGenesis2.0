@@ -56,8 +56,19 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
 
-
-    icDataReader->readGadget2Snapshot("galaxy/Galaxy_Test.gal", particles);
+    if(ICFileFormat == "Gadget2")
+    {
+        icDataReader->readGadget2Snapshot(ICFileName, particles);
+    }
+    else if(ICFileFormat == "ASCII")
+    {
+        icDataReader->readASCII(ICFileName, 0, numberOfParticles, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    }
+    else
+    {
+        std::cerr << "Error: Unknown file format." << std::endl;
+        return false;
+    }
     //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
     //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 

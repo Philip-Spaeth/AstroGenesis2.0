@@ -61,6 +61,9 @@ public:
 
     //octree with all particles
     double theta;
+
+    std::string ICFileName;
+    std::string ICFileFormat;
     
     //particles
     std::vector<std::shared_ptr<Particle>> particles;

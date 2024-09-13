@@ -1,0 +1,5 @@
+PWD c:\Schule\IT\AstroGenesis2.0\Documentation\Jufo_Doku
+INPUT C:\Users\Phili\AppData\Local\MiKTeX\miktex\data\le\pdftex\pdflatex.fmt
+INPUT c:\Schule\IT\AstroGenesis2.0\Documentation\Jufo_Doku\Deckblatt.tex
+OUTPUT Deckblatt.log
+INPUT C:\Users\Phili\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx10.tfm

@@ -1,0 +1,11 @@
+\contentsline {section}{\numberline {1}Einleitung}{3}{}%
+\contentsline {section}{\numberline {2}Theoretischer Hintergrund}{3}{}%
+\contentsline {section}{\numberline {3}Grundlagen der N-Body-Simulation}{3}{}%
+\contentsline {section}{\numberline {4}Zeitintegration}{3}{}%
+\contentsline {section}{\numberline {5}Simulationsmethoden}{3}{}%
+\contentsline {section}{\numberline {6}Simulation der konkreten Galaxien}{3}{}%
+\contentsline {section}{\numberline {7}Ergebnisse der Simulation}{3}{}%
+\contentsline {section}{\numberline {8}Diskussion}{3}{}%
+\contentsline {section}{\numberline {9}Fazit}{3}{}%
+\contentsline {section}{\numberline {10}Anhang}{3}{}%
+\contentsline {section}{\numberline {11}Literaturverzeichnis}{3}{}%
