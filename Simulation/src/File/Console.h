@@ -8,7 +8,7 @@
 class Console
 {
 public:
-    Console();
+    Console(){};
     ~Console(){}
 ///console output
     //progress bar

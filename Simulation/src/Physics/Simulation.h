@@ -12,13 +12,16 @@
 //check if windows or linux
 #ifdef _WIN32
 #include "Tree\Node.h"
+#include "Tree\Tree.h"
 #else
 #include "Tree/Node.h"
+#include "Tree/Tree.h"
 #endif
 #include <thread>
 #include <mutex>
 #include <atomic>
 
+class Tree;
 class Simulation
 {
 public:
@@ -26,8 +29,6 @@ public:
     ~Simulation();
     bool init();
     void run();
-
-private:
 
     //simulation parameters, has to the same as in the input dataset(ICs)
     double numberOfParticles = 3909;
@@ -62,16 +63,11 @@ private:
 
     //octree with all particles
     double theta = 0.5;
-    std::shared_ptr<Node> root;
     
     //particles
     std::vector<std::shared_ptr<Particle>> particles;
 
-    //Total Energy of the system
-    std::vector<double> totalPotentialEnergy;
-    std::vector<double> totalKineticEnergy;
-    std::vector<double> totalInternalEnergy;
-    std::vector<double> totalEnergy;
+private:
 
     //pointers to modules
     std::shared_ptr<TimeIntegration> timeIntegration;
@@ -79,24 +75,13 @@ private:
     std::shared_ptr<ICDataReader> icDataReader;
     std::shared_ptr<Console> console;
 
-    //calculations with the octree
-    void buildTree();
-    void calculateForces();
-    double calcTreeWidth();
-    void calcVisualDensity();
     //SPH
-    void initGasParticleProperties(); // update A, U, P after the tree is built and rho is calculated
-    void updateGasParticleProperties(); // update A, T, U, P
-    void calcGasDensity();
-
-    //calculations without the octree
-    void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
+    void initGasParticleProperties(std::shared_ptr<Tree> tree); // update A, U, P after the tree is built and rho is calculated
+    void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update A, T, U, P
 
     //calculations without the octree
     void applyHubbleExpansion();
 
-    //multithreading
-    void calculateForcesWorker();
-    std::atomic<int> currentParticleIndex;
-    std::mutex mutex;
+    //calculations without the octree, just for debugging purposes
+    void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
 };

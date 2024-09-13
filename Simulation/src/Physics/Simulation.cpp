@@ -14,6 +14,8 @@ Simulation::Simulation()
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
     dataManager = std::make_shared<DataManager>("../../output_data/test/");
+    icDataReader = std::make_shared<ICDataReader>();
+    console = std::make_shared<Console>();
 }
 
 Simulation::~Simulation(){}
@@ -66,18 +68,21 @@ bool Simulation::init()
     //if everything is ok, write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 
+
+    std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
+
     //build the tree
-    buildTree();
+    tree->buildTree();
 
     //calculate the visualDensity, just for visualization
-    calcVisualDensity();
+    tree->calcVisualDensity();
     //calculate the gas density for SPH
-    calcGasDensity();
+    tree->calcGasDensity();
     //the first time after the temprature is set and rho is calculated
-    initGasParticleProperties();
+    initGasParticleProperties(tree);
 
     // Initial force calculation
-    calculateForces();
+    tree->calculateForces();
 
     //save the particles data
     dataManager->saveData(particles, 0);
@@ -180,18 +185,20 @@ void Simulation::run()
             }
         }
 
+        std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
+
         // Build the octree
-        buildTree();
+        tree->buildTree();
 
         // Calculate the visual density, just for visualization
-        calcVisualDensity();
+        tree->calcVisualDensity();
 
         // Calculate the gas density for SPH
-        calcGasDensity();
-        updateGasParticleProperties();
+        tree->calcGasDensity();
+        updateGasParticleProperties(tree);
 
         // Recalculate forces
-        calculateForces();
+        tree->calculateForces();
 
         // Second kick
         for (int i = 0; i < numberOfParticles; i++)
@@ -222,61 +229,10 @@ void Simulation::run()
             nextSaveTime += fixedStep;
         }
     }
+
+    std::cout << "Simulation finished." << std::endl;
 }
 
-
-void Simulation::buildTree()
-{
-    //create the root node
-    root = std::make_shared<Node>();
-    //setup the root node
-    root->position = vec3(0.0, 0.0, 0.0);
-    root->radius = calcTreeWidth();
-    root->depth = 0;
-
-    //insert the particles in the tree
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        root->insert(particles[i]);
-    }
-}
-
-void Simulation::calculateForces() 
-{
-    const int numThreads = std::thread::hardware_concurrency();
-    std::vector<std::thread> threads;
-    currentParticleIndex.store(0); // Initialisiere den Atom-Index
-
-    for (int i = 0; i < numThreads; ++i) {
-        threads.push_back(std::thread(&Simulation::calculateForcesWorker, this));
-    }
-
-    for (auto& thread : threads) {
-        thread.join();
-    }
-}
-
-void Simulation::calculateForcesWorker() {
-    while (true) {
-        int i = currentParticleIndex.fetch_add(1);
-        if (i >= numberOfParticles) {
-            break; // Beende, wenn alle Partikel bearbeitet sind
-        }
-
-        //only calculate the forces for the particles that are due to be integrated
-        if (globalTime == particles[i]->nextIntegrationTime)
-        {
-            // Berechne die Kräfte für das Partikel
-            particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            particles[i]->dUdt = 0;
-            if(particles[i]->type == 2)
-            {
-                particles[i]->dUdt = 0;
-            }
-            root->calculateGravityForce(particles[i], e0, theta);
-        }
-    }
-}
 
 void Simulation::applyHubbleExpansion()
 {
@@ -291,76 +247,7 @@ void Simulation::applyHubbleExpansion()
     }
 }
 
-double Simulation::calcTreeWidth()
-{
-    //acceptanceRatio times the standard deviation of the distances
-    double acceptanceRatio = 10;
-
-    if (numberOfParticles == 0) return 0;
-
-    std::vector<double> distances(numberOfParticles);
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        distances[i] = particles[i]->position.length();
-    }
-    double sum = std::accumulate(distances.begin(), distances.end(), 0.0);
-    double mean = sum / numberOfParticles;
-
-    double sq_sum = std::inner_product(distances.begin(), distances.end(), distances.begin(), 0.0);
-    double stdev = std::sqrt(sq_sum / numberOfParticles - mean * mean);
-
-    double maxAcceptableDistance = mean + acceptanceRatio * stdev;
-
-    double max = 0;
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        double distance = distances[i];
-        if (distance <= maxAcceptableDistance && distance > max)
-        {
-            max = distance;
-        }
-    }
-    return max;
-}
-
-void Simulation::calcGasDensity()
-{
-    //set h to 0 for all particles
-    for (int i = 0; i < numberOfParticles; i++)
-    { 
-        if(particles[i] != nullptr)
-        {
-            if(particles[i]->type == 2)
-            {
-                particles[i]->h = 0;
-            }
-        }
-    }
-
-    //calculate the h and density for all particles in the tree
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        if(particles[i] != nullptr)
-        {
-            if(particles[i]->type == 2)
-            {
-            
-                if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
-                {
-                    if(particles[i]->h == 0)
-                    {
-                        node->calcGasDensity(massInH);
-                    }
-                }
-            }
-        }
-    }
-
-    //calculate the median smoothing length and density for all nodes
-    root->calcSPHNodeMedians();
-}
-
-void Simulation::initGasParticleProperties()
+void Simulation::initGasParticleProperties(std::shared_ptr<Tree> tree)
 {
     //update the properties of the gas particles
     for (int i = 0; i < numberOfParticles; i++)
@@ -377,10 +264,10 @@ void Simulation::initGasParticleProperties()
     }
 
     //calc Median Pressure
-    root->calcMedianPressure();
+    tree->root->calcMedianPressure();
 }
 
-void Simulation::updateGasParticleProperties()
+void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
 {
     //update the properties of the gas particles
     for (int i = 0; i < numberOfParticles; i++)
@@ -394,19 +281,7 @@ void Simulation::updateGasParticleProperties()
     }
     
     //calc Median Pressure
-    root->calcMedianPressure();
-}
-
-void Simulation::calcVisualDensity()
-{
-    //calculate the density for all particles in the tree
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        if (auto node = particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
-        {
-            node->calcVisualDensity(visualDensityRadius);
-        }
-    }
+    tree->root->calcMedianPressure();
 }
 
 void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
