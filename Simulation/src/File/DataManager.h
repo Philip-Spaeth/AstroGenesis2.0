@@ -12,6 +12,7 @@ class DataManager
 public:
     DataManager(std::string path);
     ~DataManager(){}
+
     //path to the folder where the simulation data is saved
     std::string path;
 
@@ -26,23 +27,7 @@ public:
     void saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep);
     //read the same format, used in the Render program
     void loadData(int timeStep, std::vector<std::shared_ptr<Particle>>& particles);
+    
+//for reading Gadget2 snapshoot format oder ASCII see the ICDataReader
 
-//Text files, read ASCII format, slower than binary  
-    void readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles);
-
-//Gadget 2 snapshot-format
-    //save and load data in binary format, Gadget2 specific format
-    void readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles);
-
-
-///console output
-    //progress bar
-    void printProgress(double currentStep, double steps, std::string text);
-    //system info
-    static void printSystemInfo();
-
-private:
-    void readBlock(std::ifstream& file, char* buffer, size_t size);
-    std::chrono::_V2::system_clock::time_point startTime;
-    bool timerStarted = false;
 };

@@ -14,9 +14,6 @@ Simulation::Simulation()
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
     dataManager = std::make_shared<DataManager>("../../output_data/test/");
-
-    //write the info file
-    dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 }
 
 Simulation::~Simulation(){}
@@ -43,14 +40,12 @@ bool Simulation::init()
     std::cout << "  End time: " << std::scientific << std::setprecision(0) << (double)endTime / (double)3600.0 << " years" << std::endl;
 
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
-    DataManager::printSystemInfo();
+    Console::printSystemInfo();
 
 
-    dataManager->readGadget2Snapshot("galaxy/Galaxy_Test.gal", particles);
-    //dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    //dataManager->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
-
-    //dataManager->readGadget2Snapshot("Model-M1-G2/snap_000", particles);
+    icDataReader->readGadget2Snapshot("galaxy/Galaxy_Test.gal", particles);
+    //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
     if(numberOfParticles != particles.size())
     {
@@ -67,6 +62,9 @@ bool Simulation::init()
             return false;
         }
     }
+
+    //if everything is ok, write the info file
+    dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 
     //build the tree
     buildTree();
@@ -220,7 +218,7 @@ void Simulation::run()
         if (globalTime >= nextSaveTime)
         {
             dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep));
-            dataManager->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
+            console->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
             nextSaveTime += fixedStep;
         }
     }

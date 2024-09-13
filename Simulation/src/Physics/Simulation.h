@@ -6,6 +6,8 @@
 #include "Constants.h"
 #include "TimeIntegration.h"
 #include "DataManager.h"
+#include "ICDataReader.h"
+#include "Console.h"
 #include "random.h"
 //check if windows or linux
 #ifdef _WIN32
@@ -74,6 +76,8 @@ private:
     //pointers to modules
     std::shared_ptr<TimeIntegration> timeIntegration;
     std::shared_ptr<DataManager> dataManager;
+    std::shared_ptr<ICDataReader> icDataReader;
+    std::shared_ptr<Console> console;
 
     //calculations with the octree
     void buildTree();
