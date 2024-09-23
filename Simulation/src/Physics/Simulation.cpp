@@ -207,16 +207,6 @@ void Simulation::run()
             }
             if (globalTime == particles[i]->nextIntegrationTime)
             {
-                // Definition der physikalischen Konstanten in SI-Einheiten
-                const double Omega_Lambda = 0.7;             // Dichteparameter der Dunklen Energie
-
-                double H0SI = (H0 * 1000) / Units::MPC;  // Hubble-Konstante in 1/s
-
-                // Berechnung der kosmologischen Konstante Λ
-                double Lambda = (3.0 * std::pow(H0SI,2) * Omega_Lambda) / (std::pow(Constants::C, 2));
-
-                particles[i]->acceleration -= (Lambda * (std::pow(Constants::C, 2))) / 3.0 * particles[i]->position;
-
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 timeIntegration->Drift(particles[i], particles[i]->timeStep);
             }
