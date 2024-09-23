@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <iomanip>
+#include "Units.h"
 
 
 Simulation::Simulation()
@@ -206,6 +207,16 @@ void Simulation::run()
             }
             if (globalTime == particles[i]->nextIntegrationTime)
             {
+                // Definition der physikalischen Konstanten in SI-Einheiten
+                const double Omega_Lambda = 0.7;             // Dichteparameter der Dunklen Energie
+
+                double H0SI = (H0 * 1000) / Units::MPC;  // Hubble-Konstante in 1/s
+
+                // Berechnung der kosmologischen Konstante Λ
+                double Lambda = (3.0 * std::pow(H0SI,2) * Omega_Lambda) / (std::pow(Constants::C, 2));
+
+                particles[i]->acceleration -= (Lambda * (std::pow(Constants::C, 2))) / 3.0 * particles[i]->position;
+
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 timeIntegration->Drift(particles[i], particles[i]->timeStep);
             }
@@ -259,20 +270,6 @@ void Simulation::run()
     std::cout << "Simulation finished." << std::endl;
 }
 
-
-void Simulation::applyHubbleExpansion()
-{
-    //convert hubble constant to SI units
-    double kmToMeter = 1e-3;
-    double mpcToMeter = 3.086e22;
-    double hubbleConstantSI = (H0 * kmToMeter) / mpcToMeter;
-
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        particles[i]->velocity += particles[i]->position * hubbleConstantSI;
-    }
-}
-
 void Simulation::initGasParticleProperties(std::shared_ptr<Tree> tree)
 {
     //update the properties of the gas particles
@@ -280,7 +277,6 @@ void Simulation::initGasParticleProperties(std::shared_ptr<Tree> tree)
     {
         if(particles[i]->type == 2)
         {
-            
             //calc U from T, u = 1 / (gamma-1) * bk * T / (meanMolWeight* prtn)
             particles[i]->U = (1.0 / (Constants::GAMMA - 1.0)) * Constants::BK * particles[i]->T / (Constants::meanMolWeight * Constants::prtn);
             //std::cout << "Particle " << particles[i]->rho << std::endl;

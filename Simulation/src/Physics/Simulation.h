@@ -80,9 +80,6 @@ private:
     void initGasParticleProperties(std::shared_ptr<Tree> tree); // update A, U, P after the tree is built and rho is calculated
     void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update A, T, U, P
 
-    //calculations without the octree
-    void applyHubbleExpansion();
-
     //calculations without the octree, just for debugging purposes
     void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
 };

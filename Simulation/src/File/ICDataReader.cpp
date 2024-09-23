@@ -210,7 +210,7 @@ void ICDataReader::readASCII(std::string fileName, int start, int end, vec3 pos,
             else {
                 particles[particleIndex]->type = 1;
             }
-            particles[particleIndex]->T = 1e3;
+            particles[particleIndex]->T = 1e4;
             
             particleIndex++;
             currentIndex++;

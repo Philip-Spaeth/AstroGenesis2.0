@@ -15,20 +15,6 @@ namespace Constants
     constexpr double GAMMA = 5.0/3.0; //adiabatic index for ideal gas
     constexpr double BK = 1.38064852e-23; //Boltzmann constant
     constexpr double prtn = 1.6726219e-27; //proton mass in kg
-    constexpr double meanMolWeight = 0.000588235; //mean molecular weight of the gas
-
-    //lenghts units from meters
-    constexpr double AU = 149597870700.0;
-    constexpr double LY = 9460730472580800.0;
-    constexpr double PC = 3.08567758149136727886e16;
-
-    //mass units from kilograms
-    constexpr double MSUN = 1.98847e30;
-
-    //time units from seconds
-    constexpr double YR = 31557600.0;
-
-    //angle units from radians
-    constexpr double DEG = 0.01745329251994329577;
-    constexpr double RAD = 57.2957795130823208768;
+    //mean mol weight of of a neutral hydrogen atom
+    constexpr double meanMolWeight = 1; //mean molecular weight of the gas
 };
