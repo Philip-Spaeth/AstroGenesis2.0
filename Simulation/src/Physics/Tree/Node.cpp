@@ -306,7 +306,7 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
         newParticle->position.y < position.y - radius || newParticle->position.y > position.y + radius ||
         newParticle->position.z < position.z - radius || newParticle->position.z > position.z + radius) 
     {
-        std::cerr << "Warning: Particles are outside the bounds and will not be properly considered" << std::endl;
+        //std::cerr << "Warning: Particles are outside the bounds and will not be properly considered" << std::endl;
         return;
     }
     

@@ -234,11 +234,11 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "fixedTimeSteps") simulation->fixedTimeSteps = std::stod(value);
                 else if (key == "e0") simulation->e0 = std::stod(value);
                 else if (key == "massInH") simulation->massInH = std::stod(value);
-                else if (key == "visualDensityRadius") simulation->visualDensityRadius = std::stod(value);
                 else if (key == "H0") simulation->H0 = std::stod(value);
                 else if (key == "theta") simulation->theta = std::stod(value);
                 else if (key == "filePath") simulation->ICFileName = value;
                 else if (key == "format") simulation->ICFileFormat = value;
+                else if (key == "outputFolderName") path += (value + "/");
                 else {
                     std::cerr << "unknown key: " << key << std::endl;
                     return false;

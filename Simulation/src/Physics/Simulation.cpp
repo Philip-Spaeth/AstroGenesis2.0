@@ -13,7 +13,7 @@ Simulation::Simulation()
 {
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
-    dataManager = std::make_shared<DataManager>("../../output_data/test/");
+    dataManager = std::make_shared<DataManager>("../../output_data/");
     icDataReader = std::make_shared<ICDataReader>();
     console = std::make_shared<Console>();
 }
@@ -55,7 +55,7 @@ bool Simulation::init()
 
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
-
+    /*
     if(ICFileFormat == "Gadget2")
     {
         icDataReader->readGadget2Snapshot(ICFileName, particles);
@@ -68,9 +68,9 @@ bool Simulation::init()
     {
         std::cerr << "Error: Unknown file format." << std::endl;
         return false;
-    }
-    //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    //icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    }*/
+    icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
+    icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
 
     if(numberOfParticles != particles.size())
     {
@@ -97,6 +97,9 @@ bool Simulation::init()
     //build the tree
     tree->buildTree();
 
+    //print out the tree size
+    std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
+    visualDensityRadius = tree->root->radius / 200;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH

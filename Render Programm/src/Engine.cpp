@@ -469,8 +469,16 @@ void Engine::renderParticles()
 
         if (densityAv != 0) 
         {
-           double factor = particle->density * 10 / densityAv;
-           color = jetColorMap(factor);
+           color.x = particle->density * 10 / densityAv;
+           color.y = 0;
+           color.z = densityAv / particle->density;
+
+           double plus = 0;
+           if(particle->density * 100 / densityAv > 1) plus = particle->density / densityAv / 10;
+
+           color.x += plus * 10;
+           color.y += plus;
+           color.z += plus;
         }
 
         vec3 scaledPosition = particle->position * globalScale;
