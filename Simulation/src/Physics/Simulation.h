@@ -13,9 +13,11 @@
 #ifdef _WIN32
 #include "Tree\Node.h"
 #include "Tree\Tree.h"
+#include "IC\Galaxy.h"
 #else
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
+#include "IC/Galaxy.h"
 #endif
 #include <thread>
 #include <mutex>

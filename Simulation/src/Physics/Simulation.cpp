@@ -70,12 +70,37 @@ bool Simulation::init()
         std::cerr << "Error: Unknown file format." << std::endl;
         return false;
     }*/
-    icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 0, 1250, vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), particles);
-    icDataReader->readASCII("Example_Galaxy_1_ASCII_2500p_from_KlausDolag/Galaxy1.txt", 1250, 2500, vec3(5e22, 1.3e22, 0.0), vec3(-1e5, -0.2e5, 0.0), particles);
+    
+    Galaxy galaxy(&particles);
+    galaxy.M_Halo = 8e40;
+    galaxy.R_Halo = 1e21;
+    galaxy.c_Halo = 10.0;
+    galaxy.N_Halo = 0;
+    
+    galaxy.M_Disk = 1e40;
+    galaxy.R_Disk = 1e20;
+    galaxy.z_Disk = 1e19;
+    galaxy.N_Disk = 0;
+
+    galaxy.M_Bulge = 2e39;
+    galaxy.R_Bulge = 5e19;
+    galaxy.N_Bulge = 1000000;
+
+    galaxy.M_Gas = 1e40;
+    galaxy.R_Gas = 1e20;
+    galaxy.z_Gas = 1e19;
+    galaxy.N_Gas = 0;
+
+    galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
+    galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
+
+    galaxy.generateGalaxy();
 
     if(numberOfParticles != particles.size())
     {
-        std::cerr << "Error: Number of particles in the simulation does not match the number of particles in the data file." << std::endl;
+        std::cerr << "Error: Number of particles in the ConfigFile does not match the number of particles in the data file." << std::endl;
+        std::cout << "Number of particles in the ConfigFile: " << numberOfParticles << std::endl;
+        std::cout << "Number of particles in the data file: " << particles.size() << std::endl;
         return false;
     }
 
@@ -92,14 +117,12 @@ bool Simulation::init()
     //if everything is ok, write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 
-
+    auto startTimeCalc = std::chrono::high_resolution_clock::now(); // Startzeit für die Berechnungen
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-
     //build the tree
     tree->buildTree();
-
-    //print out the tree size
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
+
     visualDensityRadius = tree->root->radius / 200;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
@@ -108,11 +131,41 @@ bool Simulation::init()
     //the first time after the temprature is set and rho is calculated
     initGasParticleProperties(tree);
 
+    auto endTimeCalc = std::chrono::high_resolution_clock::now(); // Endzeit für die Berechnungen
+    // Berechne die Zeit, die für die Berechnungen benötigt wurde
+    auto calcDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeCalc - startTimeCalc).count() /1000.0;
+
+
+    // Startzeit für das Speichern der Daten
+    auto startTimeSave = std::chrono::high_resolution_clock::now();
+
     // Initial force calculation
     tree->calculateForces();
 
     //save the particles data
     dataManager->saveData(particles, 0);
+    auto endTimeSave = std::chrono::high_resolution_clock::now(); // Endzeit für das Speichern der Daten
+    auto saveDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeSave - startTimeSave).count() /1000.0;
+
+    std::cout << std::fixed << "\ncalculation takes " << int(100* (calcDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
+    std::cout << std::fixed << "data saving takes " << int(100* (saveDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
+
+    double saveTime = saveDuration * fixedTimeSteps;
+    double calcTime = calcDuration * (endTime / maxTimeStep);
+    double totalTime = saveTime + calcTime;
+    std::string unit = " s";
+    if (calcTime + totalTime > 60)
+    {
+        totalTime /= 60;
+        unit = " min";
+    }
+    if (calcTime + totalTime > 60)
+    {
+        totalTime /= 60;
+        unit = " h";
+    }
+
+    std::cout << "estimated calculation time: " << totalTime << unit << std::endl;
 
     return true;
 }
@@ -213,7 +266,7 @@ void Simulation::run()
         }
 
         std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-
+        
         // Build the octree
         tree->buildTree();
 
