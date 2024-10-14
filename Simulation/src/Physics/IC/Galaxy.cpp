@@ -13,7 +13,7 @@ Galaxy::~Galaxy() {}
 
 // Implementierung der Hernquist-Dichtefunktion
 double Galaxy::densityHernquist(double r) const {
-    return (M_Bulge / (2.0 * Constants::PI)) * (scaleRadius) / (r * std::pow(r + scaleRadius, 3));
+    return (M_Bulge / (2.0 * Constants::PI)) * (Rs_Bulge) / (r * std::pow(r + Rs_Bulge, 3));
 }
 
 // Implementierung des Hernquist-Potentials
@@ -23,20 +23,20 @@ double Galaxy::PotentialHernquist(double r, double M, double a) const {
 
 // Korrekte Sampling-Funktion basierend auf der kumulativen Massenverteilung
 double Galaxy::sample_radius_bulge(double Y) const {
-    // Berechnung von X_max basierend auf R_Bulge und scaleRadius
-    double X_max = (R_Bulge * R_Bulge) / ((R_Bulge + scaleRadius) * (R_Bulge + scaleRadius));
+    // Berechnung von X_max basierend auf R_Bulge und Rs_Bulge
+    double X_max = (R_Bulge * R_Bulge) / ((R_Bulge + Rs_Bulge) * (R_Bulge + Rs_Bulge));
     
     // Skalieren von Y auf [0, X_max)
     double X = Y * X_max;
     
     // Berechnung von r basierend auf der inversen kumulativen Verteilung
     double sqrtX = std::sqrt(X);
-    return scaleRadius * sqrtX / (1.0 - sqrtX);
+    return Rs_Bulge * sqrtX / (1.0 - sqrtX);
 }
 
 // Berechnung des Potentials für den Bulge
 double Galaxy::potential_bulge(double r) const {
-    return PotentialHernquist(r, M_Bulge, scaleRadius);
+    return PotentialHernquist(r, M_Bulge, Rs_Bulge);
 }
 
 // Berechnung der lokalen Fluchtgeschwindigkeit
@@ -48,7 +48,7 @@ double Galaxy::escape_velocity_bulge(double r) const {
 double Galaxy::f_energy(double E, double r) const {
     // Für eine genaue Verteilungsfunktion müsste die Eddington-Inversion durchgeführt werden.
     // Hier verwenden wir eine vereinfachte Annahme, z.B. Maxwellian-Verteilung.
-    double sigma = velocity_dispersion; // Geschwindigkeitsdispersion
+    double sigma = VelDis_Disk; // Geschwindigkeitsdispersion
     double prefactor = (1.0 / (std::pow(2.0 * Constants::PI, 1.5) * std::pow(sigma, 3)));
     return prefactor * std::exp(-E / (0.5 * sigma * sigma));
 }
@@ -95,9 +95,10 @@ double Galaxy::enclosedMassDisk(double R) const
 
 double Galaxy::enclosedMassBulge(double r) const 
 {
-    // Hernquist-Profil: M_enc = M_Bulge * r / (R_Bulge + r)
-    return M_Bulge * r / (R_Bulge + r);
+    // Hernquist-Profil: M_enc = M_Bulge * r^2 / (R_Bulge + r)^2
+    return M_Bulge * (r * r) / ((R_Bulge + r) * (R_Bulge + r));
 }
+
 
 // Implementierung der generateStarDisk-Funktion
 void Galaxy::generateStarDisk(int start, int end)
@@ -110,7 +111,7 @@ void Galaxy::generateStarDisk(int start, int end)
     std::uniform_real_distribution<> dist_theta(0.0, 2.0 * Constants::PI);
     std::uniform_real_distribution<> dist_uniform(0.0, 1.0); 
     std::normal_distribution<> dist_z(0.0, z_Disk); // Gaussian für z
-    std::normal_distribution<> dist_velocity(0.0, velocity_dispersion); // Geschwindigkeitsdispersion
+    std::normal_distribution<> dist_velocity(0.0, VelDis_Disk); // Geschwindigkeitsdispersion
 
     double R_d = R_Disk; // Skalierungslänge der Scheibe in Metern
     double total_mass = M_Disk; // Gesamtmasse der Scheibe in kg
@@ -198,6 +199,7 @@ void Galaxy::generateBulge(int start, int end)
                 break;
             }
         }
+        v += std::sqrt(Constants::G * enclosedMassDisk(r) / r);
         
         // Zufällige Richtung der Geschwindigkeit
         double vx_dir, vy_dir, vz_dir;

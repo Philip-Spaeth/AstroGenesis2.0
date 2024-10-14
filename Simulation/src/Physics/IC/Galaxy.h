@@ -25,20 +25,20 @@ public:
     double M_Disk;
     double R_Disk;
     double z_Disk;
+    double VelDis_Disk;
     int N_Disk;
 
     // Sternenbulge mit Hernquist-Profil
     double M_Bulge;
     double R_Bulge;
     int N_Bulge;
-    double scaleRadius = 1e19; // Angepasster Skalierungsradius des Hernquist-Profils
+    double Rs_Bulge;
 
     // Gas-Scheibe mit exponentiellem Profil
     double M_Gas;
     double R_Gas;
     double z_Gas;
-    int N_Gas;    
-    double velocity_dispersion = 1e4; // Geschwindigkeitsdispersion
+    int N_Gas;
 
     // Position und Geschwindigkeit der Galaxie
     vec3 galaxyPosition;

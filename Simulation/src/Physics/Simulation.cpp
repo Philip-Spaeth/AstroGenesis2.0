@@ -80,11 +80,13 @@ bool Simulation::init()
     galaxy.M_Disk = 1e40;
     galaxy.R_Disk = 1e20;
     galaxy.z_Disk = 1e19;
-    galaxy.N_Disk = 0;
+    galaxy.VelDis_Disk = 5e4;
+    galaxy.N_Disk = 6000;
 
     galaxy.M_Bulge = 2e39;
     galaxy.R_Bulge = 5e19;
-    galaxy.N_Bulge = 1000000;
+    galaxy.Rs_Bulge = 1e19;
+    galaxy.N_Bulge = 1000;
 
     galaxy.M_Gas = 1e40;
     galaxy.R_Gas = 1e20;
@@ -123,7 +125,7 @@ bool Simulation::init()
     tree->buildTree();
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
 
-    visualDensityRadius = tree->root->radius / 200;
+    visualDensityRadius = tree->root->radius / 500;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
@@ -150,22 +152,18 @@ bool Simulation::init()
     std::cout << std::fixed << "\ncalculation takes " << int(100* (calcDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
     std::cout << std::fixed << "data saving takes " << int(100* (saveDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
 
-    double saveTime = saveDuration * fixedTimeSteps;
-    double calcTime = calcDuration * (endTime / maxTimeStep);
-    double totalTime = saveTime + calcTime;
-    std::string unit = " s";
-    if (calcTime + totalTime > 60)
+    //calculate the storage size of the data
+    //mb per 10000 particles = 1,79 MB
+    double perParticle = 1.797 / 10000.0;
+    double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
+    if(storageSize < 1000)
     {
-        totalTime /= 60;
-        unit = " min";
+        std::cout << "Storage size of the data: " << storageSize << " MB" << std::endl;
     }
-    if (calcTime + totalTime > 60)
+    else
     {
-        totalTime /= 60;
-        unit = " h";
+        std::cout << "Storage size of the data: " << storageSize / 1000 << " GB" << std::endl;
     }
-
-    std::cout << "estimated calculation time: " << totalTime << unit << std::endl;
 
     return true;
 }
