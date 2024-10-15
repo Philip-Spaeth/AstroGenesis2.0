@@ -95,7 +95,7 @@ bool Simulation::init()
     //Dark Matter Halo
     galaxy.M_Halo = 8e40;
     galaxy.R_Halo = 1e21;
-    galaxy.c_Halo = 5;
+    galaxy.c_Halo = 7;
     galaxy.N_Halo = 3000;
 
     galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
