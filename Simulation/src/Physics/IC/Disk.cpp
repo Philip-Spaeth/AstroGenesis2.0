@@ -35,9 +35,9 @@ void Disk::generateStarDisk(int start, int end)
 
 
         double M_enc_bulge = 0;
-        if(g->N_Bulge != 0) M_enc_bulge = Hernquist_Profile::enclosedMassHernquist(R, g->M_Bulge, g->R_Bulge);
+        //if(g->N_Bulge != 0) M_enc_bulge = Hernquist_Profile::enclosedMassHernquist(R, g->M_Bulge, g->R_Bulge);
         double M_enc_Halo = 0;
-        if(g->N_Halo != 0) M_enc_Halo = NFW_Profile::enclosedMass(R, g->M_Halo, g->c_Halo, g->c_Halo);
+        //if(g->N_Halo != 0) M_enc_Halo = NFW_Profile::enclosedMass(R, g->M_Halo, g->c_Halo, g->c_Halo);
         double M_enc_disk = Exponential_Profile::enclosedMassExponential(R, g->M_Disk, g->R_Disk, 10);
         double v_theta = sqrt(Constants::G * (M_enc_disk + M_enc_bulge + M_enc_Halo) / (R + 1e-10)); // Vermeide Division durch Null
 

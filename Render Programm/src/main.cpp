@@ -282,7 +282,7 @@ void renderLive()
     engine.numOfParticles = numOfParticles;
     engine.numTimeSteps = numTimeSteps;
 
-    engine.renderMode = 10;
+    engine.renderMode = 1;
 
     engine.start();
 
