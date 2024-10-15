@@ -47,28 +47,8 @@ public:
     // Methoden zur Generierung der Galaxie
     void generateGalaxy();
 
-private:
     // Zeiger auf die Teilchenliste
     std::vector<std::shared_ptr<Particle>>* particles;
-
-    // Methoden zur Generierung einzelner Komponenten
-    void generateStarDisk(int start, int end);
-    void generateBulge(int start, int end);
-
-    // Methoden zur Berechnung der eingeschlossenen Masse
-    double enclosedMassBulge(double r) const;
-    double enclosedMassDisk(double R) const;
-
-    // Methoden zur Hernquist-Dichte und Potential
-    double densityHernquist(double r) const;
-    double PotentialHernquist(double r, double M, double a) const; // Als const deklariert
-
-    // Zusätzliche private Methoden für die Bulge-Generierung
-    double sample_radius_bulge(double Y) const;
-    double potential_bulge(double r) const;
-    double escape_velocity_bulge(double r) const;
-    double f_energy(double E, double r) const;
-    void sample_direction(double &ux, double &uy, double &uz, std::mt19937 &gen) const; // Korrigierte Parameter
 };
 
 #endif // GALAXY_H

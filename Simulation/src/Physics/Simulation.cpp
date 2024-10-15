@@ -72,26 +72,31 @@ bool Simulation::init()
     }*/
     
     Galaxy galaxy(&particles);
-    galaxy.M_Halo = 8e40;
-    galaxy.R_Halo = 1e21;
-    galaxy.c_Halo = 10.0;
-    galaxy.N_Halo = 0;
+
+    //Bulge
+    galaxy.M_Bulge = 1e39;
+    galaxy.R_Bulge = 5e19;
+    galaxy.Rs_Bulge = 5e18;
+    galaxy.N_Bulge = 1000;
     
+    //Disk
     galaxy.M_Disk = 1e40;
     galaxy.R_Disk = 1e20;
-    galaxy.z_Disk = 1e19;
-    galaxy.VelDis_Disk = 5e4;
-    galaxy.N_Disk = 6000;
+    galaxy.z_Disk = 2e18;
+    galaxy.VelDis_Disk = 1e3;
+    galaxy.N_Disk = 9000;
 
-    galaxy.M_Bulge = 2e39;
-    galaxy.R_Bulge = 5e19;
-    galaxy.Rs_Bulge = 1e19;
-    galaxy.N_Bulge = 1000;
-
+    //Gas in the disk
     galaxy.M_Gas = 1e40;
     galaxy.R_Gas = 1e20;
     galaxy.z_Gas = 1e19;
     galaxy.N_Gas = 0;
+
+    //Dark Matter Halo
+    galaxy.M_Halo = 8e40;
+    galaxy.R_Halo = 1e21;
+    galaxy.c_Halo = 5;
+    galaxy.N_Halo = 3000;
 
     galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
     galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);

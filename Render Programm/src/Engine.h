@@ -66,6 +66,31 @@ public:
     double playSpeed = 1;
     double changeSpeed = 1;
 
+
+    //render Modes:
+    int renderMode = 1;
+    // all with viusalDensity = 1
+    int ALL_WITH_VISUAL_DENSITY = 1;
+    // only Stars and gas with viusalDensity = 2
+    int STARS_AND_GAS_WITH_VISUAL_DENSITY = 2;
+    // only Stars with viusalDensity = 3
+    int STARS_WITH_VISUAL_DENSITY = 3;
+    // only gas with viusalDensity = 4
+    int GAS_WITH_VISUAL_DENSITY = 4;
+    // only dark matter with viusalDensity = 5
+    int DARK_MATTER_WITH_VISUAL_DENSITY = 5;
+
+    // all with diffrent colors
+    int ALL_WITH_DIFFRENT_COLORS = 6;
+    // only Stars and gas with diffrent colors
+    int STARS_AND_GAS_WITH_DIFFRENT_COLORS = 7;
+    // only Stars with diffrent colors
+    int STARS_WITH_DIFFRENT_COLORS = 8;
+    // only gas with diffrent colors
+    int GAS_WITH_DIFFRENT_COLORS = 9;
+    // only dark matter with diffrent colors
+    int DARK_MATTER_WITH_DIFFRENT_COLORS = 10;
+
     bool showBaryonicMatter = true;
     bool showDarkMatter = true;
     int colorMode = 2;

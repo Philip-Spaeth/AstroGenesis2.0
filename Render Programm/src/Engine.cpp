@@ -348,40 +348,18 @@ void Engine::update(int index)
             playSpeed = playSpeed - changeSpeed;
         }
 
-        //if 1 is pressed
-    #ifdef WIN32
-        if (GetAsyncKeyState(49) & 0x8000)
-    #else
-        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-    #endif
-        {
-            //set the play speed to 1
-            playSpeed = 1;
-        }
-
-        //disable / enable dark matter with Z
-    #ifdef WIN32
-        if (GetAsyncKeyState(90) & 0x8000)
-    #else
-        if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
-    #endif
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            showDarkMatter = !showDarkMatter;
-        }
-
-        //disable / enable dark matter with U
-    #ifdef WIN32
-        if (GetAsyncKeyState(85) & 0x8000)
-    #else
-        if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
-    #endif
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            if (colorMode < 2) colorMode++;
-            else colorMode = 0;
-        }
+    if (GetAsyncKeyState(49) & 0x8000) renderMode = 1;
+    if (GetAsyncKeyState(50) & 0x8000) renderMode = 2;
+    if (GetAsyncKeyState(51) & 0x8000) renderMode = 3;
+    if (GetAsyncKeyState(52) & 0x8000) renderMode = 4;
+    if (GetAsyncKeyState(53) & 0x8000) renderMode = 5;
+    if (GetAsyncKeyState(54) & 0x8000) renderMode = 6;
+    if (GetAsyncKeyState(55) & 0x8000) renderMode = 7;
+    if (GetAsyncKeyState(56) & 0x8000) renderMode = 8;
+    if (GetAsyncKeyState(57) & 0x8000) renderMode = 9;
+    if (GetAsyncKeyState(48) & 0x8000) renderMode = 10;
     }
+
     oldIndex = index;
 }
 
@@ -461,24 +439,54 @@ void Engine::renderParticles()
 
     for (const auto& particle : *particles)
     {
+        if(particle->type == 3 && (renderMode == 2 || renderMode == 3 || renderMode == 4 || renderMode == 7 || renderMode == 8 || renderMode == 9))
+        {
+            continue;
+        } 
+        if (particle->type == 2 && (renderMode == 3 || renderMode == 5 || renderMode == 8 || renderMode == 10))
+        {
+            continue;
+        }
+        if(particle->type == 1 && (renderMode == 5 || renderMode == 4 || renderMode == 9 || renderMode == 10))
+        {
+            continue;
+        }
+
         double red = 1;
         double green = 1;
         double blue = 1;
 
         vec3 color = vec3(red, green, blue);
-
-        if (densityAv != 0) 
+        if(renderMode <= 5)
         {
-           color.x = particle->density * 10 / densityAv;
-           color.y = 0;
-           color.z = densityAv / particle->density;
+            if (densityAv != 0) 
+            {
+                color.x = particle->density * 10 / densityAv;
+                color.y = 0;
+                color.z = densityAv / particle->density;
 
-           double plus = 0;
-           if(particle->density * 100 / densityAv > 1) plus = particle->density / densityAv / 10;
+                double plus = 0;
+                if(particle->density * 100 / densityAv > 1) plus = particle->density / densityAv / 10;
 
-           color.x += plus * 10;
-           color.y += plus;
-           color.z += plus;
+                color.x += plus * 10;
+                color.y += plus;
+                color.z += plus;
+            }
+        }
+        else
+        {
+            if(particle->type == 1)
+            {
+                color = vec3(1, 0, 0);
+            }
+            if(particle->type == 2)
+            {
+                color = vec3(0, 1, 0);
+            }
+            if(particle->type == 3)
+            {
+                color = vec3(0, 0, 1);
+            }
         }
 
         vec3 scaledPosition = particle->position * globalScale;

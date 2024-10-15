@@ -282,6 +282,8 @@ void renderLive()
     engine.numOfParticles = numOfParticles;
     engine.numTimeSteps = numTimeSteps;
 
+    engine.renderMode = 10;
+
     engine.start();
 
     double lastFrameTime = glfwGetTime(); // Zeit des letzten Frames
