@@ -77,14 +77,14 @@ bool Simulation::init()
     galaxy.M_Bulge = 1e39;
     galaxy.R_Bulge = 5e19;
     galaxy.Rs_Bulge = 5e18;
-    galaxy.N_Bulge = 1000;
+    galaxy.N_Bulge = 100;
     
     //Disk
     galaxy.M_Disk = 1e40;
     galaxy.R_Disk = 1e20;
     galaxy.z_Disk = 2e18;
     galaxy.VelDis_Disk = 1e3;
-    galaxy.N_Disk = 9000;
+    galaxy.N_Disk = 900;
 
     //Gas in the disk
     galaxy.M_Gas = 1e40;
@@ -96,7 +96,7 @@ bool Simulation::init()
     galaxy.M_Halo = 8e40;
     galaxy.R_Halo = 1e21;
     galaxy.c_Halo = 7;
-    galaxy.N_Halo = 3000;
+    galaxy.N_Halo = 0;
 
     galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
     galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
@@ -157,17 +157,19 @@ bool Simulation::init()
     std::cout << std::fixed << "\ncalculation takes " << int(100* (calcDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
     std::cout << std::fixed << "data saving takes " << int(100* (saveDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
 
-    //calculate the storage size of the data
-    //mb per 10000 particles = 1,79 MB
-    double perParticle = 1.797 / 10000.0;
+    //print the memory size of the data
+    double perParticle = 0;
+    if(dataManager->outputDataFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;
+    if(dataManager->outputDataFormat == "AGFE") perParticle = dataManager->AGFE_MemorySize / 1000.0;
+    if(dataManager->outputDataFormat == "AGFC") perParticle = dataManager->AGFC_MemorySize / 1000.0;
     double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
-    if(storageSize < 1000)
+    if(storageSize < 1000000000)
     {
-        std::cout << "Storage size of the data: " << storageSize << " MB" << std::endl;
+        std::cout << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
     }
     else
     {
-        std::cout << "Storage size of the data: " << storageSize / 1000 << " GB" << std::endl;
+        std::cout << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
 
     return true;

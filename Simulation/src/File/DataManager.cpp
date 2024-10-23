@@ -51,67 +51,77 @@ void DataManager::writeInfoFile(double deltaTime, double timeSteps, double numbe
     file << deltaTime << ";" << std::endl;
     file << timeSteps << ";" << std::endl;
     file << numberOfParticles << ";" << std::endl;
+    file << outputDataFormat << ";" << std::endl;
 
     file.close();
 }
 
-void DataManager::readInfoFile(double& deltaTime, double& timeSteps, double& numberOfParticles)
-{
-    std::string filename = this->path + "info.txt";
-    std::ifstream file(filename);
-    if (!file) {
-        std::cerr << "Could not open the file!" << std::endl;
-        return;
+// Funktion zum Delta-Encoding einer Sequenz von Doubles
+std::vector<double> deltaEncode(const std::vector<double>& data) {
+    std::vector<double> deltas;
+    if (data.empty()) return deltas;
+    deltas.reserve(data.size());
+    deltas.push_back(data[0]); // Erster Wert bleibt unverändert
+    for (size_t i = 1; i < data.size(); ++i) {
+        deltas.push_back(data[i] - data[i - 1]);
     }
-
-    std::string line;
-
-    // Read deltaTime from the first line
-    if (std::getline(file, line)) {
-        std::istringstream iss(line);
-        if (!(iss >> deltaTime)) {
-            std::cerr << "Error reading deltaTime from line: " << line << std::endl;
-            return;
-        }
-    } else {
-        std::cerr << "Error reading the first line for deltaTime" << std::endl;
-        return;
-    }
-
-    // Read timeSteps from the second line
-    if (std::getline(file, line)) {
-        std::istringstream iss(line);
-        if (!(iss >> timeSteps)) {
-            std::cerr << "Error reading timeSteps from line: " << line << std::endl;
-            return;
-        }
-    } else {
-        std::cerr << "Error reading the second line for timeSteps" << std::endl;
-        return;
-    }
-
-    // Read numberOfParticles from the third line
-    if (std::getline(file, line)) {
-        std::istringstream iss(line);
-        if (!(iss >> numberOfParticles)) {
-            std::cerr << "Error reading numberOfParticles from line: " << line << std::endl;
-            return;
-        }
-    } else {
-        std::cerr << "Error reading the third line for numberOfParticles" << std::endl;
-        return;
-    }
-
-    file.close();
+    return deltas;
 }
 
+// Funktion zum Delta-Decoding einer Sequenz von Doubles
+std::vector<double> deltaDecode(const std::vector<double>& deltas) {
+    std::vector<double> data;
+    if (deltas.empty()) return data;
+    data.reserve(deltas.size());
+    data.push_back(deltas[0]);
+    for (size_t i = 1; i < deltas.size(); ++i) {
+        data.push_back(data[i - 1] + deltas[i]);
+    }
+    return data;
+}
+
+// Funktion zum Run-Length Encoding (RLE) einer Sequenz von Bytes
+std::vector<std::pair<uint8_t, uint8_t>> runLengthEncode(const std::vector<uint8_t>& data) {
+    std::vector<std::pair<uint8_t, uint8_t>> encoded;
+    if (data.empty()) return encoded;
+    
+    uint8_t current = data[0];
+    uint8_t count = 1;
+    
+    for (size_t i = 1; i < data.size(); ++i) {
+        if (data[i] == current && count < 255) {
+            count++;
+        } else {
+            encoded.emplace_back(current, count);
+            current = data[i];
+            count = 1;
+        }
+    }
+    encoded.emplace_back(current, count);
+    return encoded;
+}
+
+// Funktion zum Run-Length Decoding (RLE) einer Sequenz von Paaren
+std::vector<uint8_t> runLengthDecode(const std::vector<std::pair<uint8_t, uint8_t>>& encoded) {
+    std::vector<uint8_t> data;
+    data.reserve(encoded.size() * 2); // Geschätzte Größe
+    for (const auto& pair : encoded) {
+        for (uint8_t i = 0; i < pair.second; ++i) {
+            data.push_back(pair.first);
+        }
+    }
+    return data;
+}
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep)
 {
+    // Sicherstellen, dass der Pfad existiert
     if (!fs::exists(this->path))
     {
         fs::create_directories(this->path);
     }
+
+    // Dateiname basierend auf dem Zeitschritt
     std::string filename = this->path + std::to_string(timeStep) + ".bin";
     std::ofstream file(filename, std::ios::out | std::ios::binary);
     if (!file.is_open()) {
@@ -119,81 +129,91 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         return;
     }
 
-    size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(int));
-    file.seekp(totalSize - 1);
-    file.write("", 1);
-
-    char* buffer = reinterpret_cast<char*>(malloc(totalSize));
-    if (buffer) {
-        char* ptr = buffer;
-        for (const auto& particle : particles) {
-            memcpy(ptr, &particle->position, sizeof(vec3)); ptr += sizeof(vec3);
-            memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
-            memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->P, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
-            memcpy(ptr, &particle->U, sizeof(double)); ptr += sizeof(double);
-            memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
+    if (outputDataFormat == "AGF")
+    {
+        // AGF Format
+        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(int));
+        
+        // Speicher für den Puffer allokieren
+        char* buffer = reinterpret_cast<char*>(malloc(totalSize));
+        if (buffer) {
+            char* ptr = buffer;
+            for (const auto& particle : particles) {
+                memcpy(ptr, &particle->position, sizeof(vec3)); ptr += sizeof(vec3);
+                memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
+                memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+                memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
+            }
+            file.write(buffer, totalSize);
+            free(buffer);
         }
-        file.write(buffer, totalSize);
-        free(buffer);
+    }
+    else if (outputDataFormat == "AGFC")
+    {
+        // AGFC Format: Kompaktes Format für Rendering
+        // Speichert nur position (vec3 als 3 floats), visualDensity (float) und type (int)
+
+        // Berechnung der Gesamtgröße: 3 floats für Position, 1 float für visualDensity, 1 int für type pro Particle
+        size_t totalSize = particles.size() * (sizeof(float) * 3 + sizeof(float) + sizeof(int));
+
+        // Puffer allokieren
+        std::vector<char> buffer(totalSize);
+        char* ptr = buffer.data();
+
+        for (const auto& particle : particles)
+        {
+            // Position als float konvertieren
+            float posX = static_cast<float>(particle->position.x);
+            float posY = static_cast<float>(particle->position.y);
+            float posZ = static_cast<float>(particle->position.z);
+            memcpy(ptr, &posX, sizeof(float)); ptr += sizeof(float);
+            memcpy(ptr, &posY, sizeof(float)); ptr += sizeof(float);
+            memcpy(ptr, &posZ, sizeof(float)); ptr += sizeof(float);
+
+            // visualDensity als float konvertieren
+            float visualDensity = static_cast<float>(particle->visualDensity);
+            memcpy(ptr, &visualDensity, sizeof(float)); ptr += sizeof(float);
+
+            // type als int speichern
+            int type = particle->type;
+            memcpy(ptr, &type, sizeof(int)); ptr += sizeof(int);
+        }
+
+        // Puffer in die Datei schreiben
+        file.write(buffer.data(), totalSize);
+    }
+    else if (outputDataFormat == "AGFE")
+    {
+        // AGFE Format: Erweiterte Version (bestehend aus Position, Velocity, Mass, T, P, visualDensity, U, type)
+        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(int));
+        
+        // Speicher für den Puffer allokieren
+        char* buffer = reinterpret_cast<char*>(malloc(totalSize));
+        if (buffer) {
+            char* ptr = buffer;
+            for (const auto& particle : particles) {
+                memcpy(ptr, &particle->position, sizeof(vec3)); ptr += sizeof(vec3);
+                memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
+                memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->P, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+                memcpy(ptr, &particle->U, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
+            }
+            file.write(buffer, totalSize);
+            free(buffer);
+        }
+    }
+    else
+    {
+        std::cerr << "Unknown output data format: " << outputDataFormat << std::endl;
     }
 
     file.close();
 }
-
-void DataManager::loadData(int timeStep, std::vector<std::shared_ptr<Particle>>& particles)
-{
-    std::string filename = this->path + std::to_string(timeStep) + ".bin";
-    std::ifstream file(filename, std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Error opening datafile: " << filename << std::endl;
-        return;
-    }
-
-    particles.clear();
-
-    while (!file.eof()) {
-        auto particle = std::make_shared<Particle>();
-
-        file.read(reinterpret_cast<char*>(&particle->position), sizeof(vec3));
-        if (file.gcount() != sizeof(vec3)) {
-            break;
-        }
-
-        file.read(reinterpret_cast<char*>(&particle->velocity), sizeof(vec3));
-        if (file.gcount() != sizeof(vec3)) {
-            break;
-        }
-
-        file.read(reinterpret_cast<char*>(&particle->mass), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->T), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->P), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->rho), sizeof(double));
-        file.read(reinterpret_cast<char*>(&particle->U), sizeof(double));  
-        file.read(reinterpret_cast<char*>(&particle->type), sizeof(int));
-
-        particles.push_back(particle);
-    }
-
-    file.close();
-}
-
-bool parseKeyValue(const std::string& line, std::string& key, std::string& value) {
-    std::size_t pos = line.find('=');
-    if (pos == std::string::npos) return false;
-
-    key = line.substr(0, pos);
-    value = line.substr(pos + 1);
-
-    // Entferne Leerzeichen
-    key.erase(key.find_last_not_of(" \n\r\t") + 1);
-    value.erase(0, value.find_first_not_of(" \n\r\t"));
-
-    return !key.empty() && !value.empty();
-}
-
 
 // Hilfsfunktion zum Entfernen von Leerzeichen am Anfang und Ende eines Strings
 std::string trim(const std::string& str) {
@@ -207,7 +227,23 @@ std::string trim(const std::string& str) {
     return trimmed;
 }
 
-bool DataManager::loadConfig(const std::string& filename, Simulation* simulation) {
+bool parseKeyValue(const std::string& line, std::string& key, std::string& value) {
+    std::size_t pos = line.find('=');
+    if (pos == std::string::npos) return false;
+
+    key = line.substr(0, pos);
+    value = line.substr(pos + 1);
+
+    // Entferne Leerzeichen
+    key = trim(key);
+    value = trim(value);
+
+    return !key.empty() && !value.empty();
+}
+
+
+bool DataManager::loadConfig(const std::string& filename, Simulation* simulation) 
+{
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Fehler beim Öffnen der Konfigurationsdatei: " << filename << std::endl;
@@ -218,6 +254,12 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
     while (std::getline(file, line)) {
         // Ignoriere leere Zeilen und Kommentare
         if (line.empty() || line[0] == '#') continue;
+
+        // Trim die Zeile, um führende und nachfolgende Leerzeichen zu entfernen
+        std::string trimmedLine = trim(line);
+
+        // Ignoriere leere Zeilen und Kommentare
+        if (trimmedLine.empty() || trimmedLine[0] == '#') continue;
 
         std::string key, value;
         if (parseKeyValue(line, key, value)) {
@@ -239,6 +281,7 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "filePath") simulation->ICFileName = value;
                 else if (key == "format") simulation->ICFileFormat = value;
                 else if (key == "outputFolderName") path += (value + "/");
+                else if (key == "outputDataFormat") outputDataFormat = value;
                 else {
                     std::cerr << "unknown key: " << key << std::endl;
                     return false;

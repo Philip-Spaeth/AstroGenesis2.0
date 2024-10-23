@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include "Constants.h"
 
 class Exponential_Profile
 {
@@ -9,9 +10,9 @@ public:
         // Skalierungslänge R_d
         double R_d = R_Disk / scale;  // Wird oft so gewählt
         // Berechnung von Sigma_0 basierend auf der Gesamtmasse
-        double Sigma_0 = M_Disk / (2 * M_PI * R_d * R_d);
+        double Sigma_0 = M_Disk / (2 * Constants::PI * R_d * R_d);
         // Berechnung der eingeschlossenen Masse innerhalb Radius R
-        double mass_enclosed = 2 * M_PI * Sigma_0 * R_d * R_d * 
+        double mass_enclosed = 2 * Constants::PI * Sigma_0 * R_d * R_d * 
                                (1 - exp(-R / R_d) * (1 + R / R_d));
         return mass_enclosed;
     }
