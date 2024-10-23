@@ -9,9 +9,6 @@ set(MAIN_SOURCE "src/main.cpp")
 find_package(OpenGL REQUIRED)
 
 if(WIN32)
-    # Inkludieren Sie GLM
-    include_directories("${CMAKE_SOURCE_DIR}/External Libraries/GLM/glm")
-
     # Manuelles Hinzufügen der GLFW-Bibliotheken und Include-Verzeichnisse
     set(GLFW_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/External Libraries/GLFW/include")
     set(GLFW_LIBRARY "${CMAKE_SOURCE_DIR}/External Libraries/GLFW/lib-mingw-w64/libglfw3.a")
@@ -28,8 +25,6 @@ if(WIN32)
     list(APPEND ADDITIONAL_LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ole32 uuid)
 endif()
 
-# Define GLM_ENABLE_EXPERIMENTAL to use experimental GLM features
-add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 
 # include all cpp and .h files
 file(GLOB_RECURSE HEADER_FILES "src/*.h")
