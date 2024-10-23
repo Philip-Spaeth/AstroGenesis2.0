@@ -38,7 +38,7 @@ void Halo::generateDarkMatterHalo(int start, int end)
     double M = g->M_Halo;      // Gesamtmasse des Halos
 
     // Berechnung der charakteristischen Dichte rho0 (optional, für Debugging)
-    double rho0 = NFW_Profile::density(Rs, M, Rs, c);
+    //double rho0 = NFW_Profile::density(Rs, M, Rs, c);
     // Optional: Debugging-Ausgabe
     // std::cout << "rho0: " << rho0 << " kg/m^3\n";
 
