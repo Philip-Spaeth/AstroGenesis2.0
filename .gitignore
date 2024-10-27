@@ -1,0 +1,29 @@
+# Ignore build directories
+/AGRender/
+/Simulation/build/
+
+# Ignore binary files
+*.bin
+
+# Ignore Data directory
+/Data/
+
+# Ignore temporary files
+*.tmp
+
+# Ignore object files
+*.obj
+*.o
+
+# Ignore render output files, pictures and videos
+*.png
+*.bmp
+*.jpg
+*.jpeg
+*.avi
+*.mp4
+*.mov
+
+# Ausnahme für .vscode Verzeichnisse
+!/.vscode/
+!/Simulation/.vscode/
