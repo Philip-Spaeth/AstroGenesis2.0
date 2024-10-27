@@ -1,6 +1,6 @@
 # Ignore build directories
 /AGRender/
-/Simulation/build/
+/simulation/build/
 
 # Ignore binary files
 *.bin
@@ -26,4 +26,4 @@
 
 # Ausnahme für .vscode Verzeichnisse
 !/.vscode/
-!/Simulation/.vscode/
+!/simulation/.vscode/
