@@ -28,3 +28,4 @@ output_data/*
 # Ausnahme für .vscode Verzeichnisse
 !/.vscode/
 !/simulation/.vscode/
+!/input_data/Example/
