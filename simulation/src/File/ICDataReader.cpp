@@ -27,123 +27,104 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-//gadget2 snapshot, binary format
-
-void ICDataReader::readBlock(std::ifstream& file, char* buffer, size_t size) {
-    int32_t blockSize;
-    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
-    file.read(buffer, size);
-    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
-}
-
-void ICDataReader::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles) 
+void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
-    std::cout << "Reading Gadget2 snapshot file: " << fileName << std::endl;
-
-    GadgetHeader header;
-
-    std::string fileDir = "input_data/";
-    std::filesystem::path filePath = fileDir;
-    filePath = "../.." / filePath;
-    filePath = filePath / fileName;
+    // Öffne die Datei im Binärmodus
+    std::ifstream file(fileName, std::ios::binary);
     
-    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        std::cerr << "Fehler beim Öffnen der Datei: " << filePath << std::endl;
+        std::cerr << "Fehler: Konnte die Datei nicht öffnen: " << fileName << std::endl;
         return;
     }
 
-    // Lese den Header-Block
-    readBlock(file, reinterpret_cast<char*>(&header), sizeof(GadgetHeader));
+    // Gadget2 Header auslesen
+    gadget2Header header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(header));
 
-    // Berechnung der Gesamtanzahl der Partikel
-    int totalParticles = 0;
-    for (int i = 0; i < 6; ++i) {
-        if (header.npartTotal[i] > 0) {
-            totalParticles += header.npartTotal[i];
-        }
-    }
-    
-    std::cout << "Total Number of Particles in the Gadget2 Snapshoot file: " << totalParticles << std::endl;
-    
-    if (totalParticles <= 0) {
-        std::cerr << "Fehler: Keine Partikel zum Lesen vorhanden." << std::endl;
-        file.close();
+    // Prüfen, ob das Einlesen erfolgreich war
+    if (!file) {
+        std::cerr << "Fehler: Konnte den Header aus der Datei nicht lesen!" << std::endl;
         return;
     }
 
-    // Speicher für Positionen, Geschwindigkeiten und IDs reservieren
-    std::vector<float> positions(3 * totalParticles);
-    std::vector<float> velocities(3 * totalParticles);
-    std::vector<int32_t> particleIDs(totalParticles);
-
-    // Initialisiere Partikel-Vektor
-    particles.clear();
-    particles.reserve(totalParticles);
-
-    // Lese Partikelpositionen
-    readBlock(file, reinterpret_cast<char*>(positions.data()), sizeof(float) * 3 * totalParticles);
-
-    // Lese Partikelgeschwindigkeiten
-    readBlock(file, reinterpret_cast<char*>(velocities.data()), sizeof(float) * 3 * totalParticles);
-
-    // Lese Partikel-IDs (optional, kann übersprungen werden)
-    readBlock(file, reinterpret_cast<char*>(particleIDs.data()), sizeof(int32_t) * totalParticles);
-
-    // Lese Massen (falls sie nicht im Header stehen)
-    std::vector<float> masses(totalParticles, 0.0f);
-    bool hasIndividualMasses = false;
-    for (int i = 0; i < 6; ++i) {
-        if (header.mass[i] == 0 && header.npart[i] > 0) {
-            hasIndividualMasses = true;
-            break;
-        }
+    // Ausgabe des Headers zur Überprüfung
+    std::cout << "Gadget2 Header geladen:" << std::endl;
+    std::cout << "Teilchenanzahl pro Typ:" << std::endl;
+    for (int i = 0; i < NTYPES_HEADER; ++i) {
+        std::cout << "Typ " << i << ": " << header.npart[i] << " Partikel" << std::endl;
     }
-
-    if (hasIndividualMasses) {
-        readBlock(file, reinterpret_cast<char*>(masses.data()), sizeof(float) * totalParticles);
-    } else {
-        int particleOffset = 0;
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j < header.npart[i]; ++j) {
-                masses[particleOffset + j] = header.mass[i];
-            }
-            particleOffset += header.npart[i];
-        }
+    std::cout << "Gesamtanzahl Partikel (npartTotal):" << std::endl;
+    for (int i = 0; i < NTYPES_HEADER; ++i) {
+        std::cout << "Typ " << i << ": " << header.npartTotalLowWord[i] + header.npartTotalHighWord[i] * (1 << 32) << " Partikel" << std::endl;
     }
+    std::cout << "Boxgröße: " << header.BoxSize << std::endl;
+    std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
+    std::cout << "Hubble-Konstante: " << header.Hubble << std::endl;
+    std::cout << "Roteshift: " << header.redshift << std::endl;
+    std::cout << "Simulationszeit: " << header.time << std::endl;
 
-    // Falls Gas-Partikel existieren (Typ 0), lese interne Energie (Temperatur)
-    std::vector<float> internalEnergies(header.npart[0], 0.0f);
-    if (header.npart[0] > 0) {
-        readBlock(file, reinterpret_cast<char*>(internalEnergies.data()), sizeof(float) * header.npart[0]);
-    }
+    particles.resize(header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] + header.npart[5]);
 
-    for (int i = 0; i < totalParticles; ++i) 
-    {
-        auto particle = std::make_shared<Particle>();
-
-        particle->position.x = positions[3 * i] * 3.086e19; // kpc -> m
-        particle->position.y = positions[3 * i + 1] * 3.086e19; // kpc -> m
-        particle->position.z = positions[3 * i + 2] * 3.086e19; // kpc -> m
-
-        particle->velocity.x = velocities[3 * i] * 1e3; // km/s -> m/s
-        particle->velocity.y = velocities[3 * i + 1] *  1e3; // km/s -> m/s
-        particle->velocity.z = velocities[3 * i + 2] *  1e3; // km/s -> m/s
-
-        particle->mass = masses[i] * 1.989e30; // 1e10 M_sun -> kg
-        particle->type = 1;
-
-        if (i < header.npart[0]) {  // Nur Gas-Partikel haben interne Energie
-            particle->U = internalEnergies[i] * 1e6;
-        }
-
-        particles.push_back(particle);
-    }
-
-    std::cout << "Snapshot was successfully read." << std::endl;
-
+    //reading the data
+    //...
+    
+    // Datei schließen
     file.close();
+
+    std::cout << "Header erfolgreich ausgelesen." << std::endl;
 }
+
+void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
+{
+    // Open the file in binary mode
+    std::ifstream file(fileName, std::ios::binary);
+
+    if (!file) {
+        std::cerr << "Error: Could not open file: " << fileName << std::endl;
+        return;
+    }
+
+    // Gadget4 Header - Read only the header
+    gadget4Header header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(header));
+
+    // Check if the read was successful
+    if (!file) {
+        std::cerr << "Error: Could not read the header from the file!" << std::endl;
+        return;
+    }
+
+    // Output header information for verification
+    std::cout << "Gadget4 Header loaded:" << std::endl;
+    std::cout << "Particle counts per type:" << std::endl;
+    for (int i = 0; i < NTYPES_HEADER; ++i) {
+        std::cout << "Type " << i << ": " << header.npart[i] << " particles" << std::endl;
+    }
+
+    std::cout << "Total particle counts (npartTotal):" << std::endl;
+    for (int i = 0; i < NTYPES_HEADER; ++i) {
+        std::cout << "Type " << i << ": " << header.npartTotal[i] << " particles" << std::endl;
+    }
+
+    std::cout << "Box size: " << header.BoxSize << std::endl;
+    std::cout << "Simulation time: " << header.time << std::endl;
+    std::cout << "Redshift: " << header.redshift << std::endl;
+    std::cout << "Number of files in snapshot: " << header.num_files << std::endl;
+
+    // Resize particles vector according to the total number of particles in the snapshot
+    particles.resize(header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
+                     header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5]);
+    
+    //reading the data
+    //...
+    
+    
+    // Close the file after reading the header
+    file.close();
+
+    std::cout << "Header successfully read." << std::endl;
+}
+
 
 //Text files, read ASCII format, slower than binary
 void ICDataReader::readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)

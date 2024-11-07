@@ -108,6 +108,8 @@ bool Simulation::init()
         }
     }
 
+    icDataReader->readGadget2("../../input_data/galaxy_littleendian.dat", particles);
+
     //if everything is ok, write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 
