@@ -53,10 +53,6 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
     for (int i = 0; i < NTYPES_HEADER; ++i) {
         std::cout << "Typ " << i << ": " << header.npart[i] << " Partikel" << std::endl;
     }
-    std::cout << "Gesamtanzahl Partikel (npartTotal):" << std::endl;
-    for (int i = 0; i < NTYPES_HEADER; ++i) {
-        std::cout << "Typ " << i << ": " << header.npartTotalLowWord[i] + header.npartTotalHighWord[i] * (1 << 32) << " Partikel" << std::endl;
-    }
     std::cout << "Boxgröße: " << header.BoxSize << std::endl;
     std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
     std::cout << "Hubble-Konstante: " << header.Hubble << std::endl;
@@ -76,6 +72,7 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
 
 void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
+//Not working ///////////////////////////////7
     // Open the file in binary mode
     std::ifstream file(fileName, std::ios::binary);
 
@@ -101,11 +98,6 @@ void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr
         std::cout << "Type " << i << ": " << header.npart[i] << " particles" << std::endl;
     }
 
-    std::cout << "Total particle counts (npartTotal):" << std::endl;
-    for (int i = 0; i < NTYPES_HEADER; ++i) {
-        std::cout << "Type " << i << ": " << header.npartTotal[i] << " particles" << std::endl;
-    }
-
     std::cout << "Box size: " << header.BoxSize << std::endl;
     std::cout << "Simulation time: " << header.time << std::endl;
     std::cout << "Redshift: " << header.redshift << std::endl;
@@ -118,7 +110,7 @@ void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr
     //reading the data
     //...
     
-    
+
     // Close the file after reading the header
     file.close();
 
