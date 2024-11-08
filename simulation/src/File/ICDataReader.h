@@ -29,7 +29,7 @@ private:
     struct gadget2Header
     {
     int npart[NTYPES_HEADER];                      /**< number of particles of each type in this file */
-    double mass[NTYPES_HEADER];                    /**< mass of particles of each type. If 0, then the masses are explicitly
+    double massarr[NTYPES_HEADER];                    /**< mass of particles of each type. If 0, then the masses are explicitly
                                                           stored in the mass-block of the snapshot file, otherwise they are omitted */
     double time;                                   /**< time of snapshot file */
     double redshift;                               /**< redshift of snapshot file */

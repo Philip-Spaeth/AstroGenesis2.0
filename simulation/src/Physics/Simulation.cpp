@@ -56,7 +56,7 @@ bool Simulation::init()
 
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
-    
+    /*
     Galaxy galaxy(&particles);
 
     //Bulge
@@ -89,6 +89,10 @@ bool Simulation::init()
     galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
 
     galaxy.generateGalaxy();
+    */
+
+    icDataReader->readGadget2("../../input_data/Example/galaxy_littleendian.dat", particles);
+    //icDataReader->readGadget4("../../input_data/ics_collision_g4.dat", particles);
 
     if(numberOfParticles != particles.size())
     {
@@ -108,13 +112,9 @@ bool Simulation::init()
         }
     }
 
-    //icDataReader->readGadget2("../../input_data/Example/galaxy_littleendian.dat", particles);
-    icDataReader->readGadget4("../../input_data/ics_collision_g4.dat", particles);
-
     //if everything is ok, write the info file
     dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
 
-    auto startTimeCalc = std::chrono::high_resolution_clock::now(); // Startzeit für die Berechnungen
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
     tree->buildTree();
@@ -128,25 +128,12 @@ bool Simulation::init()
     //the first time after the temprature is set and rho is calculated
     initGasParticleProperties(tree);
 
-    auto endTimeCalc = std::chrono::high_resolution_clock::now(); // Endzeit für die Berechnungen
-    // Berechne die Zeit, die für die Berechnungen benötigt wurde
-    auto calcDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeCalc - startTimeCalc).count() /1000.0;
-
-
-    // Startzeit für das Speichern der Daten
-    auto startTimeSave = std::chrono::high_resolution_clock::now();
-
     // Initial force calculation
     tree->calculateForces();
 
     //save the particles data
     dataManager->saveData(particles, 0);
-    auto endTimeSave = std::chrono::high_resolution_clock::now(); // Endzeit für das Speichern der Daten
-    auto saveDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeSave - startTimeSave).count() /1000.0;
-
-    std::cout << std::fixed << "\ncalculation takes " << int(100* (calcDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
-    std::cout << std::fixed << "data saving takes " << int(100* (saveDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
-
+    
     //print the memory size of the data
     double perParticle = 0;
     if(dataManager->outputDataFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;

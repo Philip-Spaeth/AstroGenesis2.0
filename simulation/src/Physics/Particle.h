@@ -25,6 +25,8 @@ public:
     vec3 acceleration;
     double mass = 0;
 
+    unsigned int id;
+
     //adaptive time integration
     double timeStep = 0;
     double nextIntegrationTime = 0;
