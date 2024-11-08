@@ -214,6 +214,71 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
         return;
     }
 
+    //read mass:
+    // Überprüfen, ob individuelle Massen vorhanden sind (massarr[i] == 0)
+    const float epsilon = 1e-10;
+    bool has_individual_mass = false;
+    for(int i = 0; i < 6; ++i){
+        if(header.massarr[i] < epsilon)
+        {
+            if(header.npart[i] != 0)
+            {
+                has_individual_mass = true;
+                break;
+            }
+            else
+            {
+                std::cout << "Mass for type: "<< i << " is 0 because Npart is 0" << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << std::scientific << "Mass for type: "<< i << " is " <<  header.massarr[i] << std::endl;
+        }
+    }
+
+    std::vector<float> masses; // Vektor zur Speicherung der Massen
+    if(has_individual_mass)
+    {
+        // Lesen der Blockgröße vor dem MASS-Block
+        unsigned int mass_block_size_start;
+        file.read(reinterpret_cast<char*>(&mass_block_size_start), sizeof(mass_block_size_start));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Start-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Berechnen der erwarteten Größe für den MASS-Block: N * sizeof(float)
+        unsigned int expected_mass_block_size = total_particles * sizeof(float);
+        if (mass_block_size_start != expected_mass_block_size) {
+            std::cerr << "Warnung: Erwartete MASS-Blockgröße (" << expected_mass_block_size 
+                      << " bytes) stimmt nicht mit gelesener Größe (" << mass_block_size_start << " bytes) überein." << std::endl;
+            // Optional: Fortfahren oder Abbruch
+        }
+
+        // Lesen der Massendaten
+        masses.resize(total_particles);
+        file.read(reinterpret_cast<char*>(masses.data()), mass_block_size_start);
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Massendaten nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Lesen der Blockgröße nach dem MASS-Block
+        unsigned int mass_block_size_end;
+        file.read(reinterpret_cast<char*>(&mass_block_size_end), sizeof(mass_block_size_end));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die End-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Überprüfen, ob die Blockgrößen übereinstimmen
+        if (mass_block_size_start != mass_block_size_end) {
+            std::cerr << "Fehler: Start- und End-Blockgrößen des MASS-Blocks stimmen nicht überein!" << std::endl;
+            return;
+        }
+    }
+
     // ### Erstellen der Partikel mit ID, Position und Geschwindigkeit ###
 
     std::cout << "\nErstelle Partikel mit ID, Position und Geschwindigkeit..." << std::endl;
@@ -227,11 +292,23 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
             }
             auto particle = std::make_shared<Particle>();
             particle->id = ids[current_particle];
-            if(type == 1) particle->type = 3;
-            if(type == 2) particle->type = 1;
+            //if halo
+            if(type == 1)  
+            {   
+                particle->type = 3;
+            }
+            //if disk, bulge, star or Bndry
+            if(type == 2 || type == 4 || type == 5) 
+            {
+                particle->type = 1;
+            }
+            //if gas
+            if(type == 0) 
+            {
+                particle->type = 2;
+            }
 
-            //not working
-            particle->mass = 5e37;
+            particle->mass = header.massarr[type] * Units::MSUN * 1e10;
 
             particle->position = vec3(
                 positions[3*current_particle],
@@ -247,7 +324,6 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
             //scale to SI units
             particle->position *= Units::KPC;
             particle->velocity *= Units::KMS;
-            //particle->mass *= Units::MSUN;
 
             particles.push_back(particle);
             current_particle++;
@@ -303,7 +379,7 @@ void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr
     // Output header information for verification
     std::cout << "Gadget4 Header loaded:" << std::endl;
     std::cout << "Particle counts per type:" << std::endl;
-    for (int i = 0; i < NTYPES_HEADER; ++i) {
+    for (int i = 0; i < 6; ++i) {
         std::cout << "Type " << i << ": " << header.npart[i] << " particles" << std::endl;
     }
 
