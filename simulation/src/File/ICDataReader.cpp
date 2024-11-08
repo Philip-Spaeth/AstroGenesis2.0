@@ -220,7 +220,7 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
     unsigned int current_particle = 0;
 
     for(int type = 0; type < 6; ++type){
-        for(unsigned int i = 0; i < (int)header.npart[type]; ++i){
+        for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
             if(current_particle >= total_particles){
                 std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
                 return;
@@ -231,7 +231,7 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
             if(type == 2) particle->type = 1;
 
             //not working
-            particle->mass = 1e36;
+            particle->mass = 5e37;
 
             particle->position = vec3(
                 positions[3*current_particle],

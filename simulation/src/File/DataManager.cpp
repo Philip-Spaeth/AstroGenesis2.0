@@ -143,7 +143,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
                 memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
-                memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
                 memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
             }
             file.write(buffer, totalSize);
