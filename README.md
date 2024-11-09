@@ -36,8 +36,4 @@ We welcome contributions from the community! Whether you are fixing bugs, adding
 ## License
 Astro Genesis 2.0 is released under the GNU 3.0 License. See 'LICENSE' for more information.
 
-## Examples
-
-Andromeda galaxy crahes into the Milky Way. According to our simulation in 2 billion years.
-
 https://github.com/Philip-Spaeth/N-Body-Galaxy-Simulation/assets/142172237/efb3925b-2b48-48e0-a953-e631f030d550
