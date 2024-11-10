@@ -13,11 +13,8 @@ public:
     ICDataReader(){}
     ~ICDataReader(){}
 
-//read ASCII format, slower than binary - change for diffrent format 
-    void readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles);
-
 //Gadget snapshot-format
-    void readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles);
+    bool readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles);
 
 private:
 

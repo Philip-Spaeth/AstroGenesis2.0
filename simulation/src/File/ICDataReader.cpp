@@ -28,7 +28,7 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
+bool ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
     std::cout << "reading gadget2 snapshot ..." << std::endl;
     // Öffne die Datei im Binärmodus
@@ -36,7 +36,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     
     if (!file) {
         std::cerr << "Fehler: Konnte die Datei nicht öffnen: " << fileName << std::endl;
-        return;
+        return false;
     }
 
     // Gadget2 Header auslesen
@@ -47,14 +47,14 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&block_size_start), sizeof(block_size_start));
     if (!file) {
         std::cerr << "Fehler: Konnte die Start-Blockgröße nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Lesen des Headers
     file.read(reinterpret_cast<char*>(&header), sizeof(header));
     if (!file) {
         std::cerr << "Fehler: Konnte den Header aus der Datei nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Lesen der Blockgröße nach dem Header
@@ -62,13 +62,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&block_size_end), sizeof(block_size_end));
     if (!file) {
         std::cerr << "Fehler: Konnte die End-Blockgröße des Headers nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Überprüfen, ob die Blockgrößen übereinstimmen
     if (block_size_start != sizeof(header)) {
         std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
-        return;
+        return false;
     }
 /*
     // Ausgabe des Headers zur Überprüfung
@@ -102,7 +102,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&pos_block_size_start), sizeof(pos_block_size_start));
     if (!file) {
         std::cerr << "Fehler: Konnte die Start-Blockgröße des POS-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Berechnen der erwarteten Größe für den POS-Block: N * 3 * sizeof(float)
@@ -118,7 +118,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(positions.data()), pos_block_size_start);
     if (!file) {
         std::cerr << "Fehler: Konnte die Positionsdaten nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Lesen der Blockgröße nach dem POS-Block
@@ -126,13 +126,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&pos_block_size_end), sizeof(pos_block_size_end));
     if (!file) {
         std::cerr << "Fehler: Konnte die End-Blockgröße des POS-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Überprüfen, ob die Blockgrößen übereinstimmen
     if (pos_block_size_start != pos_block_size_end) {
         std::cerr << "Fehler: Start- und End-Blockgrößen des POS-Blocks stimmen nicht überein!" << std::endl;
-        return;
+        return false;
     }
 
     // ### Lesen des Geschwindigkeitsblocks (VEL) ###
@@ -142,7 +142,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&vel_block_size_start), sizeof(vel_block_size_start));
     if (!file) {
         std::cerr << "Fehler: Konnte die Start-Blockgröße des VEL-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Berechnen der erwarteten Größe für den VEL-Block: N * 3 * sizeof(float)
@@ -158,7 +158,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(velocities.data()), vel_block_size_start);
     if (!file) {
         std::cerr << "Fehler: Konnte die Geschwindigkeitsdaten nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Lesen der Blockgröße nach dem VEL-Block
@@ -166,13 +166,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&vel_block_size_end), sizeof(vel_block_size_end));
     if (!file) {
         std::cerr << "Fehler: Konnte die End-Blockgröße des VEL-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Überprüfen, ob die Blockgrößen übereinstimmen
     if (vel_block_size_start != vel_block_size_end) {
         std::cerr << "Fehler: Start- und End-Blockgrößen des VEL-Blocks stimmen nicht überein!" << std::endl;
-        return;
+        return false;
     }
 
     // ### Lesen des ID-Blocks (ID) ###
@@ -182,7 +182,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&id_block_size_start), sizeof(id_block_size_start));
     if (!file) {
         std::cerr << "Fehler: Konnte die Start-Blockgröße des ID-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Berechnen der erwarteten Größe für den ID-Block: N * sizeof(unsigned int)
@@ -198,7 +198,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(ids.data()), id_block_size_start);
     if (!file) {
         std::cerr << "Fehler: Konnte die ID-Daten nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Lesen der Blockgröße nach dem ID-Block
@@ -206,13 +206,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.read(reinterpret_cast<char*>(&id_block_size_end), sizeof(id_block_size_end));
     if (!file) {
         std::cerr << "Fehler: Konnte die End-Blockgröße des ID-Blocks nicht lesen!" << std::endl;
-        return;
+        return false;
     }
 
     // Überprüfen, ob die Blockgrößen übereinstimmen
     if (id_block_size_start != id_block_size_end) {
         std::cerr << "Fehler: Start- und End-Blockgrößen des ID-Blocks stimmen nicht überein!" << std::endl;
-        return;
+        return false;
     }
 
     //read mass:
@@ -246,7 +246,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(&mass_block_size_start), sizeof(mass_block_size_start));
         if (!file) {
             std::cerr << "Fehler: Konnte die Start-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Berechnen der erwarteten Größe für den MASS-Block: N * sizeof(float)
@@ -262,7 +262,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(masses.data()), mass_block_size_start);
         if (!file) {
             std::cerr << "Fehler: Konnte die Massendaten nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Lesen der Blockgröße nach dem MASS-Block
@@ -270,13 +270,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(&mass_block_size_end), sizeof(mass_block_size_end));
         if (!file) {
             std::cerr << "Fehler: Konnte die End-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Überprüfen, ob die Blockgrößen übereinstimmen
         if (mass_block_size_start != mass_block_size_end) {
             std::cerr << "Fehler: Start- und End-Blockgrößen des MASS-Blocks stimmen nicht überein!" << std::endl;
-            return;
+            return false;
         }
     }
 
@@ -291,7 +291,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(&u_block_size_start), sizeof(u_block_size_start));
         if (!file) {
             std::cerr << "Fehler: Konnte die Start-Blockgröße des U-Blocks nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Erwartete Größe des U-Blocks berechnen: Anzahl der Gaspartikel * sizeof(float)
@@ -307,7 +307,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(u_values.data()), u_block_size_start);
         if (!file) {
             std::cerr << "Fehler: Konnte die U-Daten nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Lesen der Blockgröße nach dem U-Block
@@ -315,13 +315,13 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
         file.read(reinterpret_cast<char*>(&u_block_size_end), sizeof(u_block_size_end));
         if (!file) {
             std::cerr << "Fehler: Konnte die End-Blockgröße des U-Blocks nicht lesen!" << std::endl;
-            return;
+            return false;
         }
 
         // Überprüfen, ob die Blockgrößen übereinstimmen
         if (u_block_size_start != u_block_size_end) {
             std::cerr << "Fehler: Start- und End-Blockgrößen des U-Blocks stimmen nicht überein!" << std::endl;
-            return;
+            return false;
         }
     
     unsigned int current_particle = 0;
@@ -331,7 +331,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
             for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
                 if(current_particle >= total_particles){
                     std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
-                    return;
+                    return false;
                 }
                 auto particle = std::make_shared<Particle>();
                 particle->id = ids[current_particle];
@@ -397,7 +397,7 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
             for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
                 if(current_particle >= total_particles){
                     std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
-                    return;
+                    return false;
                 }
                 auto particle = std::make_shared<Particle>();
                 particle->id = ids[current_particle];
@@ -450,82 +450,5 @@ void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::sha
     file.close();
 
     std::cout << "gadget2 snapshot sucessfully read." << std::endl;
-}
-
-
-//Text files, read ASCII format, slower than binary
-void ICDataReader::readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
-{
-    std::string fileDir = "input_data/";
-    std::filesystem::path filePath = fileDir;
-    filePath = "../.." / filePath;
-
-    filePath = filePath / fileName;
-
-
-    // Ensure the particles vector is large enough to hold the new particles
-    if (particles.size() < static_cast<size_t>(end)) {
-        particles.resize(end);
-    }
-
-    int particleIndex = start;
-
-    for (int i = start; i < end; i += 1250) {
-        std::ifstream file(filePath);
-        if (!file) {
-            std::cout << "Reading file: " << filePath << std::endl;
-            std::cerr << "Could not open the data file!" << std::endl;
-            return;
-        }
-
-        std::string line;
-        int currentIndex = 0;
-
-        while (std::getline(file, line) && particleIndex < end) 
-        {
-            std::istringstream iss(line);
-            vec3 position, velocity;
-            double mass;
-
-            // Assuming the file format is: position3d (3 values), velocity3d (3 values), mass (1 value)
-            if (!(iss >> position.x >> position.y >> position.z 
-                    >> velocity.x >> velocity.y >> velocity.z 
-                    >> mass)) {
-                std::cerr << "Error parsing line: " << line << std::endl;
-                continue;
-            }
-            //// depends on the units of the template file
-            // Convert the units: data units: kpc, km/s, 1e10 Msun -> internal units: m, m/s, kg
-            position *= 3.086e19;
-            velocity *= 1e3;
-            mass *= 1e10 * 1.989e30;
-
-            // Add the offset
-            position += pos;
-            velocity += vel;
-
-            // Insert the particle at the correct index
-            particles[particleIndex] = std::make_shared<Particle>();
-
-            //set the particle properties
-            particles[particleIndex]->position = position;
-            particles[particleIndex]->velocity = velocity;
-            particles[particleIndex]->mass = mass;
-            //one of 10 particles is a gas particle
-            if (currentIndex % 10 == 0) {
-                particles[particleIndex]->type = 2;
-            }
-            else {
-                particles[particleIndex]->type = 1;
-            }
-            particles[particleIndex]->T = 1e4;
-            
-            particleIndex++;
-            currentIndex++;
-        }
-
-        file.close();
-    }
-
-    std::cout << "Initial Condition: " << fileName << " with particles from index " << start << " to " << (particleIndex - 1) << std::endl;
+    return true;
 }

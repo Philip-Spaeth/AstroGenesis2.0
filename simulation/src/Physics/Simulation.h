@@ -63,19 +63,15 @@ public:
 
     //octree with all particles
     double theta;
-
-    std::string ICFileName;
-    std::string ICFileFormat;
     
     //particles
     std::vector<std::shared_ptr<Particle>> particles;
-
+    std::shared_ptr<ICDataReader> icDataReader;
 private:
 
     //pointers to modules
     std::shared_ptr<TimeIntegration> timeIntegration;
     std::shared_ptr<DataManager> dataManager;
-    std::shared_ptr<ICDataReader> icDataReader;
     std::shared_ptr<Console> console;
 
     //SPH

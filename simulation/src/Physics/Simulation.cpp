@@ -56,45 +56,46 @@ bool Simulation::init()
 
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
-    /*
-    Galaxy galaxy(&particles);
-
-    //Bulge
-    galaxy.M_Bulge = 1e39;
-    galaxy.R_Bulge = 5e19;
-    galaxy.Rs_Bulge = 5e18;
-    galaxy.N_Bulge = 0;
     
-    //Disk
-    galaxy.M_Disk = 1e40;
-    galaxy.R_Disk = 1e20;
-    galaxy.z_Disk = 2e18;
-    galaxy.VelDis_Disk = 1e3;
-    galaxy.N_Disk = 500;
+    if(true) dataManager->loadICs(this);
+    //get ICs from Config file:
+    else
+    {
+        //custom setup:
+        std::cout << "reading custom ICs from Simulation.cpp" << std::endl;
+        Galaxy galaxy(&particles);
 
-    //Gas in the disk
-    galaxy.M_Gas = 1e39;
-    galaxy.R_Gas = 1e20;
-    galaxy.z_Gas = 2e18;
-    galaxy.VelDis_Gas = 1e3;
-    galaxy.N_Gas = 500;
+        //Bulge
+        galaxy.M_Bulge = 1e39;
+        galaxy.R_Bulge = 5e19;
+        galaxy.Rs_Bulge = 5e18;
+        galaxy.N_Bulge = 0;
+        
+        //Disk
+        galaxy.M_Disk = 1e40;
+        galaxy.R_Disk = 1e20;
+        galaxy.z_Disk = 2e18;
+        galaxy.VelDis_Disk = 1e3;
+        galaxy.N_Disk = 500;
 
-    //Dark Matter Halo
-    galaxy.M_Halo = 8e40;
-    galaxy.R_Halo = 1e21;
-    galaxy.c_Halo = 7;
-    galaxy.N_Halo = 0;
+        //Gas in the disk
+        galaxy.M_Gas = 1e39;
+        galaxy.R_Gas = 1e20;
+        galaxy.z_Gas = 2e18;
+        galaxy.VelDis_Gas = 1e3;
+        galaxy.N_Gas = 500;
 
-    galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
-    galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
+        //Dark Matter Halo
+        galaxy.M_Halo = 8e40;
+        galaxy.R_Halo = 1e21;
+        galaxy.c_Halo = 7;
+        galaxy.N_Halo = 0;
 
-    galaxy.generateGalaxy();
-    */
-    //example ICs:
-    //icDataReader->readGadgetSnapshot("../../input_data/example/galaxy_littleendian.dat", particles);
-    icDataReader->readGadgetSnapshot("../../input_data/example/gassphere_littleendian.dat", particles);
-    //icDataReader->readGadgetSnapshot("../../input_data/example/cluster_littleendian.dat", particles);
+        galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
+        galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
 
+        galaxy.generateGalaxy();
+    }
 
     if(numberOfParticles != particles.size())
     {
