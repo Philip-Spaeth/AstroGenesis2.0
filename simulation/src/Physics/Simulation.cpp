@@ -90,9 +90,11 @@ bool Simulation::init()
 
     galaxy.generateGalaxy();
     */
+    //example ICs:
+    //icDataReader->readGadgetSnapshot("../../input_data/example/galaxy_littleendian.dat", particles);
+    icDataReader->readGadgetSnapshot("../../input_data/example/gassphere_littleendian.dat", particles);
+    //icDataReader->readGadgetSnapshot("../../input_data/example/cluster_littleendian.dat", particles);
 
-    icDataReader->readGadget2("../../input_data/Example/galaxy_littleendian.dat", particles);
-    //icDataReader->readGadget4("../../input_data/ics_collision_g4.dat", particles);
 
     if(numberOfParticles != particles.size())
     {
@@ -142,11 +144,11 @@ bool Simulation::init()
     double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
     if(storageSize < 1000000000)
     {
-        std::cout << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
+        std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
     }
     else
     {
-        std::cout << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
+        std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
 
     return true;
@@ -302,8 +304,10 @@ void Simulation::initGasParticleProperties(std::shared_ptr<Tree> tree)
     {
         if(particles[i]->type == 2)
         {
-            //calc U from T, u = 1 / (gamma-1) * bk * T / (meanMolWeight* prtn)
-            particles[i]->U = (1.0 / (Constants::GAMMA - 1.0)) * Constants::BK * particles[i]->T / (Constants::meanMolWeight * Constants::prtn);
+            //U is already set in the ICs
+            //if not calculate it:
+                //calc U from T, u = 1 / (gamma-1) * bk * T / (meanMolWeight* prtn)
+                //particles[i]->U = (1.0 / (Constants::GAMMA - 1.0)) * Constants::BK * particles[i]->T / (Constants::meanMolWeight * Constants::prtn);
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
         }
@@ -324,7 +328,8 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
             //calc T, T = (gamma-1)*u*prtn / (bk*rho)
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK * particles[i]->rho);
-            if(i == 700) std::cout << particles[i]->rho << std::endl;
+            //std::cout << particles[i]->T << std::endl;
+            //if(i == 700) std::cout << particles[i]->rho << std::endl;
         }
     }
     

@@ -28,8 +28,9 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
+void ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
+    std::cout << "reading gadget2 snapshot ..." << std::endl;
     // Öffne die Datei im Binärmodus
     std::ifstream file(fileName, std::ios::binary);
     
@@ -69,7 +70,7 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
         std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
         return;
     }
-
+/*
     // Ausgabe des Headers zur Überprüfung
     std::cout << "Gadget2 Header geladen:" << std::endl;
     std::cout << "Teilchenanzahl pro Typ:" << std::endl;
@@ -84,7 +85,7 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
     std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
     std::cout << "Roteshift: " << header.redshift << std::endl;
     std::cout << "Simulationszeit: " << header.time << std::endl;
-
+*/
     // Gesamtanzahl der Partikel berechnen
     unsigned int total_particles = 0;
     for(int i = 0; i < 6; ++i){
@@ -228,12 +229,12 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
             }
             else
             {
-                std::cout << "Mass for type: "<< i << " is 0 because Npart is 0" << std::endl;
+                //std::cout << "Mass for type: "<< i << " is 0 because Npart is 0" << std::endl;
             }
         }
         else
         {
-            std::cout << std::scientific << "Mass for type: "<< i << " is " <<  header.massarr[i] << std::endl;
+            //std::cout << std::scientific << "Mass for type: "<< i << " is " <<  header.massarr[i] << std::endl;
         }
     }
 
@@ -279,123 +280,176 @@ void ICDataReader::readGadget2(std::string fileName, std::vector<std::shared_ptr
         }
     }
 
-    // ### Erstellen der Partikel mit ID, Position und Geschwindigkeit ###
+    // ### Lesen des U-Blocks (interne Energie) ###
 
-    std::cout << "\nErstelle Partikel mit ID, Position und Geschwindigkeit..." << std::endl;
+    // Überprüfen, ob Gaspartikel vorhanden sind
+    if(header.npart[0] > 0) // Nur wenn es Gaspartikel gibt
+    {
+        std::cout << "reading U from gas particles" << std::endl;
+        // Lesen der Blockgröße vor dem U-Block
+        unsigned int u_block_size_start;
+        file.read(reinterpret_cast<char*>(&u_block_size_start), sizeof(u_block_size_start));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Start-Blockgröße des U-Blocks nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Erwartete Größe des U-Blocks berechnen: Anzahl der Gaspartikel * sizeof(float)
+        unsigned int expected_u_block_size = header.npart[0] * sizeof(float);
+        if (u_block_size_start != expected_u_block_size) {
+            std::cerr << "Warnung: Erwartete U-Blockgröße (" << expected_u_block_size 
+                      << " Bytes) stimmt nicht mit gelesener Größe (" << u_block_size_start << " Bytes) überein." << std::endl;
+            // Optional: Fortfahren oder Abbruch
+        }
+
+        // Lesen der U-Daten
+        std::vector<float> u_values(header.npart[0]); // Interne Energie pro Masseneinheit für Gaspartikel
+        file.read(reinterpret_cast<char*>(u_values.data()), u_block_size_start);
+        if (!file) {
+            std::cerr << "Fehler: Konnte die U-Daten nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Lesen der Blockgröße nach dem U-Block
+        unsigned int u_block_size_end;
+        file.read(reinterpret_cast<char*>(&u_block_size_end), sizeof(u_block_size_end));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die End-Blockgröße des U-Blocks nicht lesen!" << std::endl;
+            return;
+        }
+
+        // Überprüfen, ob die Blockgrößen übereinstimmen
+        if (u_block_size_start != u_block_size_end) {
+            std::cerr << "Fehler: Start- und End-Blockgrößen des U-Blocks stimmen nicht überein!" << std::endl;
+            return;
+        }
+    
     unsigned int current_particle = 0;
+    unsigned int gas_particle_index = 0;
 
     for(int type = 0; type < 6; ++type){
-        for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
-            if(current_particle >= total_particles){
-                std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
-                return;
-            }
-            auto particle = std::make_shared<Particle>();
-            particle->id = ids[current_particle];
-            //if halo
-            if(type == 1)  
-            {   
-                particle->type = 3;
-            }
-            //if disk, bulge, star or Bndry
-            if(type == 2 || type == 4 || type == 5) 
-            {
-                particle->type = 1;
-            }
-            //if gas
-            if(type == 0) 
-            {
-                particle->type = 2;
-            }
+            for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
+                if(current_particle >= total_particles){
+                    std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
+                    return;
+                }
+                auto particle = std::make_shared<Particle>();
+                particle->id = ids[current_particle];
 
-            particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                // Setzen des Partikeltyps und der Masse
+                if(type == 1)  
+                {   
+                    particle->type = 3; // Halo
+                }
+                else if(type == 2 || type == 4 || type == 5) 
+                {
+                    particle->type = 1; // Disk, Bulge, Stars, Bndry
+                }
+                else if(type == 0) 
+                {
+                    particle->type = 2; // Gas
+                }
 
-            particle->position = vec3(
-                positions[3*current_particle],
-                positions[3*current_particle + 1],
-                positions[3*current_particle + 2]
-            );
-            particle->velocity = vec3(
-                velocities[3*current_particle],
-                velocities[3*current_particle + 1],
-                velocities[3*current_particle + 2]
-            );
+                if(has_individual_mass)
+                {
+                    particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                }
+                else
+                {
+                    particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                }
 
-            //scale to SI units
-            particle->position *= Units::KPC;
-            particle->velocity *= Units::KMS;
+                particle->position = vec3(
+                    positions[3*current_particle],
+                    positions[3*current_particle + 1],
+                    positions[3*current_particle + 2]
+                );
+                particle->velocity = vec3(
+                    velocities[3*current_particle],
+                    velocities[3*current_particle + 1],
+                    velocities[3*current_particle + 2]
+                );
 
-            particles.push_back(particle);
-            current_particle++;
+                // Skalierung auf SI-Einheiten
+                particle->position *= Units::KPC;
+                particle->velocity *= Units::KMS;
+
+                // Interne Energie für Gaspartikel zuweisen
+                if(type == 0) // Gaspartikel
+                {
+                    //scale to SI
+                    particle->U = u_values[gas_particle_index] * 1e6;
+                    //std::cout << particle->U << std::endl;
+                    gas_particle_index++;
+                }
+
+                particles.push_back(particle);
+                current_particle++;
+            }
         }
     }
+    else // Wenn keine Gaspartikel vorhanden sind
+    {
+        // Ihr bestehender Code zum Erstellen der Partikel
+        unsigned int current_particle = 0;
 
+        for(int type = 0; type < 6; ++type){
+            for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
+                if(current_particle >= total_particles){
+                    std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
+                    return;
+                }
+                auto particle = std::make_shared<Particle>();
+                particle->id = ids[current_particle];
 
-    // ### Ausgabe ausgewählter Partikel ###
+                // Setzen des Partikeltyps und der Masse
+                if(type == 1)  
+                {   
+                    particle->type = 3; // Halo
+                }
+                else if(type == 2 || type == 4 || type == 5) 
+                {
+                    particle->type = 1; // Disk, Bulge, Stars, Bndry
+                }
+                else if(type == 0) 
+                {
+                    particle->type = 2; // Gas
+                }
 
-    std::cout << "\nAusgabe ausgewählter Partikel:" << std::endl;
-    std::vector<unsigned int> selected_indices = {10000, 50000};
-    for(auto idx : selected_indices){
-        if(idx == 0 || idx > total_particles){
-            std::cerr << "Warnung: Ungültiger Partikelindex: " << idx << std::endl;
-            continue;
+                if(has_individual_mass)
+                {
+                    particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                }
+                else
+                {
+                    particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                }
+
+                particle->position = vec3(
+                    positions[3*current_particle],
+                    positions[3*current_particle + 1],
+                    positions[3*current_particle + 2]
+                );
+                particle->velocity = vec3(
+                    velocities[3*current_particle],
+                    velocities[3*current_particle + 1],
+                    velocities[3*current_particle + 2]
+                );
+
+                // Skalierung auf SI-Einheiten
+                particle->position *= Units::KPC;
+                particle->velocity *= Units::KMS;
+
+                particles.push_back(particle);
+                current_particle++;
+            }
         }
-        unsigned int particle_idx = idx - 1;
-        std::cout << "Partikel " << idx << ": ID = " << particles[particle_idx]->id 
-                  << ", Position = (" << particles[particle_idx]->position.x << ", " 
-                  << particles[particle_idx]->position.y << ", " << particles[particle_idx]->position.z << ")"
-                  << ", Velocity = (" << particles[particle_idx]->velocity.x << ", " 
-                  << particles[particle_idx]->velocity.y << ", " << particles[particle_idx]->velocity.z << ")"
-                  << ", Mass = " << particles[particle_idx]->mass << std::endl;
     }
 
     // Datei schließen
     file.close();
 
-    std::cout << "\nHeader, Positionen, Geschwindigkeiten, IDs und Massen erfolgreich ausgelesen und zugewiesen." << std::endl;
-}
-
-void ICDataReader::readGadget4(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
-{
-//Not working ///////////////////////////////7
-    // Open the file in binary mode
-    std::ifstream file(fileName, std::ios::binary);
-
-    if (!file) {
-        std::cerr << "Error: Could not open file: " << fileName << std::endl;
-        return;
-    }
-
-    // Gadget4 Header - Read only the header
-    gadget4Header header;
-    file.read(reinterpret_cast<char*>(&header), sizeof(header));
-
-    // Check if the read was successful
-    if (!file) {
-        std::cerr << "Error: Could not read the header from the file!" << std::endl;
-        return;
-    }
-
-    // Output header information for verification
-    std::cout << "Gadget4 Header loaded:" << std::endl;
-    std::cout << "Particle counts per type:" << std::endl;
-    for (int i = 0; i < 6; ++i) {
-        std::cout << "Type " << i << ": " << header.npart[i] << " particles" << std::endl;
-    }
-
-    std::cout << "Box size: " << header.BoxSize << std::endl;
-    std::cout << "Simulation time: " << header.time << std::endl;
-    std::cout << "Redshift: " << header.redshift << std::endl;
-    std::cout << "Number of files in snapshot: " << header.num_files << std::endl;
-
-    // Resize particles vector according to the total number of particles in the snapshot
-    particles.resize(header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
-                     header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5]);
-
-    // Close the file after reading the header
-    file.close();
-
-    std::cout << "Header successfully read." << std::endl;
+    std::cout << "gadget2 snapshot sucessfully read." << std::endl;
 }
 
 

@@ -11,99 +11,126 @@
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#include <intrin.h>
-#else
 #include <unistd.h>
-#endif
+#include <sys/ioctl.h>
 
 using namespace std;
 namespace fs = std::filesystem;
 
-#ifdef _WIN32
-void setConsoleColor(WORD color) {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, color);
-}
-#else
-void setConsoleColor(int color) {
-    // No color setting for Linux in this version
-}
-#endif
 void Console::printProgress(double currentStep, double steps, std::string text) 
 {
-    if(currentStep == steps) return;
-    
-    static const int barWidth = 70;
+    // Verhindert das Aktualisieren, wenn der aktuelle Schritt größer als die Gesamt-Schritte ist
+    if(currentStep > steps) return;
 
+    // Initialisierung des Timers beim ersten Aufruf
     if (!timerStarted) {
         std::cout << std::endl;
         startTime = std::chrono::high_resolution_clock::now();
         timerStarted = true;
     }
 
-    double progress = (currentStep + 1) / steps;
+    // Berechnung des Fortschritts
+    double progress = currentStep / steps;
+
+    // Terminalgröße ermitteln
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    int terminalWidth = w.ws_col;
+
+    // Definieren der statischen Teile der Ausgabe
+    std::string prefix = "Progress:";
+    std::string suffix = text;
+    std::string fixedParts = " []  %  Estimated remaining time:  "; // Platzhalter für Balken, Prozent und Zeit
+
+    // Maximale Anzahl der Zeichen für die Progress-Bar berechnen
+    // Reserviert Platz für Prefix, Suffix und feste Teile der Ausgabe
+    int reservedSpace = prefix.length() + suffix.length() + fixedParts.length() + 10; // 10 für Prozentzahl und Zeitangabe
+    int barWidth = terminalWidth - reservedSpace;
+
+    if (barWidth < 10) barWidth = 10; // Mindestbreite der Progress-Bar
+
+    // Berechnung der Position der Fortschrittsanzeige im Balken
     int pos = static_cast<int>(barWidth * progress);
-    
-    // Set color based on progress
-#ifdef _WIN32
-    WORD progressColor = (currentStep < steps - 1) ? FOREGROUND_RED : FOREGROUND_GREEN;
-#endif
 
-    std::cout << "[";
+    // Aufbau der Progress-Bar
+    std::ostringstream barStream;
+    barStream << prefix << " [";
     for (int i = 0; i < barWidth; ++i) {
-#ifdef _WIN32
         if (i < pos) {
-            setConsoleColor(progressColor);
-            std::cout << "=";
+            barStream << "=";
+        } else if (i == pos) {
+            barStream << ">";
+        } else {
+            barStream << " ";
         }
-        else if (i == pos && currentStep < steps - 1) {
-            setConsoleColor(FOREGROUND_RED);
-            std::cout << ">";
-        }
-        else {
-            setConsoleColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-            std::cout << " ";
-        }
-#else
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-#endif
     }
+    barStream << "] ";
 
-    double remainingTime = 0;
+    // Berechnung des Prozentsatzes
+    int percent = static_cast<int>(progress * 100.0);
+
+    // Berechnung der verbleibenden Zeit
+    double remainingTime = 0.0;
 
     auto currentTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = currentTime - startTime;
-    double estimatedTotalTime = (elapsed.count() / (currentStep + 1)) * steps;
-    double estimatedRemainingTime = estimatedTotalTime - elapsed.count();
-    remainingTime = estimatedRemainingTime;
 
-    std::string unit;
-    if (remainingTime < 60) {
-        unit = "s";
-    } else if (remainingTime < 3600) {
-        remainingTime /= 60;
-        unit = "min";
-    } else {
-        remainingTime /= 3600;
-        unit = "h";
+    if (currentStep > 0) { // Vermeidung von Division durch Null
+        double estimatedTotalTime = (elapsed.count() / currentStep) * steps;
+        double estimatedRemainingTime = estimatedTotalTime - elapsed.count();
+        remainingTime = estimatedRemainingTime;
     }
 
+    // Formatierung der verbleibenden Zeit
+    std::string timeUnit;
+    if (remainingTime < 60) {
+        timeUnit = "s";
+    } else if (remainingTime < 3600) {
+        remainingTime /= 60;
+        timeUnit = "min";
+    } else {
+        remainingTime /= 3600;
+        timeUnit = "h";
+    }
+
+    // Formatierung der verbleibenden Zeit mit einer Nachkommastelle
     std::ostringstream timeStream;
     timeStream << std::fixed << std::setprecision(1) << remainingTime;
     std::string timeleft = timeStream.str();
 
-#ifdef _WIN32
-    setConsoleColor(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-#endif
-    std::cout << "] " << int(progress * 100.0) << " %  Estimated remaining time: " << timeleft << unit << "  "<< text << "       " << "\r";
+    // Aufbau der gesamten Ausgabe
+    barStream << percent << "%  Estimated remaining time: " << timeleft << timeUnit << "  " << suffix;
 
-    if (currentStep == steps - 1) {
-        std::cout << std::endl;
+    // Sicherstellen, dass die gesamte Ausgabe die Terminalbreite nicht überschreitet
+    std::string progressBarStr = barStream.str();
+    if (progressBarStr.length() > static_cast<size_t>(terminalWidth)) {
+        // Kürzen der Suffix- oder anderer Teile, falls nötig
+        int excess = progressBarStr.length() - terminalWidth;
+        if (excess > 0 && suffix.length() > static_cast<size_t>(excess)) {
+            barStream.str("");
+            barStream << prefix << " [";
+            for (int i = 0; i < barWidth; ++i) {
+                if (i < pos) {
+                    barStream << "=";
+                } else if (i == pos) {
+                    barStream << ">";
+                } else {
+                    barStream << " ";
+                }
+            }
+            barStream << "] ";
+
+            barStream << percent << "%  Estimated remaining time: " << timeleft << timeUnit << "  " 
+                      << suffix.substr(0, suffix.length() - excess) << "...";
+            progressBarStr = barStream.str();
+        }
+    }
+
+    // Ausgabe der Progress-Bar mit Carriage Return zur Aktualisierung der gleichen Zeile
+    std::cout << "\r" << progressBarStr << std::flush;
+
+    // Beenden der Progress-Bar nach dem letzten Schritt
+    if (currentStep >= steps) {
         std::cout << std::endl;
     }
 }
@@ -125,21 +152,6 @@ void Console::printSystemInfo()
 
     // CPU Clock Speed
     double cpuFrequency = 0.0;
-    #ifdef _WIN32
-    HKEY hKey;
-    LONG lError = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
-                               0, KEY_READ, &hKey);
-    if (lError == ERROR_SUCCESS) {
-        DWORD dwMHz;
-        DWORD bufferSize = sizeof(dwMHz);
-        lError = RegQueryValueEx(hKey, "~MHz", NULL, NULL, (LPBYTE)&dwMHz, &bufferSize);
-        if (lError == ERROR_SUCCESS) {
-            cpuFrequency = dwMHz;
-        }
-        RegCloseKey(hKey);
-    }
-    #else
     std::ifstream cpuinfo("/proc/cpuinfo");
     std::string line;
     while (std::getline(cpuinfo, line)) {
@@ -148,19 +160,12 @@ void Console::printSystemInfo()
             break;
         }
     }
-    #endif
 
     //display the frequency in GHz iwth 2 decimal places
     std::cout << "  CPU Clock Speed: " << std::fixed << std::setprecision(2) << cpuFrequency / 1000 << " GHz" << std::endl;
 
     // Available RAM
     size_t totalRam = 0;
-    #ifdef _WIN32
-    MEMORYSTATUSEX statex;
-    statex.dwLength = sizeof(statex);
-    GlobalMemoryStatusEx(&statex);
-    totalRam = statex.ullTotalPhys / (1024 * 1024); // in MB
-    #else
     std::ifstream meminfo("/proc/meminfo");
     while (std::getline(meminfo, line)) {
         if (line.find("MemTotal") != std::string::npos) {
@@ -168,7 +173,6 @@ void Console::printSystemInfo()
             break;
         }
     }
-    #endif
 
     std::cout << "  Available RAM: " << std::fixed << std::setprecision(1) << (double)totalRam / 1000.0 << " GB" << std::endl;
 
