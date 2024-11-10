@@ -27,7 +27,6 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
 See the GetttingStarted.md file for further information. 
   
 ## Simulation
-The Simulation Engine is responsible for calculating the n-body interactions. It uses an octree structure to optimize the computation of gravitational forces, making it possible to simulate millions of particles efficiently.
 See /docs for the codes paper, users-guide and informations about dataformats etc.
 
 ## Contributing
