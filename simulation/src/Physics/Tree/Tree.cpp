@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <iomanip>
 
-
 void Tree::buildTree()
 {
     //create the root node

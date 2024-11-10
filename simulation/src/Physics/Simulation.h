@@ -79,8 +79,7 @@ private:
     std::shared_ptr<Console> console;
 
     //SPH
-    void initGasParticleProperties(std::shared_ptr<Tree> tree); // update A, U, P after the tree is built and rho is calculated
-    void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update A, T, U, P
+    void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update T, P
 
     //calculations without the octree, just for debugging purposes
     void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);

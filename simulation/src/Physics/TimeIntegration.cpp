@@ -19,10 +19,8 @@ void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime
     particle->position = particle->position + particle->velocity * deltaTime;
 }
 
-//integrate the entropy
+//integrate the Internal Energy
 void TimeIntegration::Ueuler(std::shared_ptr<Particle> particle, double deltaTime)
 {
-    //std::cout << particle->dAdt << std::endl;
-    // Entropy Euler
     particle->U = particle->U + particle->dUdt * deltaTime;
 }

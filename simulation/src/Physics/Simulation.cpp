@@ -123,12 +123,11 @@ bool Simulation::init()
     //calculate the gas density for SPH
     tree->calcGasDensity();
     //the first time after the temprature is set and rho is calculated
-    initGasParticleProperties(tree);
+    updateGasParticleProperties(tree);
 
     auto endTimeCalc = std::chrono::high_resolution_clock::now(); // Endzeit für die Berechnungen
     // Berechne die Zeit, die für die Berechnungen benötigt wurde
     auto calcDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeCalc - startTimeCalc).count() /1000.0;
-
 
     // Startzeit für das Speichern der Daten
     auto startTimeSave = std::chrono::high_resolution_clock::now();
@@ -305,24 +304,6 @@ void Simulation::run()
     std::cout << "Simulation finished." << std::endl;
 }
 
-void Simulation::initGasParticleProperties(std::shared_ptr<Tree> tree)
-{
-    //update the properties of the gas particles
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        if(particles[i]->type == 2)
-        {
-            //calc U from T, u = 1 / (gamma-1) * bk * T / (meanMolWeight* prtn)
-            particles[i]->U = (1.0 / (Constants::GAMMA - 1.0)) * Constants::BK * particles[i]->T / (Constants::meanMolWeight * Constants::prtn);
-            //calc P, P = (gamma-1)*u*rho
-            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
-        }
-    }
-
-    //calc Median Pressure
-    tree->root->calcMedianPressure();
-}
-
 void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
 {
     //update the properties of the gas particles
@@ -333,8 +314,7 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
             //calc T, T = (gamma-1)*u*prtn / (bk*rho)
-            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK * particles[i]->rho);
-            if(i == 700) std::cout << particles[i]->rho << std::endl;
+            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK);
         }
     }
     

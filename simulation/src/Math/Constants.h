@@ -15,6 +15,9 @@ namespace Constants
     constexpr double GAMMA = 5.0/3.0; //adiabatic index for ideal gas
     constexpr double BK = 1.38064852e-23; //Boltzmann constant
     constexpr double prtn = 1.6726219e-27; //proton mass in kg
-    //mean mol weight of of a neutral hydrogen atom
-    constexpr double meanMolWeight = 1; //mean molecular weight of the gas
+    //mean molecular weight
+    constexpr double mMWH2 = 1; //neutral hydrogen
+    constexpr double mMWHe = 4; //neutral helium
+    constexpr double mMWHeI = 4; //ionized helium
+    constexpr double mMWH2I = 0.5; //ionized hydrogen
 };
