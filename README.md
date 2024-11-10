@@ -15,7 +15,7 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
 - **Octree-based Force Calculation**: Efficient force calculation by dividing space into a tree structure (Octree).
 - **Smoothed Particle Hydrodynamics (SPH)**: Models fluid-like behavior of interstellar gas.
 - **MPI Support for Parallel Computing**: Optimized for server, enabling parallel calculations to simulate large systems efficiently.
-- **Initial Conditions (ICs) Generator**: Generates stable initial conditions for galaxies, based on the solution of the Jeans equation.
+- **Basic build-in Initial Conditions (ICs) Generator**: Generates stable initial conditions for galaxies, based on the solution of the Jeans equation.
   - **Bulge**: Models the galactic bulge using the Hernquist profile.
   - **Disk**: Generates an exponential disk for the galaxy structure, including a gas disk model.
   - **Halo**: Simulates the dark matter halo using either the Hernquist profile or the NFW (Navarro-Frenk-White) profile.
