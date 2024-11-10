@@ -20,9 +20,9 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
   - **Disk**: Generates an exponential disk for the galaxy structure, including a gas disk model.
   - **Halo**: Simulates the dark matter halo using either the Hernquist profile or the NFW (Navarro-Frenk-White) profile.
 - **Radiative Cooling**: Integrates radiative cooling to realistically model the thermodynamics of interstellar gas and promote star formation.
-- **Star Formation**: Simulates the process of star formation from dense, cold gas, taking into account radiative cooling and other astrophysical processes.
+- **Star Formation**: Simulates the process of star formation from dense, cold gas.
 - **Supernova Feedback**: Accounts for feedback from supernova explosions on the interstellar medium, influencing gas dynamics and star formation.
-- **HDF5 Data Storage**: Stores simulation data in an efficient HDF5 format, enabling easy analysis and visualization of large datasets.
+- **HDF5 Data Storage option**: Stores simulation data in an efficient HDF5 format, enabling easy analysis and visualization of large datasets.
   
 ## Installation
 See the GetttingStarted.md file for further information. 
