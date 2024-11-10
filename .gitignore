@@ -6,7 +6,8 @@
 *.bin
 
 # Ignore Data directory
-/Data/
+input_data/*
+output_data/*
 
 # Ignore temporary files
 *.tmp
@@ -27,3 +28,4 @@
 # Ausnahme für .vscode Verzeichnisse
 !/.vscode/
 !/simulation/.vscode/
+!/input_data/Example/

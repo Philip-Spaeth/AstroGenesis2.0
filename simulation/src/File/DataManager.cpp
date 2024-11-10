@@ -56,6 +56,22 @@ void DataManager::writeInfoFile(double deltaTime, double timeSteps, double numbe
     file.close();
 }
 
+bool DataManager::loadICs(Simulation* simulation)
+{
+    if(inputFormat == "gadget")
+    {
+        std::string file= "../../input_data/" + inputPath;
+        std::cout << file << std::endl;
+        return (simulation->icDataReader->readGadgetSnapshot(file, simulation->particles));
+    }
+
+    //load agf formats:
+    //...
+
+
+    return false;
+}
+
 // Funktion zum Delta-Encoding einer Sequenz von Doubles
 std::vector<double> deltaEncode(const std::vector<double>& data) {
     std::vector<double> deltas;
@@ -143,7 +159,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
                 memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
-                memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
                 memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
             }
             file.write(buffer, totalSize);
@@ -278,8 +294,8 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "massInH") simulation->massInH = std::stod(value);
                 else if (key == "H0") simulation->H0 = std::stod(value);
                 else if (key == "theta") simulation->theta = std::stod(value);
-                else if (key == "filePath") simulation->ICFileName = value;
-                else if (key == "format") simulation->ICFileFormat = value;
+                else if (key == "inputPath") inputPath = value;
+                else if (key == "inputDataFormat") inputFormat = value;
                 else if (key == "outputFolderName") path += (value + "/");
                 else if (key == "outputDataFormat") outputDataFormat = value;
                 else {

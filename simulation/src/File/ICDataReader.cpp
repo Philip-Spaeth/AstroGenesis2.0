@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <cstdint>
+#include "Units.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,197 +28,427 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-//gadget2 snapshot, binary format
-
-void ICDataReader::readBlock(std::ifstream& file, char* buffer, size_t size) {
-    int32_t blockSize;
-    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
-    file.read(buffer, size);
-    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
-}
-
-void ICDataReader::readGadget2Snapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles) 
+bool ICDataReader::readGadgetSnapshot(std::string fileName, std::vector<std::shared_ptr<Particle>>& particles)
 {
-    std::cout << "Reading Gadget2 snapshot file: " << fileName << std::endl;
-
-    GadgetHeader header;
-
-    std::string fileDir = "input_data/";
-    std::filesystem::path filePath = fileDir;
-    filePath = "../.." / filePath;
-    filePath = filePath / fileName;
+    std::cout << "reading gadget2 snapshot ..." << std::endl;
+    // Öffne die Datei im Binärmodus
+    std::ifstream file(fileName, std::ios::binary);
     
-    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        std::cerr << "Fehler beim Öffnen der Datei: " << filePath << std::endl;
-        return;
+        std::cerr << "Fehler: Konnte die Datei nicht öffnen: " << fileName << std::endl;
+        return false;
     }
 
-    // Lese den Header-Block
-    readBlock(file, reinterpret_cast<char*>(&header), sizeof(GadgetHeader));
+    // Gadget2 Header auslesen
+    gadget2Header header;
 
-    // Berechnung der Gesamtanzahl der Partikel
-    int totalParticles = 0;
-    for (int i = 0; i < 6; ++i) {
-        if (header.npartTotal[i] > 0) {
-            totalParticles += header.npartTotal[i];
-        }
+    // Lesen der ersten Blockgröße vor dem Header
+    unsigned int block_size_start;
+    file.read(reinterpret_cast<char*>(&block_size_start), sizeof(block_size_start));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Start-Blockgröße nicht lesen!" << std::endl;
+        return false;
     }
+
+    // Lesen des Headers
+    file.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if (!file) {
+        std::cerr << "Fehler: Konnte den Header aus der Datei nicht lesen!" << std::endl;
+        return false;
+    }
+
+    // Lesen der Blockgröße nach dem Header
+    unsigned int block_size_end;
+    file.read(reinterpret_cast<char*>(&block_size_end), sizeof(block_size_end));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die End-Blockgröße des Headers nicht lesen!" << std::endl;
+        return false;
+    }
+
+    // Überprüfen, ob die Blockgrößen übereinstimmen
+    if (block_size_start != sizeof(header)) {
+        std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
+        return false;
+    }
+/*
+    // Ausgabe des Headers zur Überprüfung
+    std::cout << "Gadget2 Header geladen:" << std::endl;
+    std::cout << "Teilchenanzahl pro Typ:" << std::endl;
+    for (int i = 0; i < 6; ++i) { // Annahme: 6 Typen
+        std::cout << "Typ " << i << ": " << header.npart[i] << " Partikel" << std::endl;
+    }
+    std::cout << "Mass per type:" << std::endl;
+    for (int i = 0; i < 6; ++i) { // Annahme: 6 Typen
+        std::cout << "Typ " << i << ": " << header.massarr[i] << " Mass" << std::endl;
+    }
+    std::cout << "Boxgröße: " << header.BoxSize << std::endl;
+    std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
+    std::cout << "Roteshift: " << header.redshift << std::endl;
+    std::cout << "Simulationszeit: " << header.time << std::endl;
+*/
+    // Gesamtanzahl der Partikel berechnen
+    unsigned int total_particles = 0;
+    for(int i = 0; i < 6; ++i){
+        total_particles += header.npart[i];
+    }
+
+    // Reservieren des Speicherplatzes für Partikel
+    particles.reserve(total_particles);
+
+    // ### Lesen des Positionsblocks (POS) ###
     
-    std::cout << "Total Number of Particles in the Gadget2 Snapshoot file: " << totalParticles << std::endl;
-    
-    if (totalParticles <= 0) {
-        std::cerr << "Fehler: Keine Partikel zum Lesen vorhanden." << std::endl;
-        file.close();
-        return;
+    // Lesen der Blockgröße vor dem POS-Block
+    unsigned int pos_block_size_start;
+    file.read(reinterpret_cast<char*>(&pos_block_size_start), sizeof(pos_block_size_start));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Start-Blockgröße des POS-Blocks nicht lesen!" << std::endl;
+        return false;
     }
 
-    // Speicher für Positionen, Geschwindigkeiten und IDs reservieren
-    std::vector<float> positions(3 * totalParticles);
-    std::vector<float> velocities(3 * totalParticles);
-    std::vector<int32_t> particleIDs(totalParticles);
-
-    // Initialisiere Partikel-Vektor
-    particles.clear();
-    particles.reserve(totalParticles);
-
-    // Lese Partikelpositionen
-    readBlock(file, reinterpret_cast<char*>(positions.data()), sizeof(float) * 3 * totalParticles);
-
-    // Lese Partikelgeschwindigkeiten
-    readBlock(file, reinterpret_cast<char*>(velocities.data()), sizeof(float) * 3 * totalParticles);
-
-    // Lese Partikel-IDs (optional, kann übersprungen werden)
-    readBlock(file, reinterpret_cast<char*>(particleIDs.data()), sizeof(int32_t) * totalParticles);
-
-    // Lese Massen (falls sie nicht im Header stehen)
-    std::vector<float> masses(totalParticles, 0.0f);
-    bool hasIndividualMasses = false;
-    for (int i = 0; i < 6; ++i) {
-        if (header.mass[i] == 0 && header.npart[i] > 0) {
-            hasIndividualMasses = true;
-            break;
-        }
+    // Berechnen der erwarteten Größe für den POS-Block: N * 3 * sizeof(float)
+    unsigned int expected_pos_block_size = total_particles * 3 * sizeof(float);
+    if (pos_block_size_start != expected_pos_block_size) {
+        std::cerr << "Warnung: Erwartete POS-Blockgröße (" << expected_pos_block_size 
+                  << " bytes) stimmt nicht mit gelesener Größe (" << pos_block_size_start << " bytes) überein." << std::endl;
+        // Optional: Fortfahren oder Abbruch
     }
 
-    if (hasIndividualMasses) {
-        readBlock(file, reinterpret_cast<char*>(masses.data()), sizeof(float) * totalParticles);
-    } else {
-        int particleOffset = 0;
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j < header.npart[i]; ++j) {
-                masses[particleOffset + j] = header.mass[i];
-            }
-            particleOffset += header.npart[i];
-        }
+    // Lesen der Positionsdaten
+    std::vector<float> positions(total_particles * 3); // N * 3 floats
+    file.read(reinterpret_cast<char*>(positions.data()), pos_block_size_start);
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Positionsdaten nicht lesen!" << std::endl;
+        return false;
     }
 
-    // Falls Gas-Partikel existieren (Typ 0), lese interne Energie (Temperatur)
-    std::vector<float> internalEnergies(header.npart[0], 0.0f);
-    if (header.npart[0] > 0) {
-        readBlock(file, reinterpret_cast<char*>(internalEnergies.data()), sizeof(float) * header.npart[0]);
+    // Lesen der Blockgröße nach dem POS-Block
+    unsigned int pos_block_size_end;
+    file.read(reinterpret_cast<char*>(&pos_block_size_end), sizeof(pos_block_size_end));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die End-Blockgröße des POS-Blocks nicht lesen!" << std::endl;
+        return false;
     }
 
-    for (int i = 0; i < totalParticles; ++i) 
-    {
-        auto particle = std::make_shared<Particle>();
-
-        particle->position.x = positions[3 * i] * 3.086e19; // kpc -> m
-        particle->position.y = positions[3 * i + 1] * 3.086e19; // kpc -> m
-        particle->position.z = positions[3 * i + 2] * 3.086e19; // kpc -> m
-
-        particle->velocity.x = velocities[3 * i] * 1e3; // km/s -> m/s
-        particle->velocity.y = velocities[3 * i + 1] *  1e3; // km/s -> m/s
-        particle->velocity.z = velocities[3 * i + 2] *  1e3; // km/s -> m/s
-
-        particle->mass = masses[i] * 1.989e30; // 1e10 M_sun -> kg
-        particle->type = 1;
-
-        if (i < header.npart[0]) {  // Nur Gas-Partikel haben interne Energie
-            particle->U = internalEnergies[i] * 1e6;
-        }
-
-        particles.push_back(particle);
+    // Überprüfen, ob die Blockgrößen übereinstimmen
+    if (pos_block_size_start != pos_block_size_end) {
+        std::cerr << "Fehler: Start- und End-Blockgrößen des POS-Blocks stimmen nicht überein!" << std::endl;
+        return false;
     }
 
-    std::cout << "Snapshot was successfully read." << std::endl;
+    // ### Lesen des Geschwindigkeitsblocks (VEL) ###
 
-    file.close();
-}
-
-//Text files, read ASCII format, slower than binary
-void ICDataReader::readASCII(std::string fileName, int start, int end, vec3 pos, vec3 vel, std::vector<std::shared_ptr<Particle>>& particles)
-{
-    std::string fileDir = "input_data/";
-    std::filesystem::path filePath = fileDir;
-    filePath = "../.." / filePath;
-
-    filePath = filePath / fileName;
-
-
-    // Ensure the particles vector is large enough to hold the new particles
-    if (particles.size() < static_cast<size_t>(end)) {
-        particles.resize(end);
+    // Lesen der Blockgröße vor dem VEL-Block
+    unsigned int vel_block_size_start;
+    file.read(reinterpret_cast<char*>(&vel_block_size_start), sizeof(vel_block_size_start));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Start-Blockgröße des VEL-Blocks nicht lesen!" << std::endl;
+        return false;
     }
 
-    int particleIndex = start;
+    // Berechnen der erwarteten Größe für den VEL-Block: N * 3 * sizeof(float)
+    unsigned int expected_vel_block_size = total_particles * 3 * sizeof(float);
+    if (vel_block_size_start != expected_vel_block_size) {
+        std::cerr << "Warnung: Erwartete VEL-Blockgröße (" << expected_vel_block_size 
+                  << " bytes) stimmt nicht mit gelesener Größe (" << vel_block_size_start << " bytes) überein." << std::endl;
+        // Optional: Fortfahren oder Abbruch
+    }
 
-    for (int i = start; i < end; i += 1250) {
-        std::ifstream file(filePath);
-        if (!file) {
-            std::cout << "Reading file: " << filePath << std::endl;
-            std::cerr << "Could not open the data file!" << std::endl;
-            return;
-        }
+    // Lesen der Geschwindigkeitsdaten
+    std::vector<float> velocities(total_particles * 3); // N * 3 floats
+    file.read(reinterpret_cast<char*>(velocities.data()), vel_block_size_start);
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Geschwindigkeitsdaten nicht lesen!" << std::endl;
+        return false;
+    }
 
-        std::string line;
-        int currentIndex = 0;
+    // Lesen der Blockgröße nach dem VEL-Block
+    unsigned int vel_block_size_end;
+    file.read(reinterpret_cast<char*>(&vel_block_size_end), sizeof(vel_block_size_end));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die End-Blockgröße des VEL-Blocks nicht lesen!" << std::endl;
+        return false;
+    }
 
-        while (std::getline(file, line) && particleIndex < end) 
+    // Überprüfen, ob die Blockgrößen übereinstimmen
+    if (vel_block_size_start != vel_block_size_end) {
+        std::cerr << "Fehler: Start- und End-Blockgrößen des VEL-Blocks stimmen nicht überein!" << std::endl;
+        return false;
+    }
+
+    // ### Lesen des ID-Blocks (ID) ###
+
+    // Lesen der Blockgröße vor dem ID-Block
+    unsigned int id_block_size_start;
+    file.read(reinterpret_cast<char*>(&id_block_size_start), sizeof(id_block_size_start));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die Start-Blockgröße des ID-Blocks nicht lesen!" << std::endl;
+        return false;
+    }
+
+    // Berechnen der erwarteten Größe für den ID-Block: N * sizeof(unsigned int)
+    unsigned int expected_id_block_size = total_particles * sizeof(unsigned int);
+    if (id_block_size_start != expected_id_block_size) {
+        std::cerr << "Warnung: Erwartete ID-Blockgröße (" << expected_id_block_size 
+                  << " bytes) stimmt nicht mit gelesener Größe (" << id_block_size_start << " bytes) überein." << std::endl;
+        // Optional: Fortfahren oder Abbruch
+    }
+
+    // Lesen der ID-Daten
+    std::vector<unsigned int> ids(total_particles); // N unsigned ints
+    file.read(reinterpret_cast<char*>(ids.data()), id_block_size_start);
+    if (!file) {
+        std::cerr << "Fehler: Konnte die ID-Daten nicht lesen!" << std::endl;
+        return false;
+    }
+
+    // Lesen der Blockgröße nach dem ID-Block
+    unsigned int id_block_size_end;
+    file.read(reinterpret_cast<char*>(&id_block_size_end), sizeof(id_block_size_end));
+    if (!file) {
+        std::cerr << "Fehler: Konnte die End-Blockgröße des ID-Blocks nicht lesen!" << std::endl;
+        return false;
+    }
+
+    // Überprüfen, ob die Blockgrößen übereinstimmen
+    if (id_block_size_start != id_block_size_end) {
+        std::cerr << "Fehler: Start- und End-Blockgrößen des ID-Blocks stimmen nicht überein!" << std::endl;
+        return false;
+    }
+
+    //read mass:
+    // Überprüfen, ob individuelle Massen vorhanden sind (massarr[i] == 0)
+    const float epsilon = 1e-10;
+    bool has_individual_mass = false;
+    for(int i = 0; i < 6; ++i){
+        if(header.massarr[i] < epsilon)
         {
-            std::istringstream iss(line);
-            vec3 position, velocity;
-            double mass;
-
-            // Assuming the file format is: position3d (3 values), velocity3d (3 values), mass (1 value)
-            if (!(iss >> position.x >> position.y >> position.z 
-                    >> velocity.x >> velocity.y >> velocity.z 
-                    >> mass)) {
-                std::cerr << "Error parsing line: " << line << std::endl;
-                continue;
+            if(header.npart[i] != 0)
+            {
+                has_individual_mass = true;
+                break;
             }
-            //// depends on the units of the template file
-            // Convert the units: data units: kpc, km/s, 1e10 Msun -> internal units: m, m/s, kg
-            position *= 3.086e19;
-            velocity *= 1e3;
-            mass *= 1e10 * 1.989e30;
-
-            // Add the offset
-            position += pos;
-            velocity += vel;
-
-            // Insert the particle at the correct index
-            particles[particleIndex] = std::make_shared<Particle>();
-
-            //set the particle properties
-            particles[particleIndex]->position = position;
-            particles[particleIndex]->velocity = velocity;
-            particles[particleIndex]->mass = mass;
-            //one of 10 particles is a gas particle
-            if (currentIndex % 10 == 0) {
-                particles[particleIndex]->type = 2;
+            else
+            {
+                //std::cout << "Mass for type: "<< i << " is 0 because Npart is 0" << std::endl;
             }
-            else {
-                particles[particleIndex]->type = 1;
-            }
-            particles[particleIndex]->T = 1e4;
-            
-            particleIndex++;
-            currentIndex++;
         }
-
-        file.close();
+        else
+        {
+            //std::cout << std::scientific << "Mass for type: "<< i << " is " <<  header.massarr[i] << std::endl;
+        }
     }
 
-    std::cout << "Initial Condition: " << fileName << " with particles from index " << start << " to " << (particleIndex - 1) << std::endl;
+    std::vector<float> masses; // Vektor zur Speicherung der Massen
+    if(has_individual_mass)
+    {
+        // Lesen der Blockgröße vor dem MASS-Block
+        unsigned int mass_block_size_start;
+        file.read(reinterpret_cast<char*>(&mass_block_size_start), sizeof(mass_block_size_start));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Start-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Berechnen der erwarteten Größe für den MASS-Block: N * sizeof(float)
+        unsigned int expected_mass_block_size = total_particles * sizeof(float);
+        if (mass_block_size_start != expected_mass_block_size) {
+            std::cerr << "Warnung: Erwartete MASS-Blockgröße (" << expected_mass_block_size 
+                      << " bytes) stimmt nicht mit gelesener Größe (" << mass_block_size_start << " bytes) überein." << std::endl;
+            // Optional: Fortfahren oder Abbruch
+        }
+
+        // Lesen der Massendaten
+        masses.resize(total_particles);
+        file.read(reinterpret_cast<char*>(masses.data()), mass_block_size_start);
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Massendaten nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Lesen der Blockgröße nach dem MASS-Block
+        unsigned int mass_block_size_end;
+        file.read(reinterpret_cast<char*>(&mass_block_size_end), sizeof(mass_block_size_end));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die End-Blockgröße des MASS-Blocks nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Überprüfen, ob die Blockgrößen übereinstimmen
+        if (mass_block_size_start != mass_block_size_end) {
+            std::cerr << "Fehler: Start- und End-Blockgrößen des MASS-Blocks stimmen nicht überein!" << std::endl;
+            return false;
+        }
+    }
+
+    // ### Lesen des U-Blocks (interne Energie) ###
+
+    // Überprüfen, ob Gaspartikel vorhanden sind
+    if(header.npart[0] > 0) // Nur wenn es Gaspartikel gibt
+    {
+        std::cout << "reading U from gas particles" << std::endl;
+        // Lesen der Blockgröße vor dem U-Block
+        unsigned int u_block_size_start;
+        file.read(reinterpret_cast<char*>(&u_block_size_start), sizeof(u_block_size_start));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die Start-Blockgröße des U-Blocks nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Erwartete Größe des U-Blocks berechnen: Anzahl der Gaspartikel * sizeof(float)
+        unsigned int expected_u_block_size = header.npart[0] * sizeof(float);
+        if (u_block_size_start != expected_u_block_size) {
+            std::cerr << "Warnung: Erwartete U-Blockgröße (" << expected_u_block_size 
+                      << " Bytes) stimmt nicht mit gelesener Größe (" << u_block_size_start << " Bytes) überein." << std::endl;
+            // Optional: Fortfahren oder Abbruch
+        }
+
+        // Lesen der U-Daten
+        std::vector<float> u_values(header.npart[0]); // Interne Energie pro Masseneinheit für Gaspartikel
+        file.read(reinterpret_cast<char*>(u_values.data()), u_block_size_start);
+        if (!file) {
+            std::cerr << "Fehler: Konnte die U-Daten nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Lesen der Blockgröße nach dem U-Block
+        unsigned int u_block_size_end;
+        file.read(reinterpret_cast<char*>(&u_block_size_end), sizeof(u_block_size_end));
+        if (!file) {
+            std::cerr << "Fehler: Konnte die End-Blockgröße des U-Blocks nicht lesen!" << std::endl;
+            return false;
+        }
+
+        // Überprüfen, ob die Blockgrößen übereinstimmen
+        if (u_block_size_start != u_block_size_end) {
+            std::cerr << "Fehler: Start- und End-Blockgrößen des U-Blocks stimmen nicht überein!" << std::endl;
+            return false;
+        }
+    
+    unsigned int current_particle = 0;
+    unsigned int gas_particle_index = 0;
+
+    for(int type = 0; type < 6; ++type){
+            for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
+                if(current_particle >= total_particles){
+                    std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
+                    return false;
+                }
+                auto particle = std::make_shared<Particle>();
+                particle->id = ids[current_particle];
+
+                // Setzen des Partikeltyps und der Masse
+                if(type == 1)  
+                {   
+                    particle->type = 3; // Halo
+                }
+                else if(type == 2 || type == 4 || type == 5) 
+                {
+                    particle->type = 1; // Disk, Bulge, Stars, Bndry
+                }
+                else if(type == 0) 
+                {
+                    particle->type = 2; // Gas
+                }
+
+                if(has_individual_mass)
+                {
+                    particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                }
+                else
+                {
+                    particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                }
+
+                particle->position = vec3(
+                    positions[3*current_particle],
+                    positions[3*current_particle + 1],
+                    positions[3*current_particle + 2]
+                );
+                particle->velocity = vec3(
+                    velocities[3*current_particle],
+                    velocities[3*current_particle + 1],
+                    velocities[3*current_particle + 2]
+                );
+
+                // Skalierung auf SI-Einheiten
+                particle->position *= Units::KPC;
+                particle->velocity *= Units::KMS;
+
+                // Interne Energie für Gaspartikel zuweisen
+                if(type == 0) // Gaspartikel
+                {
+                    //scale to SI
+                    particle->U = u_values[gas_particle_index] * 1e6;
+                    //std::cout << particle->U << std::endl;
+                    gas_particle_index++;
+                }
+
+                particles.push_back(particle);
+                current_particle++;
+            }
+        }
+    }
+    else // Wenn keine Gaspartikel vorhanden sind
+    {
+        // Ihr bestehender Code zum Erstellen der Partikel
+        unsigned int current_particle = 0;
+
+        for(int type = 0; type < 6; ++type){
+            for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
+                if(current_particle >= total_particles){
+                    std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
+                    return false;
+                }
+                auto particle = std::make_shared<Particle>();
+                particle->id = ids[current_particle];
+
+                // Setzen des Partikeltyps und der Masse
+                if(type == 1)  
+                {   
+                    particle->type = 3; // Halo
+                }
+                else if(type == 2 || type == 4 || type == 5) 
+                {
+                    particle->type = 1; // Disk, Bulge, Stars, Bndry
+                }
+                else if(type == 0) 
+                {
+                    particle->type = 2; // Gas
+                }
+
+                if(has_individual_mass)
+                {
+                    particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                }
+                else
+                {
+                    particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                }
+
+                particle->position = vec3(
+                    positions[3*current_particle],
+                    positions[3*current_particle + 1],
+                    positions[3*current_particle + 2]
+                );
+                particle->velocity = vec3(
+                    velocities[3*current_particle],
+                    velocities[3*current_particle + 1],
+                    velocities[3*current_particle + 2]
+                );
+
+                // Skalierung auf SI-Einheiten
+                particle->position *= Units::KPC;
+                particle->velocity *= Units::KMS;
+
+                particles.push_back(particle);
+                current_particle++;
+            }
+        }
+    }
+
+    // Datei schließen
+    file.close();
+
+    std::cout << "gadget2 snapshot sucessfully read." << std::endl;
+    return true;
 }

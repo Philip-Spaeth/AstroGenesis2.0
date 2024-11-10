@@ -16,12 +16,17 @@ public:
     DataManager(std::string path);
     ~DataManager(){}
 
+    std::string inputPath;
+    std::string inputFormat;
+
     //path to the folder where the simulation data is saved
     std::string path;
     std::string outputDataFormat;
 
 //read the Config.ini file
     bool loadConfig(const std::string& filename, Simulation* simulation);
+
+    bool loadICs(Simulation* simulation);
 
     //info file with simulation parameters
     //write when saving simulation data
