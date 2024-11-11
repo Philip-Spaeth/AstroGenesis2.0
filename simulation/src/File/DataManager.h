@@ -37,6 +37,7 @@ public:
     double AGFC_MemorySize = 20480;
     double AGFE_MemorySize = 94208;
     double AGFH_MemorySize = 13000; // not implemented yet
+    double Gadget_MemorySize = 25600;
 
 private:
     //AGF header

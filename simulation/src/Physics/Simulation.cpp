@@ -138,6 +138,7 @@ bool Simulation::init()
     if(dataManager->outputFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;
     if(dataManager->outputFormat == "AGFE") perParticle = dataManager->AGFE_MemorySize / 1000.0;
     if(dataManager->outputFormat == "AGFC") perParticle = dataManager->AGFC_MemorySize / 1000.0;
+    if(dataManager->outputFormat == "gadget") perParticle = dataManager->Gadget_MemorySize / 1000.0;
     double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
     if(storageSize < 1000000000)
     {
