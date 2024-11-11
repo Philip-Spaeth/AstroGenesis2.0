@@ -15,7 +15,6 @@ Simulation::Simulation()
     //construct the modules
     timeIntegration = std::make_shared<TimeIntegration>();
     dataManager = std::make_shared<DataManager>("../../output_data/");
-    icDataReader = std::make_shared<ICDataReader>();
     console = std::make_shared<Console>();
 }
 
@@ -57,38 +56,45 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    Galaxy galaxy(&particles);
+    if(true) dataManager->loadICs(particles, this);
+    //get ICs from Config file:
+    else
+    {
+        //custom setup:
+        std::cout << "reading custom ICs from Simulation.cpp" << std::endl;
+        Galaxy galaxy(&particles);
 
-    //Bulge
-    galaxy.M_Bulge = 1e39;
-    galaxy.R_Bulge = 5e19;
-    galaxy.Rs_Bulge = 5e18;
-    galaxy.N_Bulge = 0;
-    
-    //Disk
-    galaxy.M_Disk = 1e40;
-    galaxy.R_Disk = 1e20;
-    galaxy.z_Disk = 2e18;
-    galaxy.VelDis_Disk = 1e3;
-    galaxy.N_Disk = 500;
+        //Bulge
+        galaxy.M_Bulge = 1e39;
+        galaxy.R_Bulge = 5e19;
+        galaxy.Rs_Bulge = 5e18;
+        galaxy.N_Bulge = 0;
+        
+        //Disk
+        galaxy.M_Disk = 1e40;
+        galaxy.R_Disk = 1e20;
+        galaxy.z_Disk = 2e18;
+        galaxy.VelDis_Disk = 1e3;
+        galaxy.N_Disk = 500;
 
-    //Gas in the disk
-    galaxy.M_Gas = 1e39;
-    galaxy.R_Gas = 1e20;
-    galaxy.z_Gas = 2e18;
-    galaxy.VelDis_Gas = 1e3;
-    galaxy.N_Gas = 500;
+        //Gas in the disk
+        galaxy.M_Gas = 1e39;
+        galaxy.R_Gas = 1e20;
+        galaxy.z_Gas = 2e18;
+        galaxy.VelDis_Gas = 1e3;
+        galaxy.N_Gas = 500;
 
-    //Dark Matter Halo
-    galaxy.M_Halo = 8e40;
-    galaxy.R_Halo = 1e21;
-    galaxy.c_Halo = 7;
-    galaxy.N_Halo = 0;
+        //Dark Matter Halo
+        galaxy.M_Halo = 8e40;
+        galaxy.R_Halo = 1e21;
+        galaxy.c_Halo = 7;
+        galaxy.N_Halo = 0;
 
-    galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
-    galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
+        galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
+        galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
 
-    galaxy.generateGalaxy();
+        galaxy.generateGalaxy();
+    }
 
     if(numberOfParticles != particles.size())
     {
@@ -108,10 +114,6 @@ bool Simulation::init()
         }
     }
 
-    //if everything is ok, write the info file
-    dataManager->writeInfoFile(fixedStep, fixedTimeSteps, numberOfParticles);
-
-    auto startTimeCalc = std::chrono::high_resolution_clock::now(); // Startzeit für die Berechnungen
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
     tree->buildTree();
@@ -125,37 +127,25 @@ bool Simulation::init()
     //the first time after the temprature is set and rho is calculated
     updateGasParticleProperties(tree);
 
-    auto endTimeCalc = std::chrono::high_resolution_clock::now(); // Endzeit für die Berechnungen
-    // Berechne die Zeit, die für die Berechnungen benötigt wurde
-    auto calcDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeCalc - startTimeCalc).count() /1000.0;
-
-    // Startzeit für das Speichern der Daten
-    auto startTimeSave = std::chrono::high_resolution_clock::now();
-
     // Initial force calculation
     tree->calculateForces();
 
     //save the particles data
-    dataManager->saveData(particles, 0);
-    auto endTimeSave = std::chrono::high_resolution_clock::now(); // Endzeit für das Speichern der Daten
-    auto saveDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeSave - startTimeSave).count() /1000.0;
-
-    std::cout << std::fixed << "\ncalculation takes " << int(100* (calcDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
-    std::cout << std::fixed << "data saving takes " << int(100* (saveDuration / (calcDuration + saveDuration))) << " % of simualtion time" << std::endl;
-
+    dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
+    
     //print the memory size of the data
     double perParticle = 0;
-    if(dataManager->outputDataFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;
-    if(dataManager->outputDataFormat == "AGFE") perParticle = dataManager->AGFE_MemorySize / 1000.0;
-    if(dataManager->outputDataFormat == "AGFC") perParticle = dataManager->AGFC_MemorySize / 1000.0;
+    if(dataManager->outputFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;
+    if(dataManager->outputFormat == "AGFE") perParticle = dataManager->AGFE_MemorySize / 1000.0;
+    if(dataManager->outputFormat == "AGFC") perParticle = dataManager->AGFC_MemorySize / 1000.0;
     double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
     if(storageSize < 1000000000)
     {
-        std::cout << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
+        std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
     }
     else
     {
-        std::cout << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
+        std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
 
     return true;
@@ -295,7 +285,7 @@ void Simulation::run()
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
         {
-            dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep));
+            dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
             console->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
             nextSaveTime += fixedStep;
         }
@@ -313,7 +303,7 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
         {
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
-            //calc T, T = (gamma-1)*u*prtn / (bk*rho)
+            //calc T, T = (gamma-1)*u*prtn / (bk)
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK);
         }
     }

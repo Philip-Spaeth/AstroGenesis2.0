@@ -1,6 +1,6 @@
 # Astro Genesis 2.0
 
-Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to model the dynamics of galaxies and clusters. Developed in C++, Astro Genesis 2.0 leverages cutting-edge algorithms and data structures to deliver highly accurate simulations of cosmic phenomena.
+Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to model the dynamics of galaxies and clusters. Developed in C++, Astro Genesis 2.0 leverages optimized algorithms and data structures to deliver highly accurate simulations of cosmic phenomena.
 
 ## Table of Contents
 - [Features](#features)
@@ -8,7 +8,6 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
 - [Simulation](#simulation)
 - [Contributing](#contributing)
 - [License](#license)
-- [Examples](#Examples)
 
 ## Features
 - **n-body Simulation**: Simulate complex gravitational interactions between a large number of objects with high precision.
@@ -20,7 +19,7 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
   - **Disk**: Generates an exponential disk for the galaxy structure, including a gas disk model.
   - **Halo**: Simulates the dark matter halo using either the Hernquist profile or the NFW (Navarro-Frenk-White) profile.
 - **Radiative Cooling**: Integrates radiative cooling to realistically model the thermodynamics of interstellar gas and promote star formation.
-- **Star Formation**: Simulates the process of star formation from dense, cold gas, taking into account radiative cooling and other astrophysical processes.
+- **Star Formation**: Simulates the process of star formation from dense, cold gas.
 - **Supernova Feedback**: Accounts for feedback from supernova explosions on the interstellar medium, influencing gas dynamics and star formation.
 - **HDF5 Data Storage**: Stores simulation data in an efficient HDF5 format, enabling easy analysis and visualization of large datasets.
   
@@ -28,7 +27,8 @@ Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to mo
 See the GetttingStarted.md file for further information. 
   
 ## Simulation
-The Simulation Engine is responsible for calculating the n-body interactions. It uses an octree structure to optimize the computation of gravitational forces, making it possible to simulate millions of particles efficiently.
+The Simulation Engine is responsible for calculating the n-body interactions.
+See /docs folder for the Users-guide, code paper and information about Dataformats etc.
 
 ## Contributing
 We welcome contributions from the community! Whether you are fixing bugs, adding new features, or improving documentation, your help is greatly appreciated. Please submit pull requests to the dev branch and ensure your code follows the project's coding standards.

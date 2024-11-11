@@ -6,19 +6,11 @@
 #include "Constants.h"
 #include "TimeIntegration.h"
 #include "DataManager.h"
-#include "ICDataReader.h"
 #include "Console.h"
 #include "random.h"
-//check if windows or linux
-#ifdef _WIN32
-#include "Tree\Node.h"
-#include "Tree\Tree.h"
-#include "IC\Galaxy.h"
-#else
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
 #include "IC/Galaxy.h"
-#endif
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -63,19 +55,14 @@ public:
 
     //octree with all particles
     double theta;
-
-    std::string ICFileName;
-    std::string ICFileFormat;
     
     //particles
     std::vector<std::shared_ptr<Particle>> particles;
-
 private:
 
     //pointers to modules
     std::shared_ptr<TimeIntegration> timeIntegration;
     std::shared_ptr<DataManager> dataManager;
-    std::shared_ptr<ICDataReader> icDataReader;
     std::shared_ptr<Console> console;
 
     //SPH
