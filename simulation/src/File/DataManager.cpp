@@ -20,6 +20,7 @@
 #include <locale>
 #include "Units.h"
 #include <unistd.h>
+#include <cstdint>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -106,9 +107,9 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         int numParticles[3] = {0, 0, 0};
         for (int i = 0; i < numberOfParticles; i++)
         {
-            if(particles[i]->type == 0) numParticles[0]++;
-            if(particles[i]->type == 1) numParticles[1]++;
-            if(particles[i]->type == 2) numParticles[2]++;
+            if(particles[i]->type == 1) numParticles[0]++;
+            if(particles[i]->type == 2) numParticles[1]++;
+            if(particles[i]->type == 3) numParticles[2]++;
         }
         header.numParticles[0] = numParticles[0];
         header.numParticles[1] = numParticles[1];
@@ -122,7 +123,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         // Speichert nur position (vec3 als 3 floats), visualDensity (float) und type (int)
 
         // Berechnung der Gesamtgröße: 3 floats für Position, 1 float für visualDensity, 1 int für type pro Particle
-        size_t totalSize = particles.size() * (sizeof(float) * 3 + sizeof(float) + sizeof(int));
+        size_t totalSize = particles.size() * (sizeof(float) * 3 + sizeof(float) + sizeof(uint8_t));
 
         // Puffer allokieren
         std::vector<char> buffer(totalSize);
@@ -137,14 +138,14 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             memcpy(ptr, &posX, sizeof(float)); ptr += sizeof(float);
             memcpy(ptr, &posY, sizeof(float)); ptr += sizeof(float);
             memcpy(ptr, &posZ, sizeof(float)); ptr += sizeof(float);
-
-            // visualDensity als float konvertieren
+            
             float visualDensity = static_cast<float>(particle->visualDensity);
             memcpy(ptr, &visualDensity, sizeof(float)); ptr += sizeof(float);
 
+
             // type als int speichern
-            int type = particle->type;
-            memcpy(ptr, &type, sizeof(int)); ptr += sizeof(int);
+            uint8_t type = particle->type;
+            memcpy(ptr, &type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
         }
 
         // Puffer in die Datei schreiben
@@ -158,9 +159,9 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         int numParticles[3] = {0, 0, 0};
         for (int i = 0; i < numberOfParticles; i++)
         {
-            if(particles[i]->type == 0) numParticles[0]++;
-            if(particles[i]->type == 1) numParticles[1]++;
-            if(particles[i]->type == 2) numParticles[2]++;
+            if(particles[i]->type == 1) numParticles[0]++;
+            if(particles[i]->type == 2) numParticles[1]++;
+            if(particles[i]->type == 3) numParticles[2]++;
         }
         header.numParticles[0] = numParticles[0];
         header.numParticles[1] = numParticles[1];
@@ -171,7 +172,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
         // AGFE Format: Erweiterte Version (bestehend aus Position, Velocity, Mass, T, P, visualDensity, U, type)
-        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(int));
+        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(uint8_t));
         
         // Speicher für den Puffer allokieren
         char* buffer = reinterpret_cast<char*>(malloc(totalSize));
@@ -185,7 +186,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->P, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
                 memcpy(ptr, &particle->U, sizeof(double)); ptr += sizeof(double);
-                memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
+                memcpy(ptr, &particle->type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
             }
             file.write(buffer, totalSize);
             free(buffer);
@@ -363,7 +364,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             file.read(reinterpret_cast<char*>(&particle.mass), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.T), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.type), sizeof(int));
+            file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
             particles.push_back(std::make_shared<Particle>(particle));
         }
 
@@ -402,8 +403,8 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             float visualDensity;
             file.read(reinterpret_cast<char*>(&visualDensity), sizeof(float));
             particle.visualDensity = visualDensity;
-            int type;
-            file.read(reinterpret_cast<char*>(&type), sizeof(int));
+            uint8_t type;
+            file.read(reinterpret_cast<char*>(&type), sizeof(uint8_t));
             particle.type = type;
             particles.push_back(std::make_shared<Particle>(particle));
         }
@@ -442,7 +443,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             file.read(reinterpret_cast<char*>(&particle.P), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.U), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.type), sizeof(int));
+            file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
             particles.push_back(std::make_shared<Particle>(particle));
         }
 
