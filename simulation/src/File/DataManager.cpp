@@ -498,7 +498,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
             return false;
         }
-    
+        /*
         // Ausgabe des Headers zur Überprüfung
         std::cout << "Gadget2 Header geladen:" << std::endl;
         std::cout << "Teilchenanzahl pro Typ:" << std::endl;
@@ -513,6 +513,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
         std::cout << "Roteshift: " << header.redshift << std::endl;
         std::cout << "Simulationszeit: " << header.time << std::endl;
+        */
     
         // Gesamtanzahl der Partikel berechnen
         unsigned int total_particles = 0;
