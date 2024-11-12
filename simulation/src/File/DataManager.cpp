@@ -303,8 +303,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             // Collect U values for gas particles
             std::vector<float> u_values;
             for (int i = 0; i < numberOfParticles; i++) {
-                int gadget_type = 0;
-                if (particles[i]->type == 0) { // Gas particles
+                if (particles[i]->type == 2) { // Gas particles
                     // Convert U to code units if necessary
                     u_values.push_back(static_cast<float>(particles[i]->U / 1e6));
                 }
