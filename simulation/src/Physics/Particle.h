@@ -32,7 +32,7 @@ public:
     double nextIntegrationTime = 0;
 
     //SPH only for gas particles, Stars and dark matter particles are not affected
-    int type = 1; // 1 = star, 2 = gas, 3 = dark matter
+    uint8_t type = 1; // 1 = star, 2 = gas, 3 = dark matter
 
     // Fluid properties (SPH) only for gas particles
     //calculated by the Tree

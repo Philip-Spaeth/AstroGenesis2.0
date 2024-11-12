@@ -66,9 +66,9 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         int numParticles[3] = {0, 0, 0};
         for (int i = 0; i < numberOfParticles; i++)
         {
-            if(particles[i]->type == 0) numParticles[0]++;
-            if(particles[i]->type == 1) numParticles[1]++;
-            if(particles[i]->type == 2) numParticles[2]++;
+            if(particles[i]->type == 1) numParticles[0]++;
+            if(particles[i]->type == 2) numParticles[1]++;
+            if(particles[i]->type == 3) numParticles[2]++;
         }
         header.numParticles[0] = numParticles[0];
         header.numParticles[1] = numParticles[1];
@@ -80,7 +80,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
 
         // AGF Format
-        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(int));
+        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(uint8_t));
         
         // Speicher für den Puffer allokieren
         char* buffer = reinterpret_cast<char*>(malloc(totalSize));
@@ -92,7 +92,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
-                memcpy(ptr, &particle->type, sizeof(int)); ptr += sizeof(int);
+                memcpy(ptr, &particle->type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
             }
             file.write(buffer, totalSize);
             free(buffer);
