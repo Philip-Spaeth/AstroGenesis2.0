@@ -1,4 +1,4 @@
-# Astro Genesis 2.0
+# AstroGen2 (Astro Genesis 2.0)
 
 Welcome to Astro Genesis 2.0, a modern n-body simulation software designed to model the dynamics of galaxies and clusters. Developed in C++, Astro Genesis 2.0 leverages optimized algorithms and data structures to deliver highly accurate simulations of cosmic phenomena.
 
