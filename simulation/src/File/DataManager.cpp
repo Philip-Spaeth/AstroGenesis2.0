@@ -198,19 +198,30 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     }
     else if (outputFormat == "gadget")
     {
-        // Gadget2 Snapshot Format
-
         // Initialize the header
         gadget2Header header;
         memset(&header, 0, sizeof(header)); // Zero-initialize the header
 
+        // Listen zur Organisation der Partikel nach Gadget-Typ
+        std::vector<Particle*> gas_particles;
+        std::vector<Particle*> halo_particles;
+        std::vector<Particle*> disk_particles;
+
         // Map our particle types to Gadget2 types and count particles per type
         for (int i = 0; i < numberOfParticles; i++) {
             int gadget_type = 0;
-            if (particles[i]->type == 1) gadget_type = 4; // Gas
-            else if (particles[i]->type == 2) gadget_type = 0; // Disk
-            else if (particles[i]->type == 3) gadget_type = 1; // Halo
-            else {
+            
+            // Mapping der Typen
+            if (particles[i]->type == 1) {
+                gadget_type = 4;
+                gas_particles.push_back(particles[i].get());
+            } else if (particles[i]->type == 2) {
+                gadget_type = 0;
+                disk_particles.push_back(particles[i].get());
+            } else if (particles[i]->type == 3) {
+                gadget_type = 1;
+                halo_particles.push_back(particles[i].get());
+            } else {
                 std::cerr << "Unknown particle type: " << particles[i]->type << std::endl;
                 return;
             }
@@ -232,7 +243,6 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         header.Omega0 = 0.0;
         header.OmegaLambda = 0.0;
         header.HubbleParam = 1.0;
-        // Fill the remaining header fields if necessary
 
         // Write the header with block sizes
         unsigned int block_size = sizeof(header);
@@ -240,82 +250,80 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Prepare positions in float array (positions are in kpc)
-        std::vector<float> positions(numberOfParticles * 3);
-        for (int i = 0; i < numberOfParticles; i++) {
-            positions[3*i]     = static_cast<float>(particles[i]->position.x / Units::KPC);
-            positions[3*i + 1] = static_cast<float>(particles[i]->position.y / Units::KPC);
-            positions[3*i + 2] = static_cast<float>(particles[i]->position.z / Units::KPC);
-        }
+        // Funktion zur Datenvorbereitung (Position, Geschwindigkeit)
+        auto prepareData = [](const std::vector<Particle*>& particles, std::vector<float>& data, float unit) {
+            data.resize(particles.size() * 3);
+            for (size_t i = 0; i < particles.size(); i++) {
+                data[3*i]     = static_cast<float>(particles[i]->position.x / unit);
+                data[3*i + 1] = static_cast<float>(particles[i]->position.y / unit);
+                data[3*i + 2] = static_cast<float>(particles[i]->position.z / unit);
+            }
+        };
 
-        // Write the POS block
-        block_size = numberOfParticles * 3 * sizeof(float);
+        // Positionen in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        std::vector<float> positions;
+        prepareData(gas_particles, positions, Units::KPC);
+        std::vector<float> halo_positions;
+        prepareData(halo_particles, halo_positions, Units::KPC);
+        std::vector<float> disk_positions;
+        prepareData(disk_particles, disk_positions, Units::KPC);
+        positions.insert(positions.end(), halo_positions.begin(), halo_positions.end());
+        positions.insert(positions.end(), disk_positions.begin(), disk_positions.end());
+        
+        block_size = positions.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(positions.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Prepare velocities in float array (velocities are in km/s)
-        std::vector<float> velocities(numberOfParticles * 3);
-        for (int i = 0; i < numberOfParticles; i++) {
-            velocities[3*i]     = static_cast<float>(particles[i]->velocity.x / Units::KMS);
-            velocities[3*i + 1] = static_cast<float>(particles[i]->velocity.y / Units::KMS);
-            velocities[3*i + 2] = static_cast<float>(particles[i]->velocity.z / Units::KMS);
-        }
+        // Geschwindigkeiten in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        std::vector<float> velocities;
+        prepareData(gas_particles, velocities, Units::KMS);
+        std::vector<float> halo_velocities;
+        prepareData(halo_particles, halo_velocities, Units::KMS);
+        std::vector<float> disk_velocities;
+        prepareData(disk_particles, disk_velocities, Units::KMS);
+        velocities.insert(velocities.end(), halo_velocities.begin(), halo_velocities.end());
+        velocities.insert(velocities.end(), disk_velocities.begin(), disk_velocities.end());
 
-        // Write the VEL block
-        block_size = numberOfParticles * 3 * sizeof(float);
+        block_size = velocities.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(velocities.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Assign IDs if not already assigned
-        for (int i = 0; i < numberOfParticles; i++) {
-            if (particles[i]->id == 0) { // Assuming id == 0 indicates uninitialized
-                particles[i]->id = i + 1; // Assign IDs starting from 1
-            }
-        }
-
-        // Prepare IDs
-        std::vector<unsigned int> ids(numberOfParticles);
-        for (int i = 0; i < numberOfParticles; i++) {
-            ids[i] = particles[i]->id;
-        }
-
-        // Write the ID block
-        block_size = numberOfParticles * sizeof(unsigned int);
+        // IDs in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        std::vector<unsigned int> ids;
+        for (const auto& particle : gas_particles) ids.push_back(particle->id);
+        for (const auto& particle : halo_particles) ids.push_back(particle->id);
+        for (const auto& particle : disk_particles) ids.push_back(particle->id);
+        
+        block_size = ids.size() * sizeof(unsigned int);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(ids.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Prepare masses in float array (masses are in units of 1e10 Msun/h)
-        std::vector<float> masses(numberOfParticles);
-        for (int i = 0; i < numberOfParticles; i++) {
-            masses[i] = static_cast<float>(particles[i]->mass / (Units::MSUN * 1e10));
-        }
-
-        // Write the MASS block
-        block_size = numberOfParticles * sizeof(float);
+        // Massen in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        std::vector<float> masses;
+        for (const auto& particle : gas_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
+        for (const auto& particle : halo_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
+        for (const auto& particle : disk_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
+        
+        block_size = masses.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(masses.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Write the U block if gas particles are present
-        if (header.npart[0] > 0) {
-            // Collect U values for gas particles
+        // U-Werte (interne Energie) nur für Gaspartikel schreiben
+        if (!gas_particles.empty()) {
             std::vector<float> u_values;
-            for (int i = 0; i < numberOfParticles; i++) {
-                if (particles[i]->type == 2) { // Gas particles
-                    // Convert U to code units if necessary
-                    u_values.push_back(static_cast<float>(particles[i]->U / 1e6));
-                }
+            for (const auto& particle : gas_particles) {
+                u_values.push_back(static_cast<float>(particle->U / 1e6)); // U in Code-Einheiten konvertieren
             }
-
-            // Write the U block
             block_size = u_values.size() * sizeof(float);
             file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
             file.write(reinterpret_cast<char*>(u_values.data()), block_size);
             file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         }
+
         file.close();
     }
     else
@@ -490,7 +498,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
             return false;
         }
-    /*
+    
         // Ausgabe des Headers zur Überprüfung
         std::cout << "Gadget2 Header geladen:" << std::endl;
         std::cout << "Teilchenanzahl pro Typ:" << std::endl;
@@ -505,7 +513,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         std::cout << "Hubble-Parameter: " << header.HubbleParam << std::endl;
         std::cout << "Roteshift: " << header.redshift << std::endl;
         std::cout << "Simulationszeit: " << header.time << std::endl;
-    */
+    
         // Gesamtanzahl der Partikel berechnen
         unsigned int total_particles = 0;
         for(int i = 0; i < 6; ++i){
@@ -744,74 +752,84 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                 return false;
             }
         
-        unsigned int current_particle = 0;
-        unsigned int gas_particle_index = 0;
+            unsigned int current_particle = 0;
+            unsigned int gas_particle_index = 0;
+            int count_gas = 0;
+            int count_dark = 0;
+            int count_star = 0;
 
-        for(int type = 0; type < 6; ++type){
-                for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
-                    if(current_particle >= total_particles){
-                        std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
-                        return false;
-                    }
-                    auto particle = std::make_shared<Particle>();
-                    particle->id = ids[current_particle];
+            for(int type = 0; type < 6; ++type)
+            {
+                    for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
+                        if(current_particle >= total_particles){
+                            std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
+                            return false;
+                        }
+                        auto particle = std::make_shared<Particle>();
+                        particle->id = ids[current_particle];
 
-                    // Setzen des Partikeltyps und der Masse
-                    if(type == 1)  
-                    {   
-                        particle->type = 3; // Halo
-                    }
-                    else if(type == 2 || type == 4 || type == 5) 
-                    {
-                        particle->type = 1; // Disk, Bulge, Stars, Bndry
-                    }
-                    else if(type == 0) 
-                    {
-                        particle->type = 2; // Gas
-                    }
+                        // Setzen des Partikeltyps und der Masse
+                        if(type == 1)  
+                        {   
+                            particle->type = 3; // Halo
+                            count_dark++;
+                        }
+                        else if(type == 2 || type == 4 || type == 5) 
+                        {
+                            particle->type = 1; // Disk, Bulge, Stars, Bndry
+                            count_star++;
+                        }
+                        else if(type == 0) 
+                        {
+                            particle->type = 2; // Gas
+                            count_gas++;
+                        }
 
-                    if(has_individual_mass)
-                    {
-                        particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                        if(has_individual_mass)
+                        {
+                            particle->mass = masses[current_particle] * Units::MSUN * 1e10;
+                        }
+                        else
+                        {
+                            particle->mass = header.massarr[type] * Units::MSUN * 1e10;
+                        }
+
+                        particle->position = vec3(
+                            positions[3*current_particle],
+                            positions[3*current_particle + 1],
+                            positions[3*current_particle + 2]
+                        );
+                        particle->velocity = vec3(
+                            velocities[3*current_particle],
+                            velocities[3*current_particle + 1],
+                            velocities[3*current_particle + 2]
+                        );
+
+                        // Skalierung auf SI-Einheiten
+                        particle->position *= Units::KPC;
+                        particle->velocity *= Units::KMS;
+
+                        // Interne Energie für Gaspartikel zuweisen
+                        if(type == 0) // Gaspartikel
+                        {
+                            //scale to SI
+                            particle->U = u_values[gas_particle_index] * 1e6;
+                            //std::cout << particle->U << std::endl;
+                            gas_particle_index++;
+                        }
+
+                        particles.push_back(particle);
+                        current_particle++;
                     }
-                    else
-                    {
-                        particle->mass = header.massarr[type] * Units::MSUN * 1e10;
-                    }
-
-                    particle->position = vec3(
-                        positions[3*current_particle],
-                        positions[3*current_particle + 1],
-                        positions[3*current_particle + 2]
-                    );
-                    particle->velocity = vec3(
-                        velocities[3*current_particle],
-                        velocities[3*current_particle + 1],
-                        velocities[3*current_particle + 2]
-                    );
-
-                    // Skalierung auf SI-Einheiten
-                    particle->position *= Units::KPC;
-                    particle->velocity *= Units::KMS;
-
-                    // Interne Energie für Gaspartikel zuweisen
-                    if(type == 0) // Gaspartikel
-                    {
-                        //scale to SI
-                        particle->U = u_values[gas_particle_index] * 1e6;
-                        //std::cout << particle->U << std::endl;
-                        gas_particle_index++;
-                    }
-
-                    particles.push_back(particle);
-                    current_particle++;
                 }
             }
-        }
         else // Wenn keine Gaspartikel vorhanden sind
         {
             // Ihr bestehender Code zum Erstellen der Partikel
             unsigned int current_particle = 0;
+            int count_gas = 0;
+            int count_dark = 0;
+            int count_star = 0;
 
             for(int type = 0; type < 6; ++type){
                 for(unsigned int i = 0; i < (unsigned int)header.npart[type]; ++i){
@@ -826,14 +844,17 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     if(type == 1)  
                     {   
                         particle->type = 3; // Halo
+                        count_dark++;
                     }
                     else if(type == 2 || type == 4 || type == 5) 
                     {
                         particle->type = 1; // Disk, Bulge, Stars, Bndry
+                        count_star++;
                     }
                     else if(type == 0) 
                     {
                         particle->type = 2; // Gas
+                        count_gas++;
                     }
 
                     if(has_individual_mass)
