@@ -40,10 +40,10 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     }
 
     std::string ending = "";
-    if(outputFormat == "AGF") ending = ".agf";
-    else if(outputFormat == "AGFC") ending = ".agfc";
-    else if(outputFormat == "AGFE") ending = ".agfe";
-    else if(outputFormat == "AGFH") ending = ".agfh";
+    if(outputFormat == "ag") ending = ".ag";
+    else if(outputFormat == "agc") ending = ".agc";
+    else if(outputFormat == "age") ending = ".age";
+    else if(outputFormat == "hdf5") ending = ".hdf5";
     else if(outputFormat == "gadget") ending = ".gadget";
     else
     {
@@ -59,7 +59,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         return;
     }
 
-    if (outputFormat == "AGF")
+    if (outputFormat == "ag")
     {
         //write the header
         AGFHeader header;
@@ -80,8 +80,8 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
 
-        // AGF Format
-        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(uint8_t));
+        ag_MemorySize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(uint8_t) * 2 + sizeof(uint32_t));
+        size_t totalSize = ag_MemorySize;
         
         // Speicher für den Puffer allokieren
         char* buffer = reinterpret_cast<char*>(malloc(totalSize));
@@ -94,12 +94,15 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
                 memcpy(ptr, &particle->type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
+                memcpy(ptr, &particle->galaxyPart, sizeof(uint8_t)); ptr += sizeof(uint8_t);
+                memcpy(ptr, &particle->id, sizeof(uint32_t)); ptr += sizeof(uint32_t);
+
             }
             file.write(buffer, totalSize);
             free(buffer);
         }
     }
-    else if (outputFormat == "AGFC")
+    else if (outputFormat == "agc")
     {
         //write the header
         AGFHeader header;
@@ -119,11 +122,8 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         header.currentTime = currentTime;
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
-        // AGFC Format: Kompaktes Format für Rendering
-        // Speichert nur position (vec3 als 3 floats), visualDensity (float) und type (int)
-
-        // Berechnung der Gesamtgröße: 3 floats für Position, 1 float für visualDensity, 1 int für type pro Particle
-        size_t totalSize = particles.size() * (sizeof(float) * 3 + sizeof(float) + sizeof(uint8_t));
+        agc_MemorySize = (sizeof(float) * 3 + sizeof(float) + sizeof(uint8_t)) * particles.size();
+        size_t totalSize = agc_MemorySize;
 
         // Puffer allokieren
         std::vector<char> buffer(totalSize);
@@ -151,7 +151,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         // Puffer in die Datei schreiben
         file.write(buffer.data(), totalSize);
     }
-    else if (outputFormat == "AGFE")
+    else if (outputFormat == "age")
     {
         //write the header
         AGFHeader header;
@@ -171,8 +171,8 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         header.currentTime = currentTime;
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
-        // AGFE Format: Erweiterte Version (bestehend aus Position, Velocity, Mass, T, P, visualDensity, U, type)
-        size_t totalSize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(uint8_t));
+        age_MemorySize =  particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 5 + sizeof(uint8_t) * 2 + sizeof(uint32_t));
+        size_t totalSize = age_MemorySize;
         
         // Speicher für den Puffer allokieren
         char* buffer = reinterpret_cast<char*>(malloc(totalSize));
@@ -187,12 +187,14 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
                 memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
                 memcpy(ptr, &particle->U, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
+                memcpy(ptr, &particle->galaxyPart, sizeof(uint8_t)); ptr += sizeof(uint8_t);
+                memcpy(ptr, &particle->id, sizeof(uint32_t)); ptr += sizeof(uint32_t);
             }
             file.write(buffer, totalSize);
             free(buffer);
         }
     }
-    else if (outputFormat == "AGFH")
+    else if (outputFormat == "hdf5")
     {
         //...
     }
@@ -206,24 +208,39 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         std::vector<Particle*> gas_particles;
         std::vector<Particle*> halo_particles;
         std::vector<Particle*> disk_particles;
+        std::vector<Particle*> bulge_particles;
+
+        gadget_MemorySize = sizeof(header) + particles.size() * (6 * sizeof(float) + sizeof(unsigned int) + sizeof(float)) +  gas_particles.size() * sizeof(float);
 
         // Map our particle types to Gadget2 types and count particles per type
         for (int i = 0; i < numberOfParticles; i++) {
             int gadget_type = 0;
             
-            // Mapping der Typen
-            if (particles[i]->type == 1) {
-                gadget_type = 4;
+            // Map AstroGen2 particle types to Gadget2 types
+            if (particles[i]->galaxyPart == 1 && particles[i]->type == 1)
+            {
+                //save disk as a disk particle
+                gadget_type = 2;
                 gas_particles.push_back(particles[i].get());
-            } else if (particles[i]->type == 2) {
-                gadget_type = 0;
-                disk_particles.push_back(particles[i].get());
-            } else if (particles[i]->type == 3) {
+            } 
+            if (particles[i]->galaxyPart == 3 && particles[i]->type == 3) 
+            {
+                //save halo as a halo particle
                 gadget_type = 1;
+                disk_particles.push_back(particles[i].get());
+            } 
+            if (particles[i]->galaxyPart == 2 && particles[i]->type == 1)
+            {
+                //save bulge as a bulge particle
+                gadget_type = 3;
                 halo_particles.push_back(particles[i].get());
-            } else {
-                std::cerr << "Unknown particle type: " << particles[i]->type << std::endl;
-                return;
+            }
+
+            //exeption: if if particle is a gas no matter if it is a disk or bulge particle save it as a gas particle
+            if (particles[i]->type == 2) 
+            {
+                gadget_type = 0;
+                gas_particles.push_back(particles[i].get());
             }
 
             header.npart[gadget_type]++;
@@ -260,53 +277,63 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             }
         };
 
-        // Positionen in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        // Positionen in der Reihenfolge Gas, Halo, Disk, Bulge vorbereiten und schreiben
         std::vector<float> positions;
         prepareData(gas_particles, positions, Units::KPC);
         std::vector<float> halo_positions;
         prepareData(halo_particles, halo_positions, Units::KPC);
         std::vector<float> disk_positions;
         prepareData(disk_particles, disk_positions, Units::KPC);
+        std::vector<float> bulge_positions;
+        prepareData(bulge_particles, bulge_positions, Units::KPC);
+
         positions.insert(positions.end(), halo_positions.begin(), halo_positions.end());
         positions.insert(positions.end(), disk_positions.begin(), disk_positions.end());
-        
+        positions.insert(positions.end(), bulge_positions.begin(), bulge_positions.end());
+
         block_size = positions.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(positions.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Geschwindigkeiten in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        // Geschwindigkeiten in der Reihenfolge Gas, Halo, Disk, Bulge vorbereiten und schreiben
         std::vector<float> velocities;
         prepareData(gas_particles, velocities, Units::KMS);
         std::vector<float> halo_velocities;
         prepareData(halo_particles, halo_velocities, Units::KMS);
         std::vector<float> disk_velocities;
         prepareData(disk_particles, disk_velocities, Units::KMS);
+        std::vector<float> bulge_velocities;
+        prepareData(bulge_particles, bulge_velocities, Units::KMS);
+
         velocities.insert(velocities.end(), halo_velocities.begin(), halo_velocities.end());
         velocities.insert(velocities.end(), disk_velocities.begin(), disk_velocities.end());
+        velocities.insert(velocities.end(), bulge_velocities.begin(), bulge_velocities.end());
 
         block_size = velocities.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(velocities.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // IDs in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        // IDs in der Reihenfolge Gas, Halo, Disk, Bulge vorbereiten und schreiben
         std::vector<unsigned int> ids;
         for (const auto& particle : gas_particles) ids.push_back(particle->id);
         for (const auto& particle : halo_particles) ids.push_back(particle->id);
         for (const auto& particle : disk_particles) ids.push_back(particle->id);
-        
+        for (const auto& particle : bulge_particles) ids.push_back(particle->id);
+
         block_size = ids.size() * sizeof(unsigned int);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(ids.data()), block_size);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
-        // Massen in der Reihenfolge Gas, Halo, Disk vorbereiten und schreiben
+        // Massen in der Reihenfolge Gas, Halo, Disk, Bulge vorbereiten und schreiben
         std::vector<float> masses;
         for (const auto& particle : gas_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
         for (const auto& particle : halo_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
         for (const auto& particle : disk_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
-        
+        for (const auto& particle : bulge_particles) masses.push_back(static_cast<float>(particle->mass / (Units::MSUN * 1e10)));
+
         block_size = masses.size() * sizeof(float);
         file.write(reinterpret_cast<char*>(&block_size), sizeof(block_size));
         file.write(reinterpret_cast<char*>(masses.data()), block_size);
@@ -344,14 +371,14 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         return false;
     }
 
-    if(inputFormat == "AGF")
+    if(inputFormat == "ag")
     {
-        std::cout << "reading AGF initial condition data ..." << std::endl;
+        std::cout << "reading ag initial condition data ..." << std::endl;
         // Header auslesen
         AGFHeader header;
         file.read(reinterpret_cast<char*>(&header), sizeof(header));
         if (!file) {
-            std::cerr << "Fehler: Konnte den AGF-Header nicht lesen!" << std::endl;
+            std::cerr << "Fehler: Konnte den ag-Header nicht lesen!" << std::endl;
             return false;
         }
 
@@ -373,21 +400,23 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             file.read(reinterpret_cast<char*>(&particle.T), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle.galaxyPart), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle.id), sizeof(uint32_t));
             particles.push_back(std::make_shared<Particle>(particle));
         }
 
         file.close();
-        std::cout << "successfully read AGF initial condition data" << std::endl;
+        std::cout << "successfully read ag initial condition data" << std::endl;
         return true;
     }
-    else if (inputFormat == "AGFC")
+    else if (inputFormat == "agc")
     {
-        std::cout << "reading AGFC initial condition data ..." << std::endl;
+        std::cout << "reading agc initial condition data ..." << std::endl;
         // Header auslesen
         AGFHeader header;
         file.read(reinterpret_cast<char*>(&header), sizeof(header));
         if (!file) {
-            std::cerr << "Fehler: Konnte den AGFC-Header nicht lesen!" << std::endl;
+            std::cerr << "Fehler: Konnte den agc-Header nicht lesen!" << std::endl;
             return false;
         }
 
@@ -418,17 +447,17 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         }
 
         file.close();
-        std::cout << "successfully read AGFC initial condition data" << std::endl;
+        std::cout << "successfully read agc initial condition data" << std::endl;
         return true;
     }
-    else if (inputFormat == "AGFE")
+    else if (inputFormat == "age")
     {
-        std::cout << "reading AGFE initial condition data ..." << std::endl;
+        std::cout << "reading age initial condition data ..." << std::endl;
         // Header auslesen
         AGFHeader header;
         file.read(reinterpret_cast<char*>(&header), sizeof(header));
         if (!file) {
-            std::cerr << "Fehler: Konnte den AGFE-Header nicht lesen!" << std::endl;
+            std::cerr << "Fehler: Konnte den age-Header nicht lesen!" << std::endl;
             return false;
         }
 
@@ -452,15 +481,17 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.U), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle.galaxyPart), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle.id), sizeof(uint32_t));
             particles.push_back(std::make_shared<Particle>(particle));
         }
 
         file.close();
 
-        std::cout << "successfully read AGFE initial condition data" << std::endl;
+        std::cout << "successfully read age initial condition data" << std::endl;
         return true;
     }
-    else if(inputFormat == "AGFH")
+    else if(inputFormat == "hdf5")
     {
         //...
     }
@@ -498,13 +529,17 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             std::cerr << "Fehler: Start- und End-Blockgrößen des Headers stimmen nicht überein!" << std::endl;
             return false;
         }
-        /*
+        
         // Ausgabe des Headers zur Überprüfung
-        std::cout << "Gadget2 Header geladen:" << std::endl;
-        std::cout << "Teilchenanzahl pro Typ:" << std::endl;
-        for (int i = 0; i < 6; ++i) { // Annahme: 6 Typen
-            std::cout << "Typ " << i << ": " << header.npart[i] << " Partikel" << std::endl;
-        }
+        std::cout << "Gadget2 Header: " << std::endl;
+        std::cout << "Gas (Typ 0): " << header.npart[0] << std::endl;
+        std::cout << "Halo (Typ 1): " << header.npart[1] << std::endl;
+        std::cout << "Disk (Typ 2): " << header.npart[2] << std::endl;
+        std::cout << "Bulge (Typ 3): " << header.npart[3] << std::endl;
+        std::cout << "Stars (Typ 4): " << header.npart[4] << std::endl;
+        std::cout << "Black Hole (Typ 5): " << header.npart[5] << std::endl;
+
+        /*
         std::cout << "Mass per type:" << std::endl;
         for (int i = 0; i < 6; ++i) { // Annahme: 6 Typen
             std::cout << "Typ " << i << ": " << header.massarr[i] << " Mass" << std::endl;
@@ -514,6 +549,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         std::cout << "Roteshift: " << header.redshift << std::endl;
         std::cout << "Simulationszeit: " << header.time << std::endl;
         */
+        
     
         // Gesamtanzahl der Partikel berechnen
         unsigned int total_particles = 0;
@@ -772,17 +808,25 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         // Setzen des Partikeltyps und der Masse
                         if(type == 1)  
                         {   
-                            particle->type = 3; // Halo
+                            particle->type = 3; // dark matter
+                            particle->galaxyPart = 3; // Halo
                             count_dark++;
                         }
                         else if(type == 2 || type == 4 || type == 5) 
                         {
-                            particle->type = 1; // Disk, Bulge, Stars, Bndry
+                            particle->type = 1;
+                            count_star++;
+                        }
+                        else if (type == 3)
+                        {
+                            particle->type = 1;
+                            particle->galaxyPart = 2; // Bulge
                             count_star++;
                         }
                         else if(type == 0) 
                         {
                             particle->type = 2; // Gas
+                            particle->galaxyPart = 1; // Disk
                             count_gas++;
                         }
 
@@ -844,17 +888,25 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     // Setzen des Partikeltyps und der Masse
                     if(type == 1)  
                     {   
-                        particle->type = 3; // Halo
+                        particle->type = 3; // dark matter
+                        particle->galaxyPart = 3; // Halo
                         count_dark++;
                     }
                     else if(type == 2 || type == 4 || type == 5) 
                     {
-                        particle->type = 1; // Disk, Bulge, Stars, Bndry
+                        particle->type = 1;
+                        count_star++;
+                    }
+                    else if (type == 3)
+                    {
+                        particle->type = 1;
+                        particle->galaxyPart = 2; // Bulge
                         count_star++;
                     }
                     else if(type == 0) 
                     {
                         particle->type = 2; // Gas
+                        particle->galaxyPart = 1; // Disk
                         count_gas++;
                     }
 
@@ -887,6 +939,51 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                 }
             }
         }
+
+        int num_stars = 0;
+        int num_gas = 0;
+        int num_dark = 0;
+
+        int num_disk = 0;
+        int num_bulge = 0;
+        int num_halo = 0;
+
+        for(auto particle : particles)
+        {
+            if(particle->type == 1)
+            {
+                num_stars++;
+            }
+            else if(particle->type == 2)
+            {
+                num_gas++;
+            }
+            else if(particle->type == 3)
+            {
+                num_dark++;
+            }
+
+            if(particle->galaxyPart == 1)
+            {
+                num_disk++;
+            }
+            else if(particle->galaxyPart == 2)
+            {
+                num_bulge++;
+            }
+            else if(particle->galaxyPart == 3)
+            {
+                num_halo++;
+            }
+        }
+        std::cout << "\nParticle types: " << std::endl;
+        std::cout << "stars: " << num_stars << std::endl;
+        std::cout << "gas: " << num_gas << std::endl;
+        std::cout << "dark matter: " << num_dark << std::endl;
+        std::cout << "Galaxy parts: " << std::endl;
+        std::cout << "disk: " << num_disk << std::endl;
+        std::cout << "bulge: " << num_bulge << std::endl;
+        std::cout << "halo: " << num_halo << std::endl;
 
         // Datei schließen
         file.close();

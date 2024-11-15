@@ -2,12 +2,7 @@
 
 #include "vec3.h"
 #include <memory>
-//check if windows or linux
-#ifdef _WIN32
-#include "Tree\Node.h"
-#else
 #include "Tree/Node.h"
-#endif
 
 class Node;
 
@@ -19,12 +14,13 @@ public:
     Particle(){}
     ~Particle(){}
 
-    // Particle properties
+    // Particle properties in SI units
     vec3 position;
     vec3 velocity;
     vec3 acceleration;
     double mass = 0;
 
+    //unique id
     unsigned int id;
 
     //adaptive time integration
@@ -33,27 +29,20 @@ public:
 
     //SPH only for gas particles, Stars and dark matter particles are not affected
     uint8_t type = 1; // 1 = star, 2 = gas, 3 = dark matter
+    uint8_t galaxyPart = 1; // 1 = disk, 2 = bulge, 3 = halo
 
     // Fluid properties (SPH) only for gas particles
     //calculated by the Tree
-    double h = 0;
+    double h = 0; // smoothing length in m
     double rho = 0; //density in kg/m^3
-    //calcualted with the forces
     double P = 0; //pressure in Pascal
     double T = 0; //temperature in Kelvin
-    //derivative of A for the time integration of the entropy
+    //derivative of A for the time integration of the internal energy
     double dUdt = 0;
-    double U = 0; //internal energy in J
+    double U = 0; //internal energy in J/kg
 
-    //double totalViscosityTensor;
-
-
-    //for all particles, just for visualization
+    //calculated for all particles not just SPH gas, just for visualization
     double visualDensity = 0;
-
-    // Energy properties
-    double kineticEnergy = 0;
-    double potentialEnergy= 0;
 
     //Octree properties
     std::weak_ptr<Node> node;

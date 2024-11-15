@@ -10,13 +10,14 @@
 #include "random.h"
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
-#include "IC/Galaxy.h"
+#include "IC/Halo.h"
 #include <thread>
 #include <mutex>
 #include <atomic>
 
 class Tree;
 class DataManager;
+class Halo;
 
 class Simulation
 {

@@ -57,43 +57,12 @@ bool Simulation::init()
     Console::printSystemInfo();
     
     if(true) dataManager->loadICs(particles, this);
-    //get ICs from Config file:
+//custom initial conditions
     else
     {
-        //custom setup:
-        std::cout << "reading custom ICs from Simulation.cpp" << std::endl;
-        Galaxy galaxy(&particles);
+        Halo halo;
 
-        //Bulge
-        galaxy.M_Bulge = 1e39;
-        galaxy.R_Bulge = 5e19;
-        galaxy.Rs_Bulge = 5e18;
-        galaxy.N_Bulge = 0;
-        
-        //Disk
-        galaxy.M_Disk = 1e40;
-        galaxy.R_Disk = 1e20;
-        galaxy.z_Disk = 2e18;
-        galaxy.VelDis_Disk = 1e3;
-        galaxy.N_Disk = 500;
-
-        //Gas in the disk
-        galaxy.M_Gas = 1e39;
-        galaxy.R_Gas = 1e20;
-        galaxy.z_Gas = 2e18;
-        galaxy.VelDis_Gas = 1e3;
-        galaxy.N_Gas = 500;
-
-        //Dark Matter Halo
-        galaxy.M_Halo = 8e40;
-        galaxy.R_Halo = 1e21;
-        galaxy.c_Halo = 7;
-        galaxy.N_Halo = 0;
-
-        galaxy.galaxyPosition = vec3(0.0, 0.0, 0.0);
-        galaxy.galaxyVelocity = vec3(0.0, 0.0, 0.0);
-
-        galaxy.generateGalaxy();
+        halo.generateHalo(0, numberOfParticles, particles);
     }
 
     if(numberOfParticles != particles.size())
@@ -134,12 +103,12 @@ bool Simulation::init()
     dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     
     //print the memory size of the data
-    double perParticle = 0;
-    if(dataManager->outputFormat == "AGF") perParticle = dataManager->AGF_MemorySize / 1000.0;
-    if(dataManager->outputFormat == "AGFE") perParticle = dataManager->AGFE_MemorySize / 1000.0;
-    if(dataManager->outputFormat == "AGFC") perParticle = dataManager->AGFC_MemorySize / 1000.0;
-    if(dataManager->outputFormat == "gadget") perParticle = dataManager->Gadget_MemorySize / 1000.0;
-    double storageSize = perParticle * numberOfParticles * fixedTimeSteps;
+    double storageSize = fixedTimeSteps;
+    if(dataManager->outputFormat == "ag") storageSize *= dataManager->ag_MemorySize;
+    if(dataManager->outputFormat == "age") storageSize *= dataManager->age_MemorySize;
+    if(dataManager->outputFormat == "agc") storageSize *= dataManager->agc_MemorySize;
+    if(dataManager->outputFormat == "hdf5") storageSize *= dataManager->hdf5_MemorySize;
+    if(dataManager->outputFormat == "gadget") storageSize *= dataManager->gadget_MemorySize;
     if(storageSize < 1000000000)
     {
         std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000 << " MB" << std::endl;
