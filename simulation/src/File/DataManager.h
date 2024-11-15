@@ -32,12 +32,12 @@ public:
 //
     bool loadICs(std::vector<std::shared_ptr<Particle>>& particles, Simulation* sim);
 
-    //Data Size per 1000 particles in bytes
-    double AGF_MemorySize = 77824;
-    double AGFC_MemorySize = 20480;
-    double AGFE_MemorySize = 94208;
-    double AGFH_MemorySize = 13000; // not implemented yet
-    double Gadget_MemorySize = 32000;
+    //Data Size
+    size_t ag_MemorySize;
+    size_t agc_MemorySize;
+    size_t age_MemorySize;
+    size_t hdf5_MemorySize;
+    size_t gadget_MemorySize;
 
 private:
     //AGF header
