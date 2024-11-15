@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <filesystem>
 #include <iomanip>
-
 #include <omp.h>
 
 void Tree::buildTree()
@@ -26,7 +25,8 @@ void Tree::buildTree()
     }
 }
 
-void Tree::calculateForces() {
+void Tree::calculateForces() 
+{
     const int numThreads = std::thread::hardware_concurrency();
     omp_set_num_threads(numThreads);  // Setze die Anzahl der OpenMP-Threads
 
