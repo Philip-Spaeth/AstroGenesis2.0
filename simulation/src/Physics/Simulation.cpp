@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <iomanip>
 #include "Units.h"
-
+#include "Log.h"
 
 Simulation::Simulation()
 {
@@ -16,9 +16,14 @@ Simulation::Simulation()
     timeIntegration = std::make_shared<TimeIntegration>();
     dataManager = std::make_shared<DataManager>("../../output_data/");
     console = std::make_shared<Console>();
+
+    initLogger("logfile.csv");
 }
 
-Simulation::~Simulation(){}
+Simulation::~Simulation()
+{
+    closeLogger();
+}
 
 bool Simulation::init()
 {
@@ -56,6 +61,7 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
+    start("load IC");
     if(true) dataManager->loadICs(particles, this);
 //custom initial conditions
     else
@@ -64,6 +70,7 @@ bool Simulation::init()
 
         halo.generateHalo(0, numberOfParticles, particles);
     }
+    
 
     if(numberOfParticles != particles.size())
     {
@@ -83,23 +90,29 @@ bool Simulation::init()
         }
     }
 
+    start("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
     tree->buildTree();
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
-
+    
+    start("Visual Density");
     visualDensityRadius = tree->root->radius / 500;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
+    start("SPH density");
     tree->calcGasDensity();
     //the first time after the temprature is set and rho is calculated
+    start("Update SPH");
     updateGasParticleProperties(tree);
 
     // Initial force calculation
+    start("Force Calculation");
     tree->calculateForces();
 
-    //save the particles data
+    //save the particles data#
+    start("Save data");
     dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     
     //print the memory size of the data
@@ -117,7 +130,7 @@ bool Simulation::init()
     {
         std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
-
+    start("end");
     return true;
 }
 
