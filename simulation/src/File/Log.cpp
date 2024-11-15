@@ -58,7 +58,7 @@ namespace Log
             auto now = std::chrono::steady_clock::now();
             double elapsedTime = std::chrono::duration<double>(now - startTimestamp).count();
             // Schreibe in die Log-Datei
-            logFile << currentProcessName << ", " << elapsedTime << "\n";
+            logFile << currentProcessName << ";" << elapsedTime << "\n";
             
             // Stelle sicher, dass der Puffer geschrieben wird
             logFile.flush();
