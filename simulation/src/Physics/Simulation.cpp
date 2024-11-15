@@ -17,12 +17,12 @@ Simulation::Simulation()
     dataManager = std::make_shared<DataManager>("../../output_data/");
     console = std::make_shared<Console>();
 
-    initLogger("logfile.csv");
+    Log::initLogger("logfile.csv");
 }
 
 Simulation::~Simulation()
 {
-    closeLogger();
+    Log::closeLogger();
 }
 
 bool Simulation::init()
@@ -61,7 +61,7 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    start("load IC");
+    Log::start("load IC");
     if(true) dataManager->loadICs(particles, this);
 //custom initial conditions
     else
@@ -90,29 +90,29 @@ bool Simulation::init()
         }
     }
 
-    start("build Tree");
+    Log::start("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
     tree->buildTree();
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
-    start("Visual Density");
+    Log::start("Visual Density");
     visualDensityRadius = tree->root->radius / 500;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
-    start("SPH density");
+    Log::start("SPH density");
     tree->calcGasDensity();
     //the first time after the temprature is set and rho is calculated
-    start("Update SPH");
+    Log::start("Update SPH");
     updateGasParticleProperties(tree);
 
     // Initial force calculation
-    start("Force Calculation");
+    Log::start("Force Calculation");
     tree->calculateForces();
 
     //save the particles data#
-    start("Save data");
+    Log::start("Save data");
     dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     
     //print the memory size of the data
@@ -130,7 +130,7 @@ bool Simulation::init()
     {
         std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
-    start("end");
+    Log::start("end");
     return true;
 }
 

@@ -33,8 +33,13 @@ endfunction()
 include_directories(${PROJECT_SOURCE_DIR}/src)
 add_subdirectories_recursive(${PROJECT_SOURCE_DIR}/src)
 
-# Add executable
+find_package(OpenMP REQUIRED)
+
 add_executable(${PROJECT_AND_EXE_NAME} ${USER_SOURCE_FILES})
+
+if(OpenMP_FOUND)
+    target_link_libraries(AstroGen2 PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 # Compiler-Optionen und Link-Bibliotheken
 target_compile_options(${PROJECT_AND_EXE_NAME} PRIVATE -Wall)
