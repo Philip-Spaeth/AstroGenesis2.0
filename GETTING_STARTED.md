@@ -20,7 +20,6 @@ sudo apt install cmake gcc g++
 Astro Genesis 2.0 relies on several scientific libraries to perform computations and handle data. Ensure the following dependencies are installed:
 
 - GNU Scientific Library (GSL)
-- Message Passing Interface (MPI)
 - HDF5 (Hierarchical Data Format 5)
 
 1. **Install GNU Scientific Library (GSL)**
@@ -29,14 +28,7 @@ Astro Genesis 2.0 relies on several scientific libraries to perform computations
 sudo apt install libgsl-dev
 ```
 
-2. **Install MPI (OpenMPI)**
-For parallel processing, Astro Genesis 2.0 uses MPI. OpenMPI is a widely used implementation of the MPI standard.
-
-```sh
-sudo apt install openmpi-bin libopenmpi-dev
-```
-
-3. **Install HDF5**
+2. **Install HDF5**
 HDF5 is used to efficiently store and manage large amounts of scientific data.
 
 ```sh
