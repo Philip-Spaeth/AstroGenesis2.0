@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <iomanip>
 
+#include <omp.h>
+
 void Tree::buildTree()
 {
     //create the root node
@@ -24,36 +26,19 @@ void Tree::buildTree()
     }
 }
 
-void Tree::calculateForces() 
-{
+void Tree::calculateForces() {
     const int numThreads = std::thread::hardware_concurrency();
-    std::vector<std::thread> threads;
-    currentParticleIndex.store(0); // Initialisiere den Atom-Index
+    omp_set_num_threads(numThreads);  // Setze die Anzahl der OpenMP-Threads
 
-    for (int i = 0; i < numThreads; ++i) {
-        threads.push_back(std::thread(&Tree::calculateForcesWorker, this));
-    }
+    // Erstelle eine lokale Kopie von numberOfParticles
+    int numParticles = simulation->numberOfParticles;
 
-    for (auto& thread : threads) {
-        thread.join();
-    }
-}
-
-void Tree::calculateForcesWorker() {
-    while (true) {
-        int i = currentParticleIndex.fetch_add(1);
-        if (i >= simulation->numberOfParticles) {
-            break; // Beende, wenn alle Partikel bearbeitet sind
-        }
-
-        //only calculate the forces for the particles that are due to be integrated
-        if (simulation->globalTime == simulation->particles[i]->nextIntegrationTime)
-        {
-            // Berechne die Kräfte für das Partikel
+    #pragma omp parallel for
+    for (int i = 0; i < numParticles; ++i) {
+        if (simulation->globalTime == simulation->particles[i]->nextIntegrationTime) {
             simulation->particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
             simulation->particles[i]->dUdt = 0;
-            if(simulation->particles[i]->type == 2)
-            {
+            if(simulation->particles[i]->type == 2) {
                 simulation->particles[i]->dUdt = 0;
             }
             root->calculateGravityForce(simulation->particles[i], simulation->e0, simulation->theta);
@@ -97,7 +82,9 @@ double Tree::calcTreeWidth()
 void Tree::calcGasDensity()
 {
     //set h to 0 for all particles
-    for (int i = 0; i < simulation->numberOfParticles; i++)
+    const int numParticles = simulation->numberOfParticles; // lokal speichern
+    #pragma omp parallel for
+    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
     { 
         if(simulation->particles[i] != nullptr)
         {
@@ -109,13 +96,13 @@ void Tree::calcGasDensity()
     }
 
     //calculate the h and density for all particles in the tree
-    for (int i = 0; i < simulation->numberOfParticles; i++)
+    #pragma omp parallel for
+    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
     {
         if(simulation->particles[i] != nullptr)
         {
             if(simulation->particles[i]->type == 2)
             {
-            
                 if (auto node = simulation->particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
                 {
                     if(simulation->particles[i]->h == 0)
@@ -131,12 +118,23 @@ void Tree::calcGasDensity()
     root->calcSPHNodeMedians();
 }
 
-
 void Tree::calcVisualDensity()
 {
-    //calculate the density for all particles in the tree
-    for (int i = 0; i < simulation->numberOfParticles; i++)
-    {
+    // Set visualDensity to 0 for all particles
+    const int numParticles = simulation->numberOfParticles; // lokal speichern
+    #pragma omp parallel for
+    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
+    { 
+        simulation->particles[i]->visualDensity = 0;
+    }
+
+    #pragma omp parallel for
+    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
+    { 
+        if(simulation->particles[i]->visualDensity != 0)
+        {
+            continue;
+        }
         if (auto node = simulation->particles[i]->node.lock()) // Convert weak_ptr to shared_ptr for access
         {
             node->calcVisualDensity(simulation->visualDensityRadius);
