@@ -1,0 +1,6 @@
+[submodule "simulation/extern/hdf5"]
+	path = simulation/extern/hdf5
+	url = https://github.com/HDFGroup/hdf5.git
+[submodule "simulation/extern/HighFive"]
+	path = simulation/extern/HighFive
+	url = https://github.com/BlueBrain/HighFive.git

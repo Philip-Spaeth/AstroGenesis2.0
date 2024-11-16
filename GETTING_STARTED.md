@@ -2,6 +2,14 @@
 
 This guide will help you set up and compile Astro Genesis 2.0 using CMake and GCC on Linux.
 
+#Downloading Sub-modules
+when checkout:
+	git clone --recursive git@github.com:Philip-Spaeth/AstroGen2.git
+retrospectively:
+	in simulation folder:
+		git submodule update --recursive
+
+
 ## Prerequisites
 
 Before you begin, ensure you have the following software installed on your system:

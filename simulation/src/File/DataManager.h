@@ -1,14 +1,18 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 #include <memory>
 #include <vector>
 #include <chrono>
 #include "Particle.h"
 #include "vec3.h"
 #include "Simulation.h"
+#include "Tree/Tree.h"
+#include <cstring>
 
 class Simulation;
+class Tree;
 
 class DataManager
 {
@@ -28,6 +32,8 @@ public:
 
 //save data in AGF and gadget format
     void saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime);
+//save Data in hdf5 format -> tree structure in file
+    void saveData(std::shared_ptr<Tree> tree, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime);
 
 //
     bool loadICs(std::vector<std::shared_ptr<Particle>>& particles, Simulation* sim);
@@ -40,6 +46,9 @@ public:
     size_t gadget_MemorySize;
 
 private:
+    bool setupFile();
+    std::string ending;
+
     //AGF header
     struct AGFHeader
     {

@@ -21,6 +21,7 @@
 #include "Units.h"
 #include <unistd.h>
 #include <cstdint>
+#include "Tree/Tree.h"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -30,8 +31,7 @@ DataManager::DataManager(std::string path)
   this->outputPath = path;
 }
 
-
-void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
+bool DataManager::setupFile()
 {
     // Sicherstellen, dass der Pfad existiert
     if (!fs::exists(this->outputPath))
@@ -39,7 +39,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         fs::create_directories(this->outputPath);
     }
 
-    std::string ending = "";
+    ending = "";
     if(outputFormat == "ag") ending = ".ag";
     else if(outputFormat == "agc") ending = ".agc";
     else if(outputFormat == "age") ending = ".age";
@@ -48,8 +48,27 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     else
     {
         std::cerr << "Unknown output data format: " << outputFormat << std::endl;
-        return;
+        return false;
     }
+
+    return true;
+}
+
+// HDF5  hdf5
+void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
+{
+    // check for folder and file ending
+    if(!setupFile()) return;
+
+
+
+}
+
+
+void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
+{
+    // check for folder and file ending
+    if(!setupFile()) return;
 
     // Dateiname basierend auf dem Zeitschritt
     std::string filename = this->outputPath + std::to_string(timeStep) + ending;
@@ -61,6 +80,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
 
     if (outputFormat == "ag")
     {
+
         //write the header
         AGFHeader header;
         //find the number of particles per type
@@ -104,6 +124,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     }
     else if (outputFormat == "agc")
     {
+
         //write the header
         AGFHeader header;
         //find the number of particles per type
@@ -153,6 +174,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     }
     else if (outputFormat == "age")
     {
+
         //write the header
         AGFHeader header;
         //find the number of particles per type
@@ -194,12 +216,9 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             free(buffer);
         }
     }
-    else if (outputFormat == "hdf5")
-    {
-        //...
-    }
     else if (outputFormat == "gadget")
     {
+
         // Initialize the header
         gadget2Header header;
         memset(&header, 0, sizeof(header)); // Zero-initialize the header

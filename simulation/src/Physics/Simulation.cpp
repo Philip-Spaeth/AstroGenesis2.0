@@ -268,7 +268,10 @@ void Simulation::run()
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
         {
-            dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
+            if(dataManager->outputFormat == "hdf5")
+                dataManager->saveData(tree, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
+            else
+                dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
             console->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
             nextSaveTime += fixedStep;
         }
