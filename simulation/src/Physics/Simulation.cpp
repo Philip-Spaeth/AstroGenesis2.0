@@ -62,7 +62,7 @@ bool Simulation::init()
     Console::printSystemInfo();
     
     Log::start("load IC");
-    if(true) dataManager->loadICs(particles, this);
+    if(false) dataManager->loadICs(particles, this);
 //custom initial conditions
     else
     {

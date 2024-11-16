@@ -5,7 +5,8 @@
 #include <random>
 #include <cmath>
 #include <functional>
-
+#include "Constants.h"
+#include "Units.h"
 
 class Halo
 {
@@ -15,13 +16,17 @@ public:
     void generateHalo(int start, int end, std::vector<std::shared_ptr<Particle>>& particles);
 
     //properties:
-    
+    double M = 1.0e12 * Units::MSUN;
+    double a = 10.0 * Units::KPC;
 
 private:
-//     //Hernquist profile
-//     double hernquistDensity(double r, double a, double M){};
-//     double hernquistPotential(double r, double a, double M){};
-//     double hernquistEnclosedMass(double r, double a, double M){};
+    //Hernquist profile
+    double hernquistDensity(double r) const;
+    double hernquistPotential(double r) const;
+    double hernquistEnclosedMass(double r) const;
+    double hernquistVelocityDispersion(double r) const;
+    double hernquistVelocity(double r) const;
+
 
 //     //NFW profile
 //     double NFWDensity(double r, double rs, double rho0){};
