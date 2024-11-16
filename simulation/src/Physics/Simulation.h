@@ -11,6 +11,7 @@
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
 #include "IC/Halo.h"
+#include "IC/Disk.h"
 #include <thread>
 #include <mutex>
 #include <atomic>

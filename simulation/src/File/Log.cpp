@@ -1,5 +1,22 @@
 #include "Log.h"
 #include <cstdio> 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
+#include <string>
+
+std::string formatWithComma(double value) {
+    std::ostringstream stream;
+    stream.imbue(std::locale("C")); // Standardlocale für Dezimalpunkt
+    stream << std::fixed << std::setprecision(5) << value;
+    std::string result = stream.str();
+
+    // Ersetze Punkt durch Komma
+    std::replace(result.begin(), result.end(), '.', ',');
+    return result;
+}
 
 namespace Log
 {
@@ -24,7 +41,7 @@ namespace Log
         if (logFile.is_open()) {
             std::cout << "Logfile opened successfully." << std::endl;
             if (logFile.tellp() == 0) {
-                logFile << "Process, Time\n";
+                //logFile << "Process, Time\n";
             }
         } else {
             std::cerr << "Error opening logfile." << std::endl;
@@ -37,6 +54,12 @@ namespace Log
         if (logFile.is_open()) {
             logFile.close();
         }
+    }
+
+    void printData(const double x, const double y) 
+    {
+        logFile << formatWithComma(x) << ";" << formatWithComma(y)<< "\n";
+        logFile.flush();
     }
 
     void start(const std::string& processName) 

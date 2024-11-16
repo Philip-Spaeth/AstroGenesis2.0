@@ -14,6 +14,7 @@ namespace Log
     void closeLogger();
     void start(const std::string& processName);
     void end();
+    void printData(const double x, const double y);
 
     extern bool hasStarted;
 

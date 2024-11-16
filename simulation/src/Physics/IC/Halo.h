@@ -13,11 +13,23 @@ class Halo
 public:
     Halo();
     ~Halo();
-    void generateHalo(int start, int end, std::vector<std::shared_ptr<Particle>>& particles);
+    void generateHernquistHalo(int start, int end, std::vector<std::shared_ptr<Particle>>& particles);
+    void generateNFWHalo(int start, int end, std::vector<std::shared_ptr<Particle>>& particles);
 
-    //properties:
+//properties:
+    //General:
     double M = 1.0e12 * Units::MSUN;
+
+    //for Hernquist profile
     double a = 10.0 * Units::KPC;
+    double maxR = 400 * Units::KPC;
+
+    //for NFW profile
+    double rs = 10.0 * Units::KPC;;    // Skalenradius
+    double c = 10;     // Konzentrationsparameter
+    double rho0;  // Zentrale Dichte (berechnet)
+    double R_vir = rs * c;                    // Virialradius
+
 
 private:
     //Hernquist profile
@@ -25,21 +37,12 @@ private:
     double hernquistPotential(double r) const;
     double hernquistEnclosedMass(double r) const;
     double hernquistVelocityDispersion(double r) const;
-    double hernquistVelocity(double r) const;
 
-
-//     //NFW profile
-//     double NFWDensity(double r, double rs, double rho0){};
-//     double NFWPotential(double r, double rs, double rho0){};
-//     double NFWEnclosedMass(double r, double rs, double rho0){};
-
-//     //Plummer profile
-//     double plummerDensity(double r, double a, double M){};
-//     double plummerPotential(double r, double a, double M){};
-//     double plummerEnclosedMass(double r, double a, double M){};
-
-//     //Einasto profile
-//     double einastoDensity(double r, double a, double rho0, double alpha){};
-//     double einastoPotential(double r, double a, double rho0, double alpha){};
-//     double einastoEnclosedMass(double r, double a, double rho0, double alpha){};
+    //NFW profile
+    void calculateRho0(); // Berechnung von rho0
+    double nfwDensity(double r) const;
+    double nfwPotential(double r) const;
+    double nfwEnclosedMass(double r) const;
+    double sampleRadius() const;
+    double sampleVelocity(double r) const;
 };

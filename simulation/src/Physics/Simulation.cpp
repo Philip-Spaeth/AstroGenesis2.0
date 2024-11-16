@@ -61,14 +61,17 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    Log::start("load IC");
+    //Log::start("load IC");
     if(false) dataManager->loadICs(particles, this);
 //custom initial conditions
     else
     {
-        Halo halo;
-
-        halo.generateHalo(0, numberOfParticles, particles);
+        //Halo* halo = new Halo();
+        //halo->generateHernquistHalo(0, numberOfParticles, particles);
+        //delete halo;
+        Disk* disk = new Disk();
+        disk->generateDisk(0, numberOfParticles, particles);
+        delete disk;
     }
     
 
@@ -79,7 +82,7 @@ bool Simulation::init()
         std::cout << "Number of particles in the data file: " << particles.size() << std::endl;
         return false;
     }
-
+    /*
     //check if there are null pointers in the particles vector
     for (int i = 0; i < numberOfParticles; i++)
     {
@@ -89,30 +92,59 @@ bool Simulation::init()
             return false;
         }
     }
+    //get the velocity of the particles
+    struct data
+    {
+        double r;
+        double v;
+        double i;
+    };
+    std::vector<data> v;
+    //get every 10th particle and save it in v
+    for (int i = 0; i < numberOfParticles; i += 10)
+    {
+        data d;
+        d.r = particles[i]->position.length() / Units::KPC;
+        d.v = particles[i]->velocity.length() / Units::KMS;
+        d.i = i;
+        v.push_back(d);
+    }
 
-    Log::start("build Tree");
+    //sort v after r
+    std::sort(v.begin(), v.end(), [](data a, data b) { return a.r < b.r; });
+
+    //print the velocity of the particles
+    std::cout << "Velocity of the particles:" << std::endl;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        std::cout << "i: "<< v[i].i << "  r: " << std::fixed << std::setprecision(1) << v[i].r << " kpc, v: " << std::fixed << std::setprecision(1) << v[i].v << " km/s" << std::endl;
+        Log::printData(v[i].r, v[i].v);
+    }
+    */
+
+    //Log::start("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
     tree->buildTree();
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
-    Log::start("Visual Density");
+    //Log::start("Visual Density");
     visualDensityRadius = tree->root->radius / 500;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
-    Log::start("SPH density");
+    //Log::start("SPH density");
     tree->calcGasDensity();
     //the first time after the temprature is set and rho is calculated
-    Log::start("Update SPH");
+    //Log::start("Update SPH");
     updateGasParticleProperties(tree);
 
     // Initial force calculation
-    Log::start("Force Calculation");
+    //Log::start("Force Calculation");
     tree->calculateForces();
 
     //save the particles data#
-    Log::start("Save data");
+    //Log::start("Save data");
     dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     
     //print the memory size of the data
@@ -130,7 +162,7 @@ bool Simulation::init()
     {
         std::cout << std::fixed << std::setprecision(1) << "Storage size of the data: " << storageSize / 1000000000 << " GB" << std::endl;
     }
-    Log::start("end");
+    //Log::start("end");
     return true;
 }
 
