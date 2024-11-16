@@ -113,7 +113,12 @@ bool Simulation::init()
 
     //save the particles data#
     Log::start("Save data");
-    dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
+    if(dataManager->outputFormat == "h5")
+    {
+        //dataManager->saveData(tree, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
+    }
+    else
+        dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     
     //print the memory size of the data
     double storageSize = fixedTimeSteps;
@@ -268,7 +273,7 @@ void Simulation::run()
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
         {
-            if(dataManager->outputFormat == "hdf5")
+            if(dataManager->outputFormat == "h5")
                 dataManager->saveData(tree, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
             else
                 dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);

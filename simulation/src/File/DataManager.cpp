@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <cstdint>
 #include "Tree/Tree.h"
+#include <HighFive/HighFive.hpp>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -43,7 +44,7 @@ bool DataManager::setupFile()
     if(outputFormat == "ag") ending = ".ag";
     else if(outputFormat == "agc") ending = ".agc";
     else if(outputFormat == "age") ending = ".age";
-    else if(outputFormat == "hdf5") ending = ".hdf5";
+    else if(outputFormat == "h5") ending = ".h5";
     else if(outputFormat == "gadget") ending = ".gadget";
     else
     {
@@ -54,15 +55,54 @@ bool DataManager::setupFile()
     return true;
 }
 
-// HDF5  hdf5
+
+
+// HDF5  hdf5  h5
 void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
 {
     // check for folder and file ending
     if(!setupFile()) return;
+    std::string filename = this->outputPath + std::to_string(timeStep) + ending;
+    std::cerr << filename << std::endl;
 
+    try {
+        HighFive::File file(filename, HighFive::File::Overwrite);
 
+        // -------- Header ---------
+        std::vector<int> numParticles(3, 0);
+        for (int i = 0; i < numberOfParticles; i++) {
+            std::shared_ptr<Particle> particle = tree->root->childParticles[i];
+            if (!particle) {
+                throw std::runtime_error("Kein Blattknoten gefunden im Baum.");
+            }
+            if (particle->type == 1)
+                numParticles[0]++;
+            if (particle->type == 2)
+                numParticles[1]++;
+            if (particle->type == 3)
+                numParticles[2]++;
+        }
 
+        HighFive::Group headerGroup = file.createGroup("header");
+
+        // Schreiben des Datasets "numParticles"
+        headerGroup.createDataSet<int>("numParticles", HighFive::DataSpace::From(numParticles)).write(numParticles);
+
+        // Schreiben weiterer Datasets
+        headerGroup.createDataSet<double>("deltaTime", HighFive::DataSpace::From(deltaTime)).write(deltaTime);
+        headerGroup.createDataSet<double>("endTime", HighFive::DataSpace::From(endTime)).write(endTime);
+        headerGroup.createDataSet<double>("currentTime", HighFive::DataSpace::From(currentTime)).write(currentTime);
+
+        std::cout << "HDF5-Datei '" << filename << "' erfolgreich erstellt und Daten geschrieben!" << std::endl;
+    }
+    catch (const HighFive::Exception& err) {
+        std::cerr << "HighFive-Fehler: " << err.what() << std::endl;
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Allgemeiner Fehler: " << ex.what() << std::endl;
+    }
 }
+
 
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
