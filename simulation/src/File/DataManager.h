@@ -10,6 +10,7 @@
 #include "Simulation.h"
 #include "Tree/Tree.h"
 #include <cstring>
+#include <HighFive/HighFive.hpp>
 
 class Simulation;
 class Tree;
@@ -48,6 +49,9 @@ public:
 private:
     bool setupFile();
     std::string ending;
+    void saveTreeToHDF5(HighFive::Group& group, const std::shared_ptr<Node>& node, const std::string& path = "");
+    void saveParticleDataset(HighFive::Group& group, const std::string& name, const Particle& particle);
+
 
     //AGF header
     struct AGFHeader

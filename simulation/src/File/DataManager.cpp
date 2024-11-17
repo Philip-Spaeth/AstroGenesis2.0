@@ -83,6 +83,7 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
                 numParticles[2]++;
         }
 
+
         HighFive::Group headerGroup = file.createGroup("header");
 
         // Schreiben des Datasets "numParticles"
@@ -93,6 +94,14 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
         headerGroup.createDataSet<double>("endTime", HighFive::DataSpace::From(endTime)).write(endTime);
         headerGroup.createDataSet<double>("currentTime", HighFive::DataSpace::From(currentTime)).write(currentTime);
 
+
+        // ---------- Tree -----------
+        HighFive::Group treeGroup = file.createGroup("tree");
+        std::shared_ptr<Node> node = tree->root;
+        this->saveTreeToHDF5(treeGroup, node);
+
+
+
         std::cout << "HDF5-Datei '" << filename << "' erfolgreich erstellt und Daten geschrieben!" << std::endl;
     }
     catch (const HighFive::Exception& err) {
@@ -100,6 +109,56 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
     }
     catch (const std::exception& ex) {
         std::cerr << "Allgemeiner Fehler: " << ex.what() << std::endl;
+    }
+}
+
+void DataManager::saveParticleDataset(HighFive::Group& group, const std::string& name, const Particle& particle) {
+    // Erstelle eine Untergruppe für das Particle
+    HighFive::Group particleGroup = group.createGroup("particle");
+
+
+    // Speichern der Vektoren als Arrays
+    std::array<double, 3> position = {particle.position.x, particle.position.y, particle.position.z};
+    particleGroup.createDataSet<double>("position", HighFive::DataSpace::From(position)).write(position);
+
+    std::array<double, 3> velocity = {particle.velocity.x, particle.velocity.y, particle.velocity.z};
+    particleGroup.createDataSet<double>("velocity", HighFive::DataSpace::From(velocity)).write(velocity);
+
+    std::array<double, 3> acceleration = {particle.acceleration.x, particle.acceleration.y, particle.acceleration.z};
+    particleGroup.createDataSet<double>("acceleration", HighFive::DataSpace::From(acceleration)).write(acceleration);
+
+    // Speichern der anderen Eigenschaften als separate Datasets
+    particleGroup.createDataSet<double>("mass", HighFive::DataSpace::From(particle.mass)).write(particle.mass);
+    particleGroup.createDataSet<double>("T", HighFive::DataSpace::From(particle.T)).write(particle.T);
+    particleGroup.createDataSet<double>("visualDensity", HighFive::DataSpace::From(particle.visualDensity)).write(particle.visualDensity);
+    particleGroup.createDataSet<uint8_t>("type", HighFive::DataSpace::From(particle.type)).write(particle.type);
+    particleGroup.createDataSet<uint8_t>("galaxyPart", HighFive::DataSpace::From(particle.galaxyPart)).write(particle.galaxyPart);
+    particleGroup.createDataSet<uint32_t>("id", HighFive::DataSpace::From(particle.id)).write(particle.id);
+}
+
+void DataManager::saveTreeToHDF5(HighFive::Group& group, const std::shared_ptr<Node>& node, const std::string& path) {
+    if (node->isLeaf) {
+        // Speichere das Particle im aktuellen Pfad
+        if(node->particle)
+            saveParticleDataset(group, path, *(node->particle));
+        //else
+            //std::cerr << "particle existiert nicht: " << std::endl;
+    } else {
+        // Interne Node: Erstelle Untergruppen für jedes Kind
+        for (size_t i = 0; i < 8; ++i) {
+            if (node->children[i]) { // Prüfe, ob das Kind existiert
+                std::string childPath = path.empty() ? std::to_string(i) : path + "/" + std::to_string(i);
+                // Erstelle oder öffne die Untergruppe
+                HighFive::Group childGroup;
+                if (group.exist(childPath)) {
+                    childGroup = group.getGroup(childPath);
+                } else {
+                    childGroup = group.createGroup(childPath);
+                }
+                // Rekursiver Aufruf für das Kind
+                saveTreeToHDF5(childGroup, node->children[i], "");
+            }
+        }
     }
 }
 
