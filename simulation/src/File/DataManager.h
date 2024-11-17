@@ -15,6 +15,26 @@
 class Simulation;
 class Tree;
 
+// Saving h5 file
+struct ParticleData {
+    std::array<double, 3> position;
+    std::array<double, 3> velocity;
+    std::array<double, 3> acceleration;
+    double mass;
+    double T;
+    double visualDensity;
+    uint8_t type;
+    uint8_t galaxyPart;
+    uint32_t id;
+};
+struct NodeData {
+    uint32_t nodeID;
+    uint32_t parentID; // ID des Elternknotens, 0 wenn Root
+    std::vector<uint32_t> childrenIDs; // IDs der Kindknoten
+    bool isLeaf;
+    uint32_t particleIndex; // Index in der Partikel-Datenliste, falls Leaf
+};
+
 class DataManager
 {
 public:
@@ -49,8 +69,7 @@ public:
 private:
     bool setupFile();
     std::string ending;
-    void saveTreeToHDF5(HighFive::Group& group, const std::shared_ptr<Node>& node, const std::string& path = "");
-    void saveParticleDataset(HighFive::Group& group, const std::string& name, const Particle& particle);
+    void collectParticleData(const std::shared_ptr<Node>& node, std::vector<ParticleData>& particles, std::vector<NodeData>& nodes, uint32_t parentID, uint32_t& currentNodeID);
 
 
     //AGF header

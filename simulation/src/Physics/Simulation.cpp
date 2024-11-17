@@ -115,7 +115,7 @@ bool Simulation::init()
     Log::start("Save data");
     if(dataManager->outputFormat == "h5")
     {
-        //dataManager->saveData(tree, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numberOfParticles, fixedStep, endTime, globalTime);
+        dataManager->saveData(tree, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
     }
     else
         dataManager->saveData(particles, 0, fixedTimeSteps, numberOfParticles, fixedStep, endTime, 0.0);
@@ -125,7 +125,7 @@ bool Simulation::init()
     if(dataManager->outputFormat == "ag") storageSize *= dataManager->ag_MemorySize;
     if(dataManager->outputFormat == "age") storageSize *= dataManager->age_MemorySize;
     if(dataManager->outputFormat == "agc") storageSize *= dataManager->agc_MemorySize;
-    if(dataManager->outputFormat == "hdf5") storageSize *= dataManager->hdf5_MemorySize;
+    if(dataManager->outputFormat == "h5") storageSize *= dataManager->hdf5_MemorySize;
     if(dataManager->outputFormat == "gadget") storageSize *= dataManager->gadget_MemorySize;
     if(storageSize < 1000000000)
     {

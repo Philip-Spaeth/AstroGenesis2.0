@@ -23,6 +23,7 @@
 #include <cstdint>
 #include "Tree/Tree.h"
 #include <HighFive/HighFive.hpp>
+#include "Log.h"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -30,6 +31,8 @@ namespace fs = std::filesystem;
 DataManager::DataManager(std::string path)
 {
   this->outputPath = path;
+
+  
 }
 
 bool DataManager::setupFile()
@@ -60,7 +63,7 @@ bool DataManager::setupFile()
 // HDF5  hdf5  h5
 void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
 {
-    // check for folder and file ending
+    // Überprüfe Ordner und Dateiendung
     if(!setupFile()) return;
     std::string filename = this->outputPath + std::to_string(timeStep) + ending;
     std::cerr << filename << std::endl;
@@ -70,19 +73,25 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
 
         // -------- Header ---------
         std::vector<int> numParticles(3, 0);
-        for (int i = 0; i < numberOfParticles; i++) {
-            std::shared_ptr<Particle> particle = tree->root->childParticles[i];
-            if (!particle) {
-                throw std::runtime_error("Kein Blattknoten gefunden im Baum.");
-            }
-            if (particle->type == 1)
+        std::vector<ParticleData> particles;
+        std::vector<NodeData> nodes;
+        particles.reserve(numberOfParticles);
+        nodes.reserve(numberOfParticles); // Annahme: maximal so viele Knoten wie Partikel
+
+        uint32_t currentNodeID = 1; // Start bei 1, 0 könnte Root sein
+
+        // Sammle alle Partikeldaten und die Baumstruktur
+        collectParticleData(tree->root, particles, nodes, 0, currentNodeID); // Root hat keine Eltern
+
+        // Zähle die Partikeltypen
+        for (const auto& particle : particles) {
+            if (particle.type == 1)
                 numParticles[0]++;
-            if (particle->type == 2)
+            if (particle.type == 2)
                 numParticles[1]++;
-            if (particle->type == 3)
+            if (particle.type == 3)
                 numParticles[2]++;
         }
-
 
         HighFive::Group headerGroup = file.createGroup("header");
 
@@ -94,13 +103,82 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
         headerGroup.createDataSet<double>("endTime", HighFive::DataSpace::From(endTime)).write(endTime);
         headerGroup.createDataSet<double>("currentTime", HighFive::DataSpace::From(currentTime)).write(currentTime);
 
+        // ---------- Partikel Datasets -----------
+        HighFive::Group particlesGroup = file.createGroup("particles");
 
-        // ---------- Tree -----------
+        // Vorbereitung der Datenstrukturen für Bulk-Write
+        std::vector<std::array<double, 3>> positions;
+        std::vector<std::array<double, 3>> velocities;
+        std::vector<std::array<double, 3>> accelerations;
+        std::vector<double> masses;
+        std::vector<double> Ts;
+        std::vector<double> visualDensities;
+        std::vector<uint8_t> types;
+        std::vector<uint8_t> galaxyParts;
+        std::vector<uint32_t> ids;
+
+        positions.reserve(particles.size());
+        velocities.reserve(particles.size());
+        accelerations.reserve(particles.size());
+        masses.reserve(particles.size());
+        Ts.reserve(particles.size());
+        visualDensities.reserve(particles.size());
+        types.reserve(particles.size());
+        galaxyParts.reserve(particles.size());
+        ids.reserve(particles.size());
+
+        for (const auto& p : particles) {
+            positions.push_back(p.position);
+            velocities.push_back(p.velocity);
+            accelerations.push_back(p.acceleration);
+            masses.push_back(p.mass);
+            Ts.push_back(p.T);
+            visualDensities.push_back(p.visualDensity);
+            types.push_back(p.type);
+            galaxyParts.push_back(p.galaxyPart);
+            ids.push_back(p.id);
+        }
+
+        // Schreibe die Datasets einmal
+        particlesGroup.createDataSet<double>("position", HighFive::DataSpace::From(positions)).write(positions);
+        particlesGroup.createDataSet<double>("velocity", HighFive::DataSpace::From(velocities)).write(velocities);
+        particlesGroup.createDataSet<double>("acceleration", HighFive::DataSpace::From(accelerations)).write(accelerations);
+        particlesGroup.createDataSet<double>("mass", HighFive::DataSpace::From(masses)).write(masses);
+        particlesGroup.createDataSet<double>("T", HighFive::DataSpace::From(Ts)).write(Ts);
+        particlesGroup.createDataSet<double>("visualDensity", HighFive::DataSpace::From(visualDensities)).write(visualDensities);
+        particlesGroup.createDataSet<uint8_t>("type", HighFive::DataSpace::From(types)).write(types);
+        particlesGroup.createDataSet<uint8_t>("galaxyPart", HighFive::DataSpace::From(galaxyParts)).write(galaxyParts);
+        particlesGroup.createDataSet<uint32_t>("id", HighFive::DataSpace::From(ids)).write(ids);
+
+        // ---------- Baumstruktur Datasets -----------
         HighFive::Group treeGroup = file.createGroup("tree");
-        std::shared_ptr<Node> node = tree->root;
-        this->saveTreeToHDF5(treeGroup, node);
 
+        // Vorbereitung der Datenstrukturen für die Baumstruktur
+        std::vector<uint32_t> nodeIDs;
+        std::vector<uint32_t> parentIDs;
+        std::vector<std::vector<uint32_t>> childrenIDs; // Variable Länge, daher benötigen wir einen anderen Ansatz
 
+        nodeIDs.reserve(nodes.size());
+        parentIDs.reserve(nodes.size());
+
+        // Um die Kinder in einem einzigen Array zu speichern, können wir auch eine Offset-Liste verwenden
+        std::vector<uint32_t> allChildrenIDs;
+        std::vector<uint32_t> childrenOffsets; // Startindex jedes Knotens' Kinder in allChildrenIDs
+        childrenOffsets.reserve(nodes.size() + 1);
+        childrenOffsets.push_back(0); // Start bei 0
+
+        for (const auto& node : nodes) {
+            nodeIDs.push_back(node.nodeID);
+            parentIDs.push_back(node.parentID);
+            allChildrenIDs.insert(allChildrenIDs.end(), node.childrenIDs.begin(), node.childrenIDs.end());
+            childrenOffsets.push_back(static_cast<uint32_t>(allChildrenIDs.size()));
+        }
+
+        // Schreibe die Baumstruktur-Datasets
+        treeGroup.createDataSet<uint32_t>("nodeID", HighFive::DataSpace::From(nodeIDs)).write(nodeIDs);
+        treeGroup.createDataSet<uint32_t>("parentID", HighFive::DataSpace::From(parentIDs)).write(parentIDs);
+        treeGroup.createDataSet<uint32_t>("childrenIDs", HighFive::DataSpace::From(allChildrenIDs)).write(allChildrenIDs);
+        treeGroup.createDataSet<uint32_t>("childrenOffsets", HighFive::DataSpace::From(childrenOffsets)).write(childrenOffsets);
 
         std::cout << "HDF5-Datei '" << filename << "' erfolgreich erstellt und Daten geschrieben!" << std::endl;
     }
@@ -112,54 +190,40 @@ void DataManager::saveData(std::shared_ptr<Tree> tree, int timeStep, int numberT
     }
 }
 
-void DataManager::saveParticleDataset(HighFive::Group& group, const std::string& name, const Particle& particle) {
-    // Erstelle eine Untergruppe für das Particle
-    HighFive::Group particleGroup = group.createGroup("particle");
 
+void DataManager::collectParticleData(const std::shared_ptr<Node>& node, std::vector<ParticleData>& particles, std::vector<NodeData>& nodes, uint32_t parentID, uint32_t& currentNodeID)
+{
+    uint32_t nodeID = currentNodeID++;
+    NodeData nodeData;
+    nodeData.nodeID = nodeID;
+    nodeData.parentID = parentID;
+    nodeData.isLeaf = node->isLeaf;
 
-    // Speichern der Vektoren als Arrays
-    std::array<double, 3> position = {particle.position.x, particle.position.y, particle.position.z};
-    particleGroup.createDataSet<double>("position", HighFive::DataSpace::From(position)).write(position);
+    if (node->isLeaf && node->particle) {
+        nodeData.particleIndex = static_cast<uint32_t>(particles.size());
+        ParticleData pdata;
+        pdata.position = {node->particle->position.x, node->particle->position.y, node->particle->position.z};
+        pdata.velocity = {node->particle->velocity.x, node->particle->velocity.y, node->particle->velocity.z};
+        pdata.acceleration = {node->particle->acceleration.x, node->particle->acceleration.y, node->particle->acceleration.z};
+        pdata.mass = node->particle->mass;
+        pdata.T = node->particle->T;
+        pdata.visualDensity = node->particle->visualDensity;
+        pdata.type = node->particle->type;
+        pdata.galaxyPart = node->particle->galaxyPart;
+        pdata.id = node->particle->id;
+        particles.push_back(pdata);
+    }
 
-    std::array<double, 3> velocity = {particle.velocity.x, particle.velocity.y, particle.velocity.z};
-    particleGroup.createDataSet<double>("velocity", HighFive::DataSpace::From(velocity)).write(velocity);
-
-    std::array<double, 3> acceleration = {particle.acceleration.x, particle.acceleration.y, particle.acceleration.z};
-    particleGroup.createDataSet<double>("acceleration", HighFive::DataSpace::From(acceleration)).write(acceleration);
-
-    // Speichern der anderen Eigenschaften als separate Datasets
-    particleGroup.createDataSet<double>("mass", HighFive::DataSpace::From(particle.mass)).write(particle.mass);
-    particleGroup.createDataSet<double>("T", HighFive::DataSpace::From(particle.T)).write(particle.T);
-    particleGroup.createDataSet<double>("visualDensity", HighFive::DataSpace::From(particle.visualDensity)).write(particle.visualDensity);
-    particleGroup.createDataSet<uint8_t>("type", HighFive::DataSpace::From(particle.type)).write(particle.type);
-    particleGroup.createDataSet<uint8_t>("galaxyPart", HighFive::DataSpace::From(particle.galaxyPart)).write(particle.galaxyPart);
-    particleGroup.createDataSet<uint32_t>("id", HighFive::DataSpace::From(particle.id)).write(particle.id);
-}
-
-void DataManager::saveTreeToHDF5(HighFive::Group& group, const std::shared_ptr<Node>& node, const std::string& path) {
-    if (node->isLeaf) {
-        // Speichere das Particle im aktuellen Pfad
-        if(node->particle)
-            saveParticleDataset(group, path, *(node->particle));
-        //else
-            //std::cerr << "particle existiert nicht: " << std::endl;
-    } else {
-        // Interne Node: Erstelle Untergruppen für jedes Kind
-        for (size_t i = 0; i < 8; ++i) {
-            if (node->children[i]) { // Prüfe, ob das Kind existiert
-                std::string childPath = path.empty() ? std::to_string(i) : path + "/" + std::to_string(i);
-                // Erstelle oder öffne die Untergruppe
-                HighFive::Group childGroup;
-                if (group.exist(childPath)) {
-                    childGroup = group.getGroup(childPath);
-                } else {
-                    childGroup = group.createGroup(childPath);
-                }
-                // Rekursiver Aufruf für das Kind
-                saveTreeToHDF5(childGroup, node->children[i], "");
-            }
+    // Sammle Kinder
+    for (size_t i = 0; i < 8; ++i) {
+        if (node->children[i]) {
+            uint32_t childID = currentNodeID;
+            nodeData.childrenIDs.push_back(childID);
+            collectParticleData(node->children[i], particles, nodes, nodeID, currentNodeID);
         }
     }
+
+    nodes.push_back(nodeData);
 }
 
 
