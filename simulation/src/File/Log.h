@@ -10,6 +10,9 @@
 
 namespace Log
 {
+    void setOutputDir(const std::string& outputDir);
+    extern std::string outputDir;
+
 //logs are saved in the output dir /logs
 
     // track process time

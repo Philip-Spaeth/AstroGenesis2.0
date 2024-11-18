@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <algorithm>
 #include <string>
+#include <filesystem>
+#include <chrono>
+
 
 std::string formatWithComma(double value) 
 {
@@ -20,20 +23,32 @@ std::string formatWithComma(double value)
 
 namespace Log
 {
+    std::string outputDir;
+    void setOutputDir(const std::string& dir) 
+    {
+        outputDir = dir;
+        if (!std::filesystem::exists(outputDir)) 
+        {
+            std::filesystem::create_directories(outputDir);
+        }
+    }
+
 //save data in csv file
     std::vector<std::ofstream> dataFiles;
 
-    void printData(const std::string& file, const double x, const double y) 
+    void printData(const std::string& filename, const double x, const double y) 
     {
-        //find the fiel in dataFiles vector or create a new one
-        auto it = std::find_if(dataFiles.begin(), dataFiles.end(), [&file](const std::ofstream& f) { return f.is_open() && f.rdbuf()->is_open(); });
+        std::string fullPath = outputDir + "/" + filename;
+        auto it = std::find_if(dataFiles.begin(), dataFiles.end(),
+            [&fullPath](const std::ofstream& f) { return f.is_open() && f.rdbuf()->is_open(); });
+
         if (it == dataFiles.end()) 
         {
-            dataFiles.push_back(std::ofstream(file, std::ios::out | std::ios::app));
+            dataFiles.emplace_back(std::ofstream(fullPath, std::ios::out | std::ios::app));
             it = dataFiles.end() - 1;
         }
 
-        *it << formatWithComma(x) << ";" << formatWithComma(y)<< "\n";
+        *it << formatWithComma(x) << ";" << formatWithComma(y) << "\n";
         it->flush();
     }
 
@@ -53,7 +68,7 @@ namespace Log
         }
         else
         {
-            std::string filename = "processLog.csv";
+            std::string filename =  outputDir + "/processLog.csv";
 
             if (std::ifstream(filename)) 
             {

@@ -30,6 +30,7 @@ bool Simulation::init()
         std::cerr << "Error: Could not load the config file." << std::endl;
         return false;
     }
+    Log::setOutputDir(dataManager->outputPath + "/logs");
     
     fixedStep = endTime / fixedTimeSteps;
 
@@ -95,7 +96,7 @@ bool Simulation::init()
 
 
 //save velocity curve
-if (false)
+if (true)
 {
     int N = 1000;
     //get the velocity of the particles
