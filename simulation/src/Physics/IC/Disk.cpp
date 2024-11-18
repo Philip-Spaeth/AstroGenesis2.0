@@ -16,8 +16,7 @@ void Disk::generateDisk(int start, int end, std::vector<std::shared_ptr<Particle
     size_t N = end - start;
     particles.resize(N);
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen(42);
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
     std::normal_distribution<double> normal(0.0, 1.0);
 
@@ -80,7 +79,7 @@ double Disk::circularVelocity(double R) const
     double G = Constants::G;
 
     // Enclosed mass within radius R
-    double M_enc = 2 * M * (1 - std::exp(-R / Rd) * (1 + R / Rd));
+    double M_enc = M * (1 - std::exp(-R / Rd) * (1 + R / Rd));
 
     // Smoothed circular velocity to avoid singularity at R=0
     return std::sqrt(G * M_enc / (R));

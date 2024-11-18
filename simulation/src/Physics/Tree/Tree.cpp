@@ -97,7 +97,7 @@ void Tree::calcGasDensity()
 
     //calculate the h and density for all particles in the tree
     #pragma omp parallel for
-    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
+    for (int i = 0; i < numParticles; i++)
     {
         if(simulation->particles[i] != nullptr)
         {
