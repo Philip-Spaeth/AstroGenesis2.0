@@ -96,7 +96,7 @@ bool Simulation::init()
 
 
 //save velocity curve
-if (true)
+if (false)
 {
     int N = 1000;
     //get the velocity of the particles
@@ -138,7 +138,7 @@ if (true)
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
-    visualDensityRadius = tree->root->radius / 500;
+    visualDensityRadius = tree->root->radius / 1000;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
@@ -301,6 +301,12 @@ void Simulation::run()
                     // Integrate the entropy
                     timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
                 }
+
+                //aplly hubbles law
+                double H0SI = (H0 * Units::KMS) / Units::MPC;
+                double scale_factor = exp(H0SI * particles[i]->timeStep);
+                particles[i]->position *= scale_factor;
+
                 timeIntegration->Kick(particles[i], particles[i]->timeStep);
                 // Schedule the next integration time for this particle
                 particles[i]->nextIntegrationTime += particles[i]->timeStep;
@@ -330,6 +336,8 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
             //calc T, T = (gamma-1)*u*prtn / (bk)
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK);
+
+            //std::cout << std::fixed << std::scientific << std::setprecision(10) << "  U: " << particles[i]->U << "  T: " << particles[i]->T << std::endl;
         }
     }
     

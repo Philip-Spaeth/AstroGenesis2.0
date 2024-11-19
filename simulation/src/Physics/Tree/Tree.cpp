@@ -17,11 +17,19 @@ void Tree::buildTree()
     root->position = vec3(0.0, 0.0, 0.0);
     root->radius = calcTreeWidth();
     root->depth = 0;
-
+    double totalMass = 0;
+    double gasMass = 0;
     //insert the particles in the tree
     for (int i = 0; i < simulation->numberOfParticles; i++)
     {
+        totalMass += simulation->particles[i]->mass;
+        if(simulation->particles[i]->type == 2) gasMass += simulation->particles[i]->mass;
         root->insert(simulation->particles[i]);
+    }
+    if(simulation->globalTime == 0)
+    {
+        std::cout << "\nTotalMass " << std::fixed << std::scientific << totalMass << " kg" << std::endl;
+        std::cout << "GasMass " << std::fixed << std::scientific << gasMass << " kg" << std::endl;
     }
 }
 
