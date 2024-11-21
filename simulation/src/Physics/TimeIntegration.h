@@ -19,5 +19,5 @@ public:
     void Drift(std::shared_ptr<Particle> particle, double deltaTime);
 
     //integrate the internal energy
-    void Ueuler(std::shared_ptr<Particle> particle, double deltaTime);
+    void Ueuler(std::shared_ptr<Particle>& particle, double deltaTime);
 };

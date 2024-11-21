@@ -20,8 +20,8 @@ void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime
 }
 
 //integrate the Internal Energy
-void TimeIntegration::Ueuler(std::shared_ptr<Particle> particle, double deltaTime)
+void TimeIntegration::Ueuler(std::shared_ptr<Particle>& particle, double deltaTime)
 {
     //std::cout << std::fixed << std::scientific << particle->dUdt  * deltaTime<< std::endl;
-    particle->U = particle->U + particle->dUdt * deltaTime;
+    if(!std::isnan(particle->dUdt))particle->U += particle->dUdt * deltaTime;
 }

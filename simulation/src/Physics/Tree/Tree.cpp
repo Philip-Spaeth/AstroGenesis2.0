@@ -45,10 +45,6 @@ void Tree::calculateForces()
     for (int i = 0; i < numParticles; ++i) {
         if (simulation->globalTime == simulation->particles[i]->nextIntegrationTime) {
             simulation->particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            simulation->particles[i]->dUdt = 0;
-            if(simulation->particles[i]->type == 2) {
-                simulation->particles[i]->dUdt = 0;
-            }
             root->calculateGravityForce(simulation->particles[i], simulation->e0, simulation->theta);
         }
     }

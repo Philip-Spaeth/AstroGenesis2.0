@@ -194,7 +194,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
     	            if(v_ij.dot(d) < 0)
                     {
                         double alpha = 0.5;
-                        double beta = 1;
+                        //double beta = 1;
                         MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
                     }
                     
@@ -268,7 +268,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     {
                         //calculate the artificial viscosity
                         double alpha = 0.5;
-                        double beta = 1;
+                        //double beta = 1;
                         MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
                     }
                     // calculate the acceleration due to the artificial viscosity

@@ -298,7 +298,7 @@ void Simulation::run()
             {
                 if(particles[i]->type == 2)
                 {
-                    // Integrate the entropy
+                    // Integrate the internal energy
                     timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
                 }
 
@@ -337,7 +337,10 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             //calc T, T = (gamma-1)*u*prtn / (bk)
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK);
 
-            //std::cout << std::fixed << std::scientific << std::setprecision(10) << "  U: " << particles[i]->U << "  T: " << particles[i]->T << std::endl;
+            //radiative cooling
+            //...
+
+            //std::cout << std::fixed << std::scientific << std::setprecision(20) << "  U: " << particles[i]->U << "  T: " << particles[i]->T << std::endl;
         }
     }
     
