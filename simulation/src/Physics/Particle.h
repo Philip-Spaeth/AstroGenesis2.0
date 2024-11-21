@@ -41,6 +41,11 @@ public:
     double dUdt = 0;
     double U = 0; //internal energy in J/kg
 
+    //star formation
+    double sfr = 0; //star formation rate
+
+    //radiative cooling
+
     //calculated for all particles not just SPH gas, just for visualization
     double visualDensity = 0;
 

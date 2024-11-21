@@ -11,6 +11,7 @@
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
 #include "IC/Halo.h"
+#include "IC/Disk.h"
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -29,6 +30,8 @@ public:
 
     //simulation parameters, has to the same as in the input dataset(ICs)
     double numberOfParticles;
+
+    int numParticlesOutput; // Number of particles to output and save in the data files
 
     //adaptive time integration
     double eta;      // Accuracy parameter for adaptive time step

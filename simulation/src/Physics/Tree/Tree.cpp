@@ -17,11 +17,19 @@ void Tree::buildTree()
     root->position = vec3(0.0, 0.0, 0.0);
     root->radius = calcTreeWidth();
     root->depth = 0;
-
+    double totalMass = 0;
+    double gasMass = 0;
     //insert the particles in the tree
     for (int i = 0; i < simulation->numberOfParticles; i++)
     {
+        totalMass += simulation->particles[i]->mass;
+        if(simulation->particles[i]->type == 2) gasMass += simulation->particles[i]->mass;
         root->insert(simulation->particles[i]);
+    }
+    if(simulation->globalTime == 0)
+    {
+        std::cout << "\nTotalMass " << std::fixed << std::scientific << totalMass << " kg" << std::endl;
+        std::cout << "GasMass " << std::fixed << std::scientific << gasMass << " kg" << std::endl;
     }
 }
 
@@ -37,10 +45,6 @@ void Tree::calculateForces()
     for (int i = 0; i < numParticles; ++i) {
         if (simulation->globalTime == simulation->particles[i]->nextIntegrationTime) {
             simulation->particles[i]->acceleration = vec3(0.0, 0.0, 0.0);
-            simulation->particles[i]->dUdt = 0;
-            if(simulation->particles[i]->type == 2) {
-                simulation->particles[i]->dUdt = 0;
-            }
             root->calculateGravityForce(simulation->particles[i], simulation->e0, simulation->theta);
         }
     }
@@ -97,7 +101,7 @@ void Tree::calcGasDensity()
 
     //calculate the h and density for all particles in the tree
     #pragma omp parallel for
-    for (int i = 0; i < numParticles; i++) // Schleifenbedingungen sind jetzt mit einem konstanten Wert
+    for (int i = 0; i < numParticles; i++)
     {
         if(simulation->particles[i] != nullptr)
         {

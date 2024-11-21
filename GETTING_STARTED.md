@@ -60,7 +60,7 @@ Build the project using CMake:
 ## Running the Compiled Program
 After successfully building the project, you can run the program.
 ```
-mpirun -np 4 ./Astro_Genesis
+./Astro_Genesis
 ```
 
 

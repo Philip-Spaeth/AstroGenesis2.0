@@ -5,22 +5,27 @@
 #include <fstream>
 #include <chrono>
 #include <string>
+#include <vector>
+
 
 namespace Log
 {
+    void setOutputDir(const std::string& outputDir);
+    extern std::string outputDir;
 
-    // Funktionen zur Initialisierung und Loggen
-    void initLogger(const std::string& filename);
-    void closeLogger();
-    void start(const std::string& processName);
-    void end();
+//logs are saved in the output dir /logs
 
+    // track process time
+    void startProcess(const std::string& processName);
+    void endProcess();
     extern bool hasStarted;
-
-    // Die Log-Datei und Variablen werden als extern deklariert
-    extern std::ofstream logFile;
+    extern std::ofstream LogsDir;
+    extern std::ofstream proccessFile;
     extern std::chrono::steady_clock::time_point startTimestamp;
     extern std::string currentProcessName;
 
+    //save data to in csv file
+    void printData(const std::string& file, const double x, const double y);
+    extern std::vector<std::ofstream> dataFiles;
 }
-#endif // LOG_H
+#endif

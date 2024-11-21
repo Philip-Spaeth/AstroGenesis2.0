@@ -33,6 +33,12 @@ DataManager::DataManager(std::string path)
 
 void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
 {
+    //cut the particles to the number of particles
+    if (numberOfParticles < (int)particles.size()) 
+    {
+        particles.resize(numberOfParticles);
+    }
+
     // Sicherstellen, dass der Pfad existiert
     if (!fs::exists(this->outputPath))
     {
@@ -80,19 +86,18 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
 
-        ag_MemorySize = particles.size() * (sizeof(vec3) * 2 + sizeof(double) * 3 + sizeof(uint8_t) * 2 + sizeof(uint32_t));
+        ag_MemorySize = particles.size() * (sizeof(vec3) + sizeof(double) * 4 + sizeof(uint8_t) * 2 + sizeof(uint32_t));
         size_t totalSize = ag_MemorySize;
         
-        // Speicher für den Puffer allokieren
         char* buffer = reinterpret_cast<char*>(malloc(totalSize));
         if (buffer) {
             char* ptr = buffer;
             for (const auto& particle : particles) {
                 memcpy(ptr, &particle->position, sizeof(vec3)); ptr += sizeof(vec3);
-                memcpy(ptr, &particle->velocity, sizeof(vec3)); ptr += sizeof(vec3);
                 memcpy(ptr, &particle->mass, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->T, sizeof(double)); ptr += sizeof(double);
-                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double); // Added visualDensity not real SPH density
+                memcpy(ptr, &particle->visualDensity, sizeof(double)); ptr += sizeof(double);
+                memcpy(ptr, &particle->sfr, sizeof(double)); ptr += sizeof(double);
                 memcpy(ptr, &particle->type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
                 memcpy(ptr, &particle->galaxyPart, sizeof(uint8_t)); ptr += sizeof(uint8_t);
                 memcpy(ptr, &particle->id, sizeof(uint32_t)); ptr += sizeof(uint32_t);
@@ -122,7 +127,7 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
         header.currentTime = currentTime;
 
         file.write(reinterpret_cast<char*>(&header), sizeof(header));
-        agc_MemorySize = (sizeof(float) * 3 + sizeof(float) + sizeof(uint8_t)) * particles.size();
+        agc_MemorySize = (sizeof(float) * 3 + sizeof(float) * 3 + sizeof(uint8_t)* 2) * particles.size();
         size_t totalSize = agc_MemorySize;
 
         // Puffer allokieren
@@ -141,11 +146,16 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             
             float visualDensity = static_cast<float>(particle->visualDensity);
             memcpy(ptr, &visualDensity, sizeof(float)); ptr += sizeof(float);
-
+            float sfr = static_cast<float>(particle->sfr);
+            memcpy(ptr, &sfr, sizeof(float)); ptr += sizeof(float);
+            float T = static_cast<float>(particle->T);
+            memcpy(ptr, &T, sizeof(float)); ptr += sizeof(float);
 
             // type als int speichern
             uint8_t type = particle->type;
             memcpy(ptr, &type, sizeof(uint8_t)); ptr += sizeof(uint8_t);
+            uint8_t galaxyPart = particle->galaxyPart;
+            memcpy(ptr, &galaxyPart, sizeof(uint8_t)); ptr += sizeof(uint8_t);
         }
 
         // Puffer in die Datei schreiben
@@ -395,10 +405,10 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         {
             Particle particle;
             file.read(reinterpret_cast<char*>(&particle.position), sizeof(vec3));
-            file.read(reinterpret_cast<char*>(&particle.velocity), sizeof(vec3));
             file.read(reinterpret_cast<char*>(&particle.mass), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.T), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle.sfr), sizeof(double));
             file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
             file.read(reinterpret_cast<char*>(&particle.galaxyPart), sizeof(uint8_t));
             file.read(reinterpret_cast<char*>(&particle.id), sizeof(uint32_t));
@@ -440,9 +450,18 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             float visualDensity;
             file.read(reinterpret_cast<char*>(&visualDensity), sizeof(float));
             particle.visualDensity = visualDensity;
+            float sfr;
+            file.read(reinterpret_cast<char*>(&sfr), sizeof(float));
+            particle.sfr = sfr;
+            float T;
+            file.read(reinterpret_cast<char*>(&T), sizeof(float));
+            particle.T = T;
             uint8_t type;
             file.read(reinterpret_cast<char*>(&type), sizeof(uint8_t));
             particle.type = type;
+            uint8_t galaxyPart;
+            file.read(reinterpret_cast<char*>(&galaxyPart), sizeof(uint8_t));
+            particle.galaxyPart = galaxyPart;
             particles.push_back(std::make_shared<Particle>(particle));
         }
 
@@ -895,7 +914,21 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     else if(type == 2 || type == 4 || type == 5) 
                     {
                         particle->type = 1;
-                        count_star++;
+
+                        //30% of particles in disk are gas
+                        double r = random::uniform(0,3);
+                        if(r < 1)
+                        {
+                            particle->type = 2;
+                            //calc U from T
+                            particle->T = 1e4;
+                            particle->U = (particle->T * Constants::BK) / ((Constants::GAMMA - 1.0) * Constants::prtn);
+                            count_gas++;
+                        }
+                        else
+                        {
+                            count_star++;
+                        }
                     }
                     else if (type == 3)
                     {
@@ -1066,6 +1099,7 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "inputDataFormat") inputFormat = value;
                 else if (key == "outputFolderName") outputPath += (value + "/");
                 else if (key == "outputDataFormat") outputFormat = value;
+                else if (key == "numParticlesOutput") simulation->numParticlesOutput = std::stod(value);
                 else {
                     std::cerr << "unknown key: " << key << std::endl;
                     return false;
@@ -1079,6 +1113,16 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
             }
         }
     }
+
+    if (simulation->numParticlesOutput > simulation->numberOfParticles) 
+    {
+        std::cerr << "Number of particles to output is greater than the total number of particles." << std::endl;
+        return false;
+    }
+
+    //delete everything in the output folder
+    std::string command = "rm -rf " + outputPath;
+    system(command.c_str());
 
     return true;
 }

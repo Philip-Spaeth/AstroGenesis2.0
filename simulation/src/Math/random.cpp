@@ -15,8 +15,7 @@ double random::normal_dist(double mean, double stddev)
 
 void random::setSeed(unsigned int seed)
 {
-    // Setze den Zufallszahlengenerator auf einen bestimmten Wert
-    srand(seed);
+    random::generator.seed(seed);
 }
 
 double random::uniform(double min, double max)

@@ -180,7 +180,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     vec3 grad_ij = (grad_i + grad_j) / 2;
 
                     // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = - newparticle->mass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
+                    vec3 pressureAcceleration = - gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * grad_i;
                     newparticle->acceleration += pressureAcceleration;
                     //std::cout << std::scientific << pressureAcceleration.length() << std::endl;
 
@@ -194,8 +194,8 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
     	            if(v_ij.dot(d) < 0)
                     {
                         double alpha = 0.5;
-                        double beta = 1;
-                        MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
+                        //double beta = 1;
+                        MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
                     }
                     
                     // calculate the acceleration due to the artificial viscosity
@@ -203,15 +203,16 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     newparticle->acceleration += viscosityAcceleration;
 
 
+
                     //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
-                    newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
+                    newparticle->dUdt += 0.5 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i);
+                    //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
                 }
             }
         }
     }
     else
     {
-  
         double s = radius / r;
         if (s < theta)
         {
@@ -250,9 +251,10 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     vec3 grad_i = kernel::gradientCubicSplineKernel(d, h_i);
                     vec3 grad_j = kernel::gradientCubicSplineKernel(d, h_j);
                     vec3 grad_ij = (grad_i + grad_j) / 2;
-                    
+
+                    //medianPressure not correct thats why 2*
                     // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * grad_i;
+                    vec3 pressureAcceleration = gasMass * (P_j / (rho_j * rho_j) + P_i / (rho_i * rho_i)) * grad_i;
                     newparticle->acceleration += pressureAcceleration;
                     
                     //Artificial viscosity
@@ -266,16 +268,17 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     {
                         //calculate the artificial viscosity
                         double alpha = 0.5;
-                        double beta = 1;
-                        MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
+                        //double beta = 1;
+                        MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
                     }
                     // calculate the acceleration due to the artificial viscosity
                     vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
                     newparticle->acceleration += viscosityAcceleration;
 
 
-                    //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
-                    newparticle->dUdt += 0.5 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i);
+                    //calc the change of the internal energy = 1/2 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i)
+                    newparticle->dUdt += 0.5 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i);
+                    //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
                 }
             }
         }

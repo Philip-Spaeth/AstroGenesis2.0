@@ -3,9 +3,10 @@
 
 double kernel::cubicSplineKernel(double r, double h)
 {
-    const double alpha_3d = 1.0 / (Constants::PI * h * h * h);
+    double alpha_3d = 1.0 / (Constants::PI * h * h * h);
     double q = r / h;
-    if (q < 1.0) {
+    if (q < 1.0) 
+    {
         return alpha_3d * (1 - 1.5 * q * q + 0.75 * q * q * q);
     }
     else if (q < 2.0) {
