@@ -22,6 +22,13 @@ void TimeIntegration::Drift(std::shared_ptr<Particle> particle, double deltaTime
 //integrate the Internal Energy
 void TimeIntegration::Ueuler(std::shared_ptr<Particle>& particle, double deltaTime)
 {
+    if (!particle)
+    {
+        std::cerr << "Error: Particle " << " is not initialized." << std::endl;
+        return;
+    }
+
     //std::cout << std::fixed << std::scientific << particle->dUdt  * deltaTime<< std::endl;
     if(!std::isnan(particle->dUdt))particle->U += particle->dUdt * deltaTime;
+    //std::cout << std::fixed << std::scientific << "  U diff: " << particle->dUdt  * deltaTime / particle->U<< std::endl;
 }

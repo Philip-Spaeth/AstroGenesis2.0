@@ -15,6 +15,8 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include "Cooling.h"
+#include "SFR.h"
 
 class Tree;
 class DataManager;
@@ -51,6 +53,9 @@ public:
     //SPH parameters
     double massInH; //in kg
 
+    bool starFormation = false;
+    bool coolingEnabled = true;
+
     //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning
     double visualDensityRadius; //in m
 
@@ -68,6 +73,8 @@ private:
     std::shared_ptr<TimeIntegration> timeIntegration;
     std::shared_ptr<DataManager> dataManager;
     std::shared_ptr<Console> console;
+    std::shared_ptr<Cooling> cooling;
+    std::shared_ptr<SFR> sfr;
 
     //SPH
     void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update T, P

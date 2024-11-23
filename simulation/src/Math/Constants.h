@@ -13,11 +13,11 @@ namespace Constants
 
     //SPH related constants in SI units
     constexpr double GAMMA = 5.0/3.0; //adiabatic index for ideal gas
-    constexpr double BK = 1.38064852e-23; //Boltzmann constant
+    constexpr double k_b = 1.38064852e-23; //Boltzmann constant
+    constexpr double h_p = 6.62607015e-34; //Planck constant
     constexpr double prtn = 1.6726219e-27; //proton mass in kg
-    //mean molecular weight
-    constexpr double mMWH2 = 1; //neutral hydrogen
-    constexpr double mMWHe = 4; //neutral helium
-    constexpr double mMWHeI = 4; //ionized helium
-    constexpr double mMWH2I = 0.5; //ionized hydrogen
+
+    // Primordiale Häufigkeiten
+    const double X_H = 0.76;            // Massenanteil von Wasserstoff
+    const double X_He = 0.24;           // Massenanteil von Helium
 };

@@ -921,8 +921,8 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         {
                             particle->type = 2;
                             //calc U from T
-                            particle->T = 1e4;
-                            particle->U = (particle->T * Constants::BK) / ((Constants::GAMMA - 1.0) * Constants::prtn);
+                            particle->T = 2e4;
+                            particle->U = (particle->T * Constants::k_b) / ((Constants::GAMMA - 1.0) * Constants::prtn * particle->mu);
                             count_gas++;
                         }
                         else

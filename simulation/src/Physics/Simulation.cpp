@@ -16,6 +16,8 @@ Simulation::Simulation()
     timeIntegration = std::make_shared<TimeIntegration>();
     dataManager = std::make_shared<DataManager>("../../output_data/");
     console = std::make_shared<Console>();
+    cooling = std::make_shared<Cooling>();
+    sfr = std::make_shared<SFR>();
 }
 
 Simulation::~Simulation()
@@ -138,7 +140,7 @@ if (false)
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
-    visualDensityRadius = tree->root->radius / 1000;
+    visualDensityRadius = tree->root->radius / 100000;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
@@ -281,7 +283,7 @@ void Simulation::run()
 
         // Calculate the gas density for SPH
         tree->calcGasDensity();
-        updateGasParticleProperties(tree);
+        updateGasParticleProperties(tree); 
 
         // Recalculate forces
         tree->calculateForces();
@@ -298,6 +300,18 @@ void Simulation::run()
             {
                 if(particles[i]->type == 2)
                 {
+                    //cooling and star formation
+                    if(coolingEnabled)
+                    {
+                        cooling->coolingRoutine(particles[i]);
+                    }
+                    if(starFormation)
+                    {
+                        //calc SFR
+                        sfr->sfrRoutine(particles[i]);
+                        //transform the gas particle to a star particle
+                        //...
+                    }
                     // Integrate the internal energy
                     timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
                 }
@@ -335,12 +349,7 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             //calc P, P = (gamma-1)*u*rho
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
             //calc T, T = (gamma-1)*u*prtn / (bk)
-            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn / (Constants::BK);
-
-            //radiative cooling
-            //...
-
-            //std::cout << std::fixed << std::scientific << std::setprecision(20) << "  U: " << particles[i]->U << "  T: " << particles[i]->T << std::endl;
+            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn * particles[i]->mu / (Constants::k_b);
         }
     }
     

@@ -37,6 +37,7 @@ public:
     double rho = 0; //density in kg/m^3
     double P = 0; //pressure in Pascal
     double T = 0; //temperature in Kelvin
+    double mu = 0.588235; //mean molecular weight
     //derivative of A for the time integration of the internal energy
     double dUdt = 0;
     double U = 0; //internal energy in J/kg
