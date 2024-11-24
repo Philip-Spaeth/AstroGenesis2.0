@@ -10,15 +10,14 @@ void SFR::sfrRoutine(std::shared_ptr<Particle>& particle)
     // Sternentstehungsraten berechnen
     if (particle->rho > rho_th && particle->T < T_th)
     {
-        particle->sfr = epsilon * (particle->rho) / t_star;
-        double deltaM_star = particle->sfr * particle->timeStep;
-
-        if(deltaM_star > particle->mass && deltaM_star > 0)
+        double p = 1 - exp(-epsilon * particle->timeStep / t_star);
+        double r = ((double) rand()) / RAND_MAX;
+        if (r < p)
         {
             //gas -> star
             particle->type = 1;
             particle->U = 0.0;
-            std::cout << "Star formed" << std::endl;
+            //std::cout << "Star formed" << std::endl;
         }
     }
 }

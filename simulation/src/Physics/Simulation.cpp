@@ -332,7 +332,7 @@ void Simulation::run()
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
         }
-        std::cout << "Gas in the system: " << gasMass / totalMass * 100 << "%" << std::endl;
+        //std::cout << "Gas in the system: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
