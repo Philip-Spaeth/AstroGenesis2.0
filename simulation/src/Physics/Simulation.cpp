@@ -140,7 +140,7 @@ if (false)
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
-    visualDensityRadius = tree->root->radius / 100000;
+    visualDensityRadius = tree->root->radius / 10000;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
@@ -287,6 +287,9 @@ void Simulation::run()
 
         // Recalculate forces
         tree->calculateForces();
+        
+        double gasMass = 0;
+        double totalMass = 0;
 
         // Second kick
         for (int i = 0; i < numberOfParticles; i++)
@@ -309,11 +312,12 @@ void Simulation::run()
                     {
                         //calc SFR
                         sfr->sfrRoutine(particles[i]);
-                        //transform the gas particle to a star particle
-                        //...
                     }
-                    // Integrate the internal energy
-                    timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
+                    if(particles[i]->type == 2)
+                    {
+                        // Integrate the internal energy
+                        timeIntegration->Ueuler(particles[i], particles[i]->timeStep);
+                    }
                 }
 
                 //aplly hubbles law
@@ -325,7 +329,10 @@ void Simulation::run()
                 // Schedule the next integration time for this particle
                 particles[i]->nextIntegrationTime += particles[i]->timeStep;
             }
+            if(particles[i]->type == 2) gasMass += particles[i]->mass;
+            totalMass += particles[i]->mass;
         }
+        std::cout << "Gas in the system: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)

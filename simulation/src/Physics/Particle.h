@@ -38,14 +38,12 @@ public:
     double P = 0; //pressure in Pascal
     double T = 0; //temperature in Kelvin
     double mu = 0.588235; //mean molecular weight
-    //derivative of A for the time integration of the internal energy
+    double ne = 1; //free electron fraction
     double dUdt = 0;
     double U = 0; //internal energy in J/kg
 
     //star formation
     double sfr = 0; //star formation rate
-
-    //radiative cooling
 
     //calculated for all particles not just SPH gas, just for visualization
     double visualDensity = 0;
