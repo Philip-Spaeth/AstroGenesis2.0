@@ -53,7 +53,7 @@ public:
     //SPH parameters
     double massInH; //in kg
 
-    bool starFormation = true;
+    bool starFormation = false;
     bool coolingEnabled = true;
 
     //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning

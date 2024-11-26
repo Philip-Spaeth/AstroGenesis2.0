@@ -12,5 +12,5 @@ public:
 
     void coolingRoutine(std::shared_ptr<Particle>& particle);
 private:
-    void calcMeanMolecularWeight(std::shared_ptr<Particle>& particle);
+
 };

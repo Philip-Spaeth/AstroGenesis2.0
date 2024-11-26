@@ -140,7 +140,7 @@ if (false)
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
-    visualDensityRadius = tree->root->radius / 10000;
+    visualDensityRadius = tree->root->radius / 100000;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
@@ -332,7 +332,7 @@ void Simulation::run()
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
         }
-        //std::cout << "Gas in the system: " << gasMass / totalMass * 100 << "%" << std::endl;
+        if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
@@ -357,6 +357,19 @@ void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
             particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
             //calc T, T = (gamma-1)*u*prtn / (bk)
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn * particles[i]->mu / (Constants::k_b);
+            //update mean molecular weight from temperature
+            //full ionized hydrogen and helium
+            /*
+            if(particles[i]->T > 1e6)
+            {
+                particles[i]->mu = 0.588235;
+            }
+            else
+            {
+                particles[i]->mu = 1.28;
+            }
+            */  
+           std::cout << "Particle " << i << " T: " << particles[i]->T << " K" << std::endl;
         }
     }
     

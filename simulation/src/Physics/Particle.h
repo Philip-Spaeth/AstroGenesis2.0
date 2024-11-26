@@ -37,7 +37,12 @@ public:
     double rho = 0; //density in kg/m^3
     double P = 0; //pressure in Pascal
     double T = 0; //temperature in Kelvin
-    double mu = 0.588235; //mean molecular weight
+    double mu = 1.28; //mean molecular weight
+    double n_H = 0; //hydrogen number density
+    double n_He = 0; //helium number density
+    double n_e = 0; //electron number density
+    double n_H2 = 0; //molecular hydrogen number density
+    double Z = 0.02; //metallicity
     double ne = 1; //free electron fraction
     double dUdt = 0;
     double U = 0; //internal energy in J/kg
