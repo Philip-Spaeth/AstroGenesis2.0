@@ -296,6 +296,80 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
     }
 }
 
+
+void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+{
+    if(particles.size() == 0) return;
+
+
+    if(particles.size() > 1)
+    {
+        isLeaf = false;
+    }
+    else{
+        isLeaf = true;
+        particle = particles[0];
+        particle->node = shared_from_this();
+
+        centerOfMass = particle->position;
+        mass = particle->mass;
+        if(particle->type == 2)
+        {
+            gasMass = particle->mass;
+        }
+
+        return;
+    }
+
+
+    // Nodes Bauen
+    for (int i = 0; i < 8; i++) 
+    {
+        children[i] = std::make_shared<Node>();
+        // setup the node properties
+        children[i]->position = position + vec3(
+            radius * (i & 1 ? 0.5 : -0.5),
+            radius * (i & 2 ? 0.5 : -0.5),
+            radius * (i & 4 ? 0.5 : -0.5));
+        // std::cout << children[i]->position << std::endl;
+        children[i]->radius = radius / 2;
+        children[i]->depth = depth + 1;
+        children[i]->parent = shared_from_this();
+    }
+
+    // Insert the particles in the corresponding octant
+    for (size_t i = 0; i < particles.size(); i++) 
+    {
+        mass += particles[i]->mass;
+        if(particles[i]->type == 2)
+        {
+            gasMass += particles[i]->mass;
+        }
+        centerOfMass = (centerOfMass * (mass - particles[i]->mass) + particles[i]->position * particles[i]->mass) / mass;
+
+
+        // get the octant of the particle
+        int octant = getOctant(particles[i]);
+        
+        // insert the particle in the corresponding octant
+        if (octant != -1) 
+        {
+            children[octant]->childParticles.push_back(particles[i]);
+        }
+    }
+
+
+    // Call Insert function for each child node
+    for (int i = 0; i < 8; i++) 
+    {
+        if (children[i]->childParticles.size() > 0) 
+        {
+            children[i]->insert(children[i]->childParticles);
+        }
+    }
+}
+
+
 void Node::insert(std::shared_ptr<Particle> newParticle) 
 {
     if (!newParticle) 
@@ -390,7 +464,7 @@ int Node::getOctant(std::shared_ptr<Particle> newParticle) {
     if (newParticle->position.x < position.x - radius || newParticle->position.x > position.x + radius ||
         newParticle->position.y < position.y - radius || newParticle->position.y > position.y + radius ||
         newParticle->position.z < position.z - radius || newParticle->position.z > position.z + radius) {
-        std::cout << "Particle is outside the bounds" << std::endl;
+        //std::cout << "Particle is outside the bounds" << std::endl;
         return -1; // Particle is outside the bounds
     }
 

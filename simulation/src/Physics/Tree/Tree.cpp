@@ -24,12 +24,13 @@ void Tree::buildTree()
     {
         totalMass += simulation->particles[i]->mass;
         if(simulation->particles[i]->type == 2) gasMass += simulation->particles[i]->mass;
-        root->insert(simulation->particles[i]);
+        //root->insert(simulation->particles[i]);
     }
+    root->insert(simulation->particles);
     if(simulation->globalTime == 0)
     {
-        std::cout << "\nTotalMass " << std::fixed << std::scientific << totalMass << " kg" << std::endl;
-        std::cout << "GasMass " << std::fixed << std::scientific << gasMass << " kg" << std::endl;
+        //std::cout << "\nTotalMass " << std::fixed << std::scientific << totalMass << " kg" << std::endl;
+        //std::cout << "GasMass " << std::fixed << std::scientific << gasMass << " kg" << std::endl;
     }
 }
 
