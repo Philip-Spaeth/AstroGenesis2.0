@@ -300,7 +300,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
 }
 
 
-/* void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
 {
     if(particles.size() == 0) return;
 
@@ -340,7 +340,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
         children[i]->parent = shared_from_this();
     }
 
-    
+    //std::cout << "Tiefe" << depth << std::endl;
 
     //#pragma omp parallel for
     for (size_t i = 0; i < particles.size(); i++) 
@@ -364,10 +364,9 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
     }
 
     // Insert the particles in the corresponding octant
-    //const int numThreads = std::thread::hardware_concurrency();
-    //omp_set_num_threads(numThreads); 
+    const int numThreads = std::thread::hardware_concurrency();
+    omp_set_num_threads(numThreads); 
 
-    // Call Insert function for each child node
     #pragma omp parallel for
     for (int i = 0; i < 8; i++) 
     {
@@ -376,10 +375,12 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             children[i]->insert(children[i]->childParticles);
         }
     }
-} */
+    
+    
+}
 
 
-void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+/* void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
 {
     if (particles.empty()) return;
 
@@ -495,7 +496,7 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles)
             children[i]->insert(children[i]->childParticles);
         }
     }
-}
+} */
 
 
 void Node::insert(std::shared_ptr<Particle> newParticle) 
