@@ -187,6 +187,9 @@ if (false)
 
 void Simulation::run()
 {
+    startTimeSimulation = std::chrono::high_resolution_clock::now();
+
+
     globalTime = 0.0;
     double nextSaveTime = fixedStep;
 
@@ -351,6 +354,11 @@ void Simulation::run()
     }
 
     std::cout << "Simulation finished." << std::endl;
+
+    // Print the total simulation time
+    auto endTimeSimulation = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTimeSimulation - startTimeSimulation);
+    std::cout << "Total simulation time: " << duration.count() << " seconds" << std::endl;
 }
 
 void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)

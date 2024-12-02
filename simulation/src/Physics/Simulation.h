@@ -17,6 +17,7 @@
 #include <atomic>
 #include "Cooling.h"
 #include "SFR.h"
+#include <chrono>
 
 class Tree;
 class DataManager;
@@ -42,6 +43,8 @@ public:
 
     double globalTime; // global time of the simulation in s
     double endTime; //end time of the simulation in s
+
+    std::chrono::high_resolution_clock::time_point startTimeSimulation; //start time of the simulation
 
     //save data at each maxTimeStep
     double fixedTimeSteps; //number of fixed maxtime steps
