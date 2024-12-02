@@ -915,15 +915,15 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     {
                         particle->type = 1;
                         particle->galaxyPart = 1; // Disk
-                        count_star++;
-/*
+                        //count_star++;
+
                         //30% of particles in disk are gas
-                        double r = random::uniform(0,3);
+                        double r = random::uniform(0,5);
                         if(r < 1)
                         {
                             particle->type = 2;
                             //calc U from T
-                            particle->T = 8e3;
+                            particle->T = 1e5;
                             particle->U = (particle->T * Constants::k_b) / ((Constants::GAMMA - 1.0) * Constants::prtn * particle->mu);
                             count_gas++;
                         }
@@ -931,7 +931,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         {
                             count_star++;
                         }
-                        */
+                        
                     }
                     else if (type == 3)
                     {
@@ -1096,6 +1096,8 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
                 else if (key == "fixedTimeSteps") simulation->fixedTimeSteps = std::stod(value);
                 else if (key == "e0") simulation->e0 = std::stod(value);
                 else if (key == "massInH") simulation->massInH = std::stod(value);
+                else if (key == "starformation") {if(value == "true" || value == "True") {simulation->starFormation = true;}else if(value == "false" || value == "False") {simulation->starFormation = false;}}
+                else if (key == "cooling") {if(value == "true" || value == "True") {simulation->coolingEnabled = true;}else if(value == "false" || value == "False") {simulation->coolingEnabled = false;}}
                 else if (key == "H0") simulation->H0 = std::stod(value);
                 else if (key == "theta") simulation->theta = std::stod(value);
                 else if (key == "inputPath") inputPath = value;

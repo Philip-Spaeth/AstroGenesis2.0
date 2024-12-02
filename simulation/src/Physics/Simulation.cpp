@@ -146,9 +146,6 @@ if (false)
     //calculate the gas density for SPH
     Log::startProcess("SPH density and update");
     tree->calcGasDensity();
-    //the first time after the temprature is set and rho is calculated
-    Log::startProcess("Calc Node Medians");
-    tree->root->calcmSPHNode();
 
     // Initial force calculation
     Log::startProcess("Force Calculation");
@@ -283,7 +280,6 @@ void Simulation::run()
 
         // Calculate the gas density for SPH
         tree->calcGasDensity();
-        tree->root->calcmSPHNode();
 
         // Recalculate forces
         tree->calculateForces();

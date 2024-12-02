@@ -21,120 +21,101 @@ Node::~Node()
 {
     for (int i = 0; i < 8; i++)
     {
-        children[i].reset(); // Explicitly reset the children to release memory
+        children[i].reset();
     }
 }
 
-void Node::calcmPressure()
+
+vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
 {
-    if(gasMass == 0) return;
+    vec3 acc = vec3(0,0,0);
+    double h_i = newparticle->h;
+    double h_j = mH;
+    if(isLeaf) h_j = this->particle->h;
+    h_j = h_i;
+    double h_ij = (h_i + h_j) / 2.0;
+    //if(h_i == 0 || h_j == 0) return vec3(0,0,0);
 
-    //calculate the median smoothing length of the child particles
-    std::vector<double> pValues;
-    for(size_t i = 0; i < childParticles.size(); i++)
-    {
-        if(childParticles[i] == nullptr) continue;
-        if(childParticles[i]->type == 2)
-        {
-            pValues.push_back(childParticles[i]->P);
-        }
-    }
-    std::sort(pValues.begin(), pValues.end());
-    if(pValues.size() == 0) return;
-    mP = pValues[pValues.size() / 2];
+    double rho_i = newparticle->rho;
+    double rho_j = mRho;
+    if(isLeaf) rho_j = this->particle->rho;
+    rho_j = rho_i;
+    double rho_ij = (rho_i + rho_j) / 2.0;
+    //if(rho_i == 0 || rho_j == 0) return vec3(0,0,0);
 
-    for (int i = 0; i < 8; i++)
+    double P_i = newparticle->P;
+    double P_j = mP;
+    if(isLeaf) P_j = this->particle->P;
+    P_j = P_i;
+    //if(P_i == 0 || P_j == 0) return vec3(0,0,0);
+
+    vec3 v_i = newparticle->velocity;
+    vec3 v_j = mVel;
+    if(isLeaf) v_j = this->particle->velocity;
+    vec3 v_ij = v_i - v_j;
+
+    vec3 d = newparticle->position - centerOfMass;
+    double r = d.length();
+    double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
+    double c_j = sqrt(Constants::GAMMA * P_i / rho_i);
+    double c_ij = (c_i + c_j) / 2.0;
+
+    //Pressure force
+    //Monaghan (1992)
+    if(true)
     {
-        if (children[i] != nullptr)
-        {
-            if(children[i]->gasMass != 0)
-            {
-                children[i]->calcmPressure();
-            }
-        }
+        acc += -gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * kernel::gradientCubicSplineKernel(d, h_i);
     }
+    //Springel & Hernquist (2002)
+    //entropy conservation formalism
+    if(false)
+    {
+        double d_rho_dh_i = 1;
+        double d_rho_dh_j = 1;
+        double f_i = pow((1.0 + (h_i / (3 * rho_i)) * d_rho_dh_i), -1);
+        double f_j = pow((1.0 + (h_j / (3 * rho_j)) * d_rho_dh_j), -1);
+        acc += -gasMass * (f_i * P_i / (rho_i * rho_i) + f_j * P_j / (rho_j * rho_j)) * kernel::gradientCubicSplineKernel(d, h_i);
+    }
+
+    //Artificial viscosity
+    //Monaghan & Gingold (1983)
+    double MU_ij = 0.0;
+    if(true)
+    {
+        double alpha = 0.5;
+        double beta = 1.0;
+        double eta = 0.01;
+        double mu_ij = h_ij * v_ij.dot(d) / (r * r + eta * (h_ij * h_ij));
+        if(v_ij.dot(d) < 0)
+        {
+            MU_ij = -alpha * c_ij * mu_ij + beta * (mu_ij * mu_ij);
+        }
+        acc += -gasMass * MU_ij * kernel::gradientCubicSplineKernel(d, h_ij);
+    }
+    //Monaghan (1997)
+    if(false)
+    {
+        double alpha = 1.0;
+        double w_ij = v_ij.dot(d) / (r);
+        double v_sig_ij = (c_i + c_j - 3 * w_ij);
+        MU_ij = -(alpha / 2.0) * (v_sig_ij * w_ij / rho_ij);
+        acc += -gasMass * MU_ij * kernel::gradientCubicSplineKernel(d, h_ij);
+    }
+
+    //Internal energy
+    newparticle->dUdt += 1.0 / 2.0 * gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j) + MU_ij) * v_ij.dot(kernel::gradientCubicSplineKernel(d, h_i));
+
+    if(std::isnan(acc.x) || std::isnan(acc.y) || std::isnan(acc.z)) return vec3(0,0,0);
+
+    return acc;
 }
-
-void Node::calcmVelocity()
-{
-    if(gasMass == 0) return;
-
-    //calculate the median smoothing length of the child particles
-    vec3 velocitySum = vec3(0,0,0);
-    int count = 0;
-    for(size_t i = 0; i < childParticles.size(); i++)
-    {
-        if(childParticles[i] == nullptr) continue;
-        if(childParticles[i]->type == 2)
-        {
-            velocitySum += childParticles[i]->velocity;
-            count++;
-        }
-    }
-    if(count == 0) return;
-    mVel = velocitySum / count;
-}
-
-void Node::calcmSPHNode()
-{
-    //calcmH();
-    //calcmDensity();
-    calcmVelocity();
-    //calcmPressure();
-
-    for (int i = 0; i < 8; i++)
-    {
-        if (children[i] != nullptr)
-        {
-            if(children[i]->gasMass != 0)
-            {
-                children[i]->calcmSPHNode();
-            }
-        }
-    }
-}
-
-void Node::calcmH()
-{
-    //calculate the median smoothing length of the child particles
-    std::vector<double> hValues;
-    for(size_t i = 0; i < childParticles.size(); i++)
-    {
-        if(childParticles[i] == nullptr) continue;
-        if(childParticles[i]->type == 2)
-        {
-            hValues.push_back(childParticles[i]->h);
-        }
-    }
-    std::sort(hValues.begin(), hValues.end());
-    if(hValues.size() == 0) return;
-    mH = hValues[hValues.size() / 2];
-}
-
-void Node::calcmDensity()
-{
-    //calculate the median density of the child particles
-    std::vector<double> densityValues;
-    for(size_t i = 0; i < childParticles.size(); i++)
-    {
-        if(childParticles[i] == nullptr) continue;
-        if(childParticles[i]->type == 2)
-        {
-            densityValues.push_back(childParticles[i]->rho);
-        }
-    }
-    std::sort(densityValues.begin(), densityValues.end());
-    if(densityValues.size() == 0) return;
-    mRho = densityValues[densityValues.size() / 2];
-}
-
 
 void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double softening, double theta)
 {
-    if (mass == 0) return; // Verhindert Berechnung, wenn keine Masse vorhanden ist
-    if (!newparticle) return; // Verhindert Berechnung, wenn kein Teilchen vorhanden ist
-    if (newparticle == this->particle) return; // Verhindert Berechnung, wenn es sich um das gleiche Teilchen handelt
-    if (newparticle->mass == 0) return; // Verhindert Berechnung, wenn es sich um das gleiche Teilchen handelt
+    if (mass == 0) return;
+    if (!newparticle) return;
+    if (newparticle == this->particle) return;
+    if (newparticle->mass == 0) return;
 
     vec3 d = centerOfMass - newparticle->position;
     double r = d.length();
@@ -147,67 +128,17 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
         {
             double e0 = softening;
             //softening described by Springel, Yoshida & White (2001) eq. 71
-            double e = -(2.8 * e0) / kernel::softeningKernel(r / (2.8 * e0)) - r;
+            double e = -(2.8 * e0) / (kernel::softeningKernel(r / (2.8 * e0)) - r);
             //gravity calculation
             vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
             newparticle->acceleration += gravityAcceleration;
 
-            //SPH calculation
             if(r < newparticle->h * 2)
             {
                 //check if both are gas particles
                 if(this->particle->type == 2 && newparticle->type == 2)
                 {
-/*
-                    double h_i = newparticle->h;
-                    if(h_i == 0) return;
-                    double h_j = this->particle->h;
-                    if(h_j == 0) return;
-                    double h_ij = (h_i + h_j) / 2;
-
-                    double rho_i = newparticle->rho;
-                    if(rho_i == 0) return;
-                    double rho_j = this->particle->rho;
-                    if(rho_j == 0) return;
-                    double rho_ij = (rho_i + rho_j) / 2;
-
-                    double P_i = newparticle->P;
-                    if(P_i == 0) return;
-                    double P_j = this->particle->P;
-                    if(P_j == 0) return;
-
-                    // calculate the acceleration due to the pressure force
-                    vec3 grad_i = kernel::gradientCubicSplineKernel(d, h_i);
-                    vec3 grad_j = kernel::gradientCubicSplineKernel(d, h_j);
-                    vec3 grad_ij = (grad_i + grad_j) / 2;
-
-                    // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = - gasMass * (2 * (P_i / (rho_i * rho_i))) * grad_i;
-                    //newparticle->acceleration += pressureAcceleration;
-                    //std::cout << std::scientific << pressureAcceleration.length() << std::endl;
-
-                    //vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    //Artificial viscosity
-                    double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
-                    double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
-                    double c_ij = (c_i + c_j) / 2;
-                    vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    double mu_ij = 0;
-    	            if(v_ij.dot(d) < 0)
-                    {
-                        mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
-                    }
-                    double alpha = 0.5;
-                    double beta = 1;
-                    double MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
-
-                    // calculate the acceleration due to the artificial viscosity
-                    vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
-                    //newparticle->acceleration += viscosityAcceleration;
-*/
-                    //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
-                    //newparticle->dUdt += 0.5 * gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * v_ij.dot(grad_i);
-                    //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
+                    newparticle->acceleration += calcSPHForce(newparticle);
                 }
             }
         }
@@ -219,7 +150,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
         {
             double e0 = softening;
             //softening described by Springel, Yoshida & White (2001) eq. 71
-            double e = -(2.8 * e0) / kernel::softeningKernel(r / (2.8 * e0)) - r;
+            double e = -(2.8 * e0) / (kernel::softeningKernel(r / (2.8 * e0)) - r);
             //gravity calculation
             vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
             newparticle->acceleration += gravityAcceleration;
@@ -229,59 +160,9 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             if(r < newparticle->h * 2)
             {
                 //check if both are gas particles
-                if(newparticle->type == 2 && gasMass != 0)
+                if(newparticle->type == 2 && gasMass > 0)
                 {
-                    /*
-                    double h_i = newparticle->h;
-                    if(h_i == 0) return;
-                    double h_j = medianH;
-                    if(h_j == 0) return;
-                    double h_ij = (h_i + h_j) / 2;
-
-                    double rho_i = newparticle->rho;
-                    if(rho_i == 0) return;
-                    double rho_j = medianDensity;
-                    if(rho_j == 0) return;
-                    double rho_ij = (rho_i + rho_j) / 2;
-
-                    double P_i = newparticle->P;
-                    if(P_i == 0) return;
-                    double P_j = medianPressure;
-                    if(P_j == 0) return;
-
-                    // calculate the acceleration due to the pressure force
-                    vec3 grad_i = kernel::gradientCubicSplineKernel(d, h_i);
-                    vec3 grad_j = kernel::gradientCubicSplineKernel(d, h_j);
-                    vec3 grad_ij = (grad_i + grad_j) / 2;
-
-                    //medianPressure not correct thats why 2*
-                    // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = gasMass * (2 * P_i / (rho_i * rho_i)) * grad_i;
-                    //newparticle->acceleration += pressureAcceleration;
-                    
-                    //vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    
-                    //Artificial viscosity
-                    double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
-                    double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
-                    double c_ij = (c_i + c_j) / 2;
-                    vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    double mu_ij = 0;
-    	            if(v_ij.dot(d) < 0)
-                    {
-                        mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
-                    }
-                    double alpha = 0.5;
-                    double beta = 1;
-                    double MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
-
-                    // calculate the acceleration due to the artificial viscosity
-                    vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
-                    //newparticle->acceleration += viscosityAcceleration;
-*/
-                    //calc the change of the internal energy = 1/2 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i)
-                    //newparticle->dUdt += 0.5 * gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * v_ij.dot(grad_i);
-                    //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
+                    newparticle->acceleration += calcSPHForce(newparticle);
                 }
             }
         }
@@ -384,7 +265,22 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
     if(newParticle->type == 2)
     {
         gasMass += newParticle->mass;
+        //calc m Node properties
+        if (gasMass > 0) 
+        {
+            mVel = (mVel * (gasMass - newParticle->mass) + newParticle->velocity * newParticle->mass) / gasMass;
+            /*if (newParticle->rho > 0) {
+                mRho = (mRho * (gasMass - newParticle->mass) + newParticle->rho * newParticle->mass) / gasMass;
+            }
+            if (newParticle->P > 0) {
+                mP = (mP * (gasMass - newParticle->mass) + newParticle->P * newParticle->mass) / gasMass;
+            }
+            if (newParticle->h > 0) {
+                mH = (mH * (gasMass - newParticle->mass) + newParticle->h * newParticle->mass) / gasMass;
+            }*/
+        }
     }
+
     centerOfMass = (centerOfMass * (mass - newParticle->mass) + newParticle->position * newParticle->mass) / mass;
 }
 
