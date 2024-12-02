@@ -117,9 +117,6 @@ void Tree::calcGasDensity()
             }
         }
     }
-
-    //calculate the median smoothing length and density for all nodes
-    root->calcSPHNodeMedians();
 }
 
 void Tree::calcVisualDensity()

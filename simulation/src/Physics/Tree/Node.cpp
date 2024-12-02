@@ -25,7 +25,7 @@ Node::~Node()
     }
 }
 
-void Node::calcMedianPressure()
+void Node::calcmPressure()
 {
     if(gasMass == 0) return;
 
@@ -41,7 +41,7 @@ void Node::calcMedianPressure()
     }
     std::sort(pValues.begin(), pValues.end());
     if(pValues.size() == 0) return;
-    medianPressure = pValues[pValues.size() / 2];
+    mP = pValues[pValues.size() / 2];
 
     for (int i = 0; i < 8; i++)
     {
@@ -49,13 +49,13 @@ void Node::calcMedianPressure()
         {
             if(children[i]->gasMass != 0)
             {
-                children[i]->calcMedianPressure();
+                children[i]->calcmPressure();
             }
         }
     }
 }
 
-void Node::calcMedianVelocity()
+void Node::calcmVelocity()
 {
     if(gasMass == 0) return;
 
@@ -72,14 +72,15 @@ void Node::calcMedianVelocity()
         }
     }
     if(count == 0) return;
-    medianVelocity = velocitySum / count;
+    mVel = velocitySum / count;
 }
 
-void Node::calcSPHNodeMedians()
+void Node::calcmSPHNode()
 {
-    calcMedianH();
-    calcMedianDensity();
-    calcMedianVelocity();
+    calcmH();
+    calcmDensity();
+    calcmVelocity();
+    calcmPressure();
 
     for (int i = 0; i < 8; i++)
     {
@@ -87,13 +88,13 @@ void Node::calcSPHNodeMedians()
         {
             if(children[i]->gasMass != 0)
             {
-                children[i]->calcSPHNodeMedians();
+                children[i]->calcmSPHNode();
             }
         }
     }
 }
 
-void Node::calcMedianH()
+void Node::calcmH()
 {
     //calculate the median smoothing length of the child particles
     std::vector<double> hValues;
@@ -107,10 +108,10 @@ void Node::calcMedianH()
     }
     std::sort(hValues.begin(), hValues.end());
     if(hValues.size() == 0) return;
-    medianH = hValues[hValues.size() / 2];
+    mH = hValues[hValues.size() / 2];
 }
 
-void Node::calcMedianDensity()
+void Node::calcmDensity()
 {
     //calculate the median density of the child particles
     std::vector<double> densityValues;
@@ -124,7 +125,7 @@ void Node::calcMedianDensity()
     }
     std::sort(densityValues.begin(), densityValues.end());
     if(densityValues.size() == 0) return;
-    medianDensity = densityValues[densityValues.size() / 2];
+    mRho = densityValues[densityValues.size() / 2];
 }
 
 
@@ -157,6 +158,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                 //check if both are gas particles
                 if(this->particle->type == 2 && newparticle->type == 2)
                 {
+/*
                     double h_i = newparticle->h;
                     if(h_i == 0) return;
                     double h_j = this->particle->h;
@@ -180,32 +182,31 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                     vec3 grad_ij = (grad_i + grad_j) / 2;
 
                     // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = - gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * grad_i;
-                    newparticle->acceleration += pressureAcceleration;
+                    vec3 pressureAcceleration = - gasMass * (2 * (P_i / (rho_i * rho_i))) * grad_i;
+                    //newparticle->acceleration += pressureAcceleration;
                     //std::cout << std::scientific << pressureAcceleration.length() << std::endl;
 
+                    //vec3 v_ij = newparticle->velocity - this->particle->velocity;
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
                     double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
                     double c_ij = (c_i + c_j) / 2;
                     vec3 v_ij = newparticle->velocity - this->particle->velocity;
-                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
-                    double MU_ij = 0;
+                    double mu_ij = 0;
     	            if(v_ij.dot(d) < 0)
                     {
-                        double alpha = 0.5;
-                        //double beta = 1;
-                        MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
+                        mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
                     }
-                    
+                    double alpha = 0.5;
+                    double beta = 1;
+                    double MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
+
                     // calculate the acceleration due to the artificial viscosity
-                    vec3 viscosityAcceleration = -newparticle->mass * MU_ij * grad_ij;
-                    newparticle->acceleration += viscosityAcceleration;
-
-
-
+                    vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
+                    //newparticle->acceleration += viscosityAcceleration;
+*/
                     //calc the change of the internal energy = 1/2 * (P_i / rho_i + P_j / rho_j + MU_ij) * v_ij.dot(grad_i)
-                    newparticle->dUdt += 0.5 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i);
+                    //newparticle->dUdt += 0.5 * gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * v_ij.dot(grad_i);
                     //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
                 }
             }
@@ -230,6 +231,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                 //check if both are gas particles
                 if(newparticle->type == 2 && gasMass != 0)
                 {
+                    /*
                     double h_i = newparticle->h;
                     if(h_i == 0) return;
                     double h_j = medianH;
@@ -254,30 +256,31 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
 
                     //medianPressure not correct thats why 2*
                     // calculate the acceleration due to the pressure force
-                    vec3 pressureAcceleration = gasMass * (P_j / (rho_j * rho_j) + P_i / (rho_i * rho_i)) * grad_i;
-                    newparticle->acceleration += pressureAcceleration;
+                    vec3 pressureAcceleration = gasMass * (2 * P_i / (rho_i * rho_i)) * grad_i;
+                    //newparticle->acceleration += pressureAcceleration;
+                    
+                    //vec3 v_ij = newparticle->velocity - this->particle->velocity;
                     
                     //Artificial viscosity
                     double c_i = sqrt(Constants::GAMMA * P_i / rho_i);
                     double c_j = sqrt(Constants::GAMMA * P_j / rho_j);
                     double c_ij = (c_i + c_j) / 2;
-                    vec3 v_ij = newparticle->velocity - medianVelocity;
-                    double mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
-                    double MU_ij = 0;
+                    vec3 v_ij = newparticle->velocity - this->particle->velocity;
+                    double mu_ij = 0;
     	            if(v_ij.dot(d) < 0)
                     {
-                        //calculate the artificial viscosity
-                        double alpha = 0.5;
-                        //double beta = 1;
-                        MU_ij = (-alpha * c_ij * mu_ij ) / (rho_ij);//+ beta * pow(mu_ij, 2)) / (rho_ij);
+                        mu_ij = (h_ij * v_ij.dot(d)) / (pow(r,2) + 0.01 * pow(h_ij, 2));
                     }
+                    double alpha = 0.5;
+                    double beta = 1;
+                    double MU_ij = (-alpha * c_ij * mu_ij + beta * pow(mu_ij, 2)) / (rho_ij);
+
                     // calculate the acceleration due to the artificial viscosity
                     vec3 viscosityAcceleration = - gasMass * MU_ij * grad_ij;
-                    newparticle->acceleration += viscosityAcceleration;
-
-
+                    //newparticle->acceleration += viscosityAcceleration;
+*/
                     //calc the change of the internal energy = 1/2 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i)
-                    newparticle->dUdt += 0.5 * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j)) + MU_ij) * v_ij.dot(grad_i);
+                    //newparticle->dUdt += 0.5 * gasMass * ((P_i / (rho_i * rho_i)) + (P_j / (rho_j * rho_j))) * v_ij.dot(grad_i);
                     //std::cout << std::fixed << std::scientific << newparticle->dUdt << std::endl;
                 }
             }
@@ -386,7 +389,8 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
 }
 
 
-int Node::getOctant(std::shared_ptr<Particle> newParticle) {
+int Node::getOctant(std::shared_ptr<Particle> newParticle) 
+{
     if (newParticle->position.x < position.x - radius || newParticle->position.x > position.x + radius ||
         newParticle->position.y < position.y - radius || newParticle->position.y > position.y + radius ||
         newParticle->position.z < position.z - radius || newParticle->position.z > position.z + radius) {
@@ -398,6 +402,7 @@ int Node::getOctant(std::shared_ptr<Particle> newParticle) {
     if (newParticle->position.x > position.x) octant |= 1;
     if (newParticle->position.y > position.y) octant |= 2;
     if (newParticle->position.z > position.z) octant |= 4;
+    
     return octant;
 }
 
@@ -449,6 +454,10 @@ void Node::calcGasDensity(double massInH)
                 if(childParticles[i]->type == 2)
                 {
                     childParticles[i]->rho = rho;
+                    //calc P, P = (gamma-1)*u*rho
+                    childParticles[i]->P = (Constants::GAMMA - 1.0) * childParticles[i]->U * childParticles[i]->rho;
+                    //calc T, T = (gamma-1)*u*prtn / (bk)
+                    childParticles[i]->T = (Constants::GAMMA - 1.0) * childParticles[i]->U * Constants::prtn * childParticles[i]->mu / (Constants::k_b);
                 }
             }
         }

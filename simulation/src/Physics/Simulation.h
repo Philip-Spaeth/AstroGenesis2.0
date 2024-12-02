@@ -10,8 +10,6 @@
 #include "random.h"
 #include "Tree/Node.h"
 #include "Tree/Tree.h"
-#include "IC/Halo.h"
-#include "IC/Disk.h"
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -54,7 +52,7 @@ public:
     double massInH; //in kg
 
     bool starFormation = false;
-    bool coolingEnabled = true;
+    bool coolingEnabled = false;
 
     //Visual density, for all particles, just for visualization, beacuse the real density is only calculated for Gas particles, has no physical meaning
     double visualDensityRadius; //in m
@@ -75,9 +73,6 @@ private:
     std::shared_ptr<Console> console;
     std::shared_ptr<Cooling> cooling;
     std::shared_ptr<SFR> sfr;
-
-    //SPH
-    void updateGasParticleProperties(std::shared_ptr<Tree> tree); // update T, P
 
     //calculations without the octree, just for debugging purposes
     void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
