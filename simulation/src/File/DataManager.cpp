@@ -916,7 +916,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         particle->type = 1;
                         particle->galaxyPart = 1; // Disk
                         count_star++;
-///*
+/*
                         //30% of particles in disk are gas
                         double r = random::uniform(0,3);
                         if(r < 1)
@@ -931,7 +931,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         {
                             count_star++;
                         }
-                        //*/
+                        */
                     }
                     else if (type == 3)
                     {

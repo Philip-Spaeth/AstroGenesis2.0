@@ -61,7 +61,7 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    Log::startProcess("load IC");
+    //Log::startProcess("load IC");
     dataManager->loadICs(particles, this);    
 
     if(numberOfParticles != particles.size())

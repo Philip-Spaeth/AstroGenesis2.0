@@ -31,6 +31,7 @@ void Node::calcmPressure()
 
     //calculate the median smoothing length of the child particles
     std::vector<double> pValues;
+    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -43,6 +44,7 @@ void Node::calcmPressure()
     if(pValues.size() == 0) return;
     mP = pValues[pValues.size() / 2];
 
+    #pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
         if (children[i] != nullptr)
@@ -62,6 +64,7 @@ void Node::calcmVelocity()
     //calculate the median smoothing length of the child particles
     vec3 velocitySum = vec3(0,0,0);
     int count = 0;
+    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -82,6 +85,7 @@ void Node::calcmSPHNode()
     calcmVelocity();
     calcmPressure();
 
+    #pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
         if (children[i] != nullptr)
@@ -98,6 +102,7 @@ void Node::calcmH()
 {
     //calculate the median smoothing length of the child particles
     std::vector<double> hValues;
+    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -115,6 +120,7 @@ void Node::calcmDensity()
 {
     //calculate the median density of the child particles
     std::vector<double> densityValues;
+    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -409,6 +415,8 @@ int Node::getOctant(std::shared_ptr<Particle> newParticle)
 //consider only the gas particles and th gasMass
 void Node::calcGasDensity(double massInH)
 {
+    if(gasMass == 0) return;
+
     //check if the parent ist not expired
     if(parent.lock() != nullptr)
     {
@@ -429,6 +437,7 @@ void Node::calcGasDensity(double massInH)
         if(std::abs(massDifference) < std::abs(parentMassDifference) && gasMass != 0)
         {
             //calculate h for all the child particles in the node
+            #pragma omp parallel for
             for (size_t i = 0; i < childParticles.size(); i++)
             {
                 if(childParticles[i]->type == 2)
@@ -439,6 +448,7 @@ void Node::calcGasDensity(double massInH)
 
             //calculate the rho for all the particles in the node
             double rho = 0;
+            #pragma omp parallel for
             for(size_t i = 0; i < childParticles.size(); i++)
             {
                 if(childParticles[i]->type == 2)
@@ -449,6 +459,7 @@ void Node::calcGasDensity(double massInH)
             }
 
             //add the new rho to all the particles in the node
+            #pragma omp parallel for
             for(size_t i = 0; i < childParticles.size(); i++)
             {
                 if(childParticles[i]->type == 2)
@@ -477,6 +488,7 @@ void Node::calcVisualDensity(double radiusDensityEstimation)
     {
         double volume = radius * radius * radius;
         double density = mass / volume;
+        #pragma omp parallel for
         for(size_t i = 0; i < childParticles.size(); i++)
         {
             childParticles[i]->visualDensity = density;
