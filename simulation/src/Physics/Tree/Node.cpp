@@ -31,7 +31,6 @@ void Node::calcmPressure()
 
     //calculate the median smoothing length of the child particles
     std::vector<double> pValues;
-    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -44,7 +43,6 @@ void Node::calcmPressure()
     if(pValues.size() == 0) return;
     mP = pValues[pValues.size() / 2];
 
-    #pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
         if (children[i] != nullptr)
@@ -64,7 +62,6 @@ void Node::calcmVelocity()
     //calculate the median smoothing length of the child particles
     vec3 velocitySum = vec3(0,0,0);
     int count = 0;
-    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -80,12 +77,11 @@ void Node::calcmVelocity()
 
 void Node::calcmSPHNode()
 {
-    calcmH();
-    calcmDensity();
+    //calcmH();
+    //calcmDensity();
     calcmVelocity();
-    calcmPressure();
+    //calcmPressure();
 
-    #pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
         if (children[i] != nullptr)
@@ -102,7 +98,6 @@ void Node::calcmH()
 {
     //calculate the median smoothing length of the child particles
     std::vector<double> hValues;
-    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -120,7 +115,6 @@ void Node::calcmDensity()
 {
     //calculate the median density of the child particles
     std::vector<double> densityValues;
-    #pragma omp parallel for
     for(size_t i = 0; i < childParticles.size(); i++)
     {
         if(childParticles[i] == nullptr) continue;
@@ -488,7 +482,6 @@ void Node::calcVisualDensity(double radiusDensityEstimation)
     {
         double volume = radius * radius * radius;
         double density = mass / volume;
-        #pragma omp parallel for
         for(size_t i = 0; i < childParticles.size(); i++)
         {
             childParticles[i]->visualDensity = density;
