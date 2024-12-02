@@ -13,6 +13,8 @@ public:
     Node();
     ~Node();
 
+    void insert(std::vector<std::shared_ptr<Particle>> particles);
+
     void insert(std::shared_ptr<Particle> newParticle);
     int getOctant(std::shared_ptr<Particle> newParticle);
 
