@@ -67,6 +67,7 @@ vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
     //Monaghan (1992)
     if(true)
     {
+        //std::cout << d << std::endl;
         acc += -gasMass * (P_i / (rho_i * rho_i) + P_j / (rho_j * rho_j)) * kernel::gradientCubicSplineKernel(d, h_i);
     }
     //Springel & Hernquist (2002)
@@ -93,6 +94,7 @@ vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
         {
             MU_ij = -alpha * c_ij * mu_ij + beta * (mu_ij * mu_ij);
         }
+        //std::cout << -gasMass * MU_ij * kernel::gradientCubicSplineKernel(d, h_ij) << std::endl;
         acc += -gasMass * MU_ij * kernel::gradientCubicSplineKernel(d, h_ij);
     }
     //Monaghan (1997)
@@ -186,8 +188,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
 
 void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
 {
-    if(particles.size() == 0) return;
-
+    if(particles.empty()) return;
 
     if(particles.size() > 1)
     {
@@ -208,60 +209,54 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles)
         return;
     }
 
-
     // Nodes Bauen
     for (int i = 0; i < 8; i++) 
     {
         children[i] = std::make_shared<Node>();
-        // setup the node properties
         children[i]->position = position + vec3(
-            radius * (i & 1 ? 0.5 : -0.5),
-            radius * (i & 2 ? 0.5 : -0.5),
-            radius * (i & 4 ? 0.5 : -0.5));
-        // std::cout << children[i]->position << std::endl;
+            radius * (i & 1 ? 0.5f : -0.5f),
+            radius * (i & 2 ? 0.5f : -0.5f),
+            radius * (i & 4 ? 0.5f : -0.5f));
         children[i]->radius = radius / 2;
         children[i]->depth = depth + 1;
         children[i]->parent = shared_from_this();
     }
 
-    //std::cout << "Tiefe" << depth << std::endl;
-
-    //#pragma omp parallel for
-    for (size_t i = 0; i < particles.size(); i++) 
+    for (const auto& p : particles) 
     {
-        mass += particles[i]->mass;
-        if(particles[i]->type == 2)
+        mass += p->mass;
+        if(p->type == 2)
         {
-            gasMass += particles[i]->mass;
+            gasMass += p->mass;
             if (gasMass > 0) 
             {
-                mVel = (mVel * (gasMass - particles[i]->mass) + particles[i]->velocity * particles[i]->mass) / gasMass;
+                mVel = (mVel * (gasMass - p->mass) + p->velocity * p->mass) / gasMass;
             }
         }
 
-        centerOfMass = (centerOfMass * (mass - particles[i]->mass) + particles[i]->position * particles[i]->mass) / mass;
+        centerOfMass = (centerOfMass * (mass - p->mass) + p->position * p->mass) / mass;
 
-
-        // get the octant of the particle
-        int octant = getOctant(particles[i]);
-        
-        // insert the particle in the corresponding octant
+        int octant = getOctant(p);
         if (octant != -1) 
         {
-            children[octant]->childParticles.push_back(particles[i]);
+            children[octant]->childParticles.push_back(p);
         }
     }
 
-    // Insert the particles in the corresponding octant
-    const int numThreads = std::thread::hardware_concurrency();
-    omp_set_num_threads(numThreads); 
-
-    #pragma omp parallel for
-    for (int i = 0; i < 8; i++) 
+    #pragma omp parallel
     {
-        if (children[i]->childParticles.size() > 0) 
+        #pragma omp single nowait
         {
-            children[i]->insert(children[i]->childParticles);
+            for (int i = 0; i < 8; i++) 
+            {
+                if (children[i]->childParticles.size() > 0) 
+                {
+                    #pragma omp task firstprivate(i)
+                    {
+                        children[i]->insert(children[i]->childParticles);
+                    }
+                }
+            }
         }
     }
 }

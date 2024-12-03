@@ -64,7 +64,7 @@ bool Simulation::init()
     //Log::startProcess("load IC");
     dataManager->loadICs(particles, this);    
 
-    if(numberOfParticles != particles.size())
+    if((size_t)numberOfParticles != particles.size())
     {
         std::cerr << "Error: Number of particles in the ConfigFile does not match the number of particles in the data file." << std::endl;
         std::cout << "Number of particles in the ConfigFile: " << numberOfParticles << std::endl;
@@ -75,12 +75,12 @@ bool Simulation::init()
     double totalMass = 0;
     double gasMass = 0;
     //check if there are null pointers in the particles vector
+    #pragma omp parallel for reduction(+:totalMass, gasMass)
     for (int i = 0; i < numberOfParticles; i++)
     {
         if (!particles[i]) 
         {
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
-            return false;
         }
 
         //additional debug information
@@ -184,10 +184,12 @@ void Simulation::run()
     double nextSaveTime = fixedStep;
 
     // Set the next integration time for each particle to 0.0 to ensure that the force is calculated in the first iteration
+    #pragma omp parallel for
     for (int i = 0; i < numberOfParticles; i++)
     {
         if (!particles[i]) 
         {
+            #pragma omp critical
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
             continue;
         }
@@ -195,10 +197,12 @@ void Simulation::run()
     }
 
     // Initialize particles' time steps and next integration times
+    #pragma omp parallel for
     for (int i = 0; i < numberOfParticles; i++)
     {
         if (!particles[i]) 
         {
+            #pragma omp critical
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
             continue;
         }
@@ -218,6 +222,7 @@ void Simulation::run()
     while (globalTime < endTime)
     {
         // Determine the next integration time for each particle
+        #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
         {
             if (!particles[i]) 
@@ -242,10 +247,12 @@ void Simulation::run()
 
         // Find the smallest next integration time among all particles
         double minIntegrationTime = std::numeric_limits<double>::max();
+        #pragma omp parallel for reduction(min:minIntegrationTime)
         for (int i = 0; i < numberOfParticles; i++)
         {
             if (!particles[i]) 
             {
+                #pragma omp critical
                 std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
                 continue;
             }
@@ -257,12 +264,13 @@ void Simulation::run()
 
         // Advance global time by the smallest integration time
         globalTime = minIntegrationTime;
-
         // Update positions and velocities using the KDK Leapfrog scheme for particles due to be integrated
+        #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
         {
             if (!particles[i]) 
             {
+                #pragma omp critical
                 std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
                 continue;
             }
@@ -274,11 +282,8 @@ void Simulation::run()
         }
 
         std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-        
-        // Build the octree
         tree->buildTree();
-
-        // Calculate the visual density, just for visualization
+        
         tree->calcVisualDensity();
 
         // Calculate the gas density for SPH
@@ -291,10 +296,12 @@ void Simulation::run()
         double totalMass = 0;
 
         // Second kick
+        #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
         {
             if (!particles[i]) 
             {
+                #pragma omp critical
                 std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
                 continue;
             }
@@ -358,6 +365,7 @@ void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
     p->acceleration = vec3(0.0, 0.0, 0.0);
     p->dUdt = 0;
 
+    #pragma omp parallel for
     for (int j = 0; j < numberOfParticles; j++)
     {
         if (p != particles[j])

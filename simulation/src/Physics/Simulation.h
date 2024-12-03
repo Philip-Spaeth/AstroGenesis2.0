@@ -30,7 +30,7 @@ public:
     void run();
 
     //simulation parameters, has to the same as in the input dataset(ICs)
-    double numberOfParticles;
+    int numberOfParticles;
 
     int numParticlesOutput; // Number of particles to output and save in the data files
 

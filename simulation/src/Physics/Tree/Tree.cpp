@@ -20,6 +20,7 @@ void Tree::buildTree()
     double totalMass = 0;
     double gasMass = 0;
     //insert the particles in the tree
+    #pragma omp parallel for
     for (int i = 0; i < simulation->numberOfParticles; i++)
     {
         totalMass += simulation->particles[i]->mass;
