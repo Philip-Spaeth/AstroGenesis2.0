@@ -19,11 +19,12 @@ public:
     int getOctant(std::shared_ptr<Particle> newParticle);
 
     void calculateGravityForce(std::shared_ptr<Particle> newparticle, double softening, double theta);
+    vec3 calcSPHForce(std::shared_ptr<Particle> newparticle);
 
-    double medianH = 0; //median smoothing length
-    double medianDensity = 0; //median density
-    double medianPressure = 0; //median pressure
-    vec3 medianVelocity = vec3(0,0,0); //median velocity
+    double mH = 0;
+    double mRho = 0;
+    double mP = 0;
+    vec3 mVel = vec3(0,0,0);
 
     //calculate the density for all particles
     void calcVisualDensity(double radiusDensityEstimation);
@@ -31,12 +32,6 @@ public:
     //SPH only for gas particles, Stars and dark matter particles are not affected
     double gasMass = 0; //mass of gas particles
     void calcGasDensity(double massInH);
-    //Medians for the SPH with Nodes and not Paticle to Particle
-    void calcSPHNodeMedians();
-    void calcMedianH();
-    void calcMedianDensity();
-    void calcMedianVelocity();
-    void calcMedianPressure();
 
     int depth;
     bool isLeaf;

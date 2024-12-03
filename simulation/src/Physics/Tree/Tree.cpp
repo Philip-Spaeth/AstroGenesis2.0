@@ -99,9 +99,6 @@ void Tree::calcGasDensity()
             }
         }
     }
-
-    //calculate the h and density for all particles in the tree
-    #pragma omp parallel for
     for (int i = 0; i < numParticles; i++)
     {
         if(simulation->particles[i] != nullptr)
@@ -118,9 +115,6 @@ void Tree::calcGasDensity()
             }
         }
     }
-
-    //calculate the median smoothing length and density for all nodes
-    root->calcSPHNodeMedians();
 }
 
 void Tree::calcVisualDensity()

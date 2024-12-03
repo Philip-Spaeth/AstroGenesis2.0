@@ -61,22 +61,8 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    if(true) 
-    {
-        Log::startProcess("load IC");
-        dataManager->loadICs(particles, this);
-    }
-    else
-    {
-        Log::startProcess("generate IC");
-        //Halo* halo = new Halo();
-        //halo->generateHernquistHalo(0, numberOfParticles, particles);
-        //delete halo;
-        Disk* disk = new Disk();
-        disk->generateDisk(0, numberOfParticles, particles);
-        //delete disk;
-    }
-    
+    //Log::startProcess("load IC");
+    dataManager->loadICs(particles, this);    
 
     if(numberOfParticles != particles.size())
     {
@@ -86,6 +72,8 @@ bool Simulation::init()
         return false;
     }
     
+    double totalMass = 0;
+    double gasMass = 0;
     //check if there are null pointers in the particles vector
     for (int i = 0; i < numberOfParticles; i++)
     {
@@ -94,7 +82,19 @@ bool Simulation::init()
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
             return false;
         }
+
+        //additional debug information
+        if(particles[i]->type == 2)
+        {
+            gasMass += particles[i]->mass;
+            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn * particles[i]->mu / (Constants::k_b);
+            //std::cout << particles[i]->U << "   ,   " << particles[i]->T << std::endl;
+        }
+        //std::cout << particles[i]->position.x << "   ,   " << particles[i]->position.y << "   ,   " << particles[i]->position.z << std::endl;
+
+        totalMass += particles[i]->mass;
     }
+    std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "% " << "of the total mass" << std::endl;
 
 
 //save velocity curve
@@ -147,15 +147,12 @@ if (false)
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
-    visualDensityRadius = tree->root->radius / 10000;
+    visualDensityRadius = tree->root->radius / 100000;
     //calculate the visualDensity, just for visualization
     tree->calcVisualDensity();
     //calculate the gas density for SPH
-    Log::startProcess("SPH density");
+    Log::startProcess("SPH density and update");
     tree->calcGasDensity();
-    //the first time after the temprature is set and rho is calculated
-    Log::startProcess("Update SPH");
-    updateGasParticleProperties(tree);
 
     // Initial force calculation
     Log::startProcess("Force Calculation");
@@ -293,7 +290,6 @@ void Simulation::run()
 
         // Calculate the gas density for SPH
         tree->calcGasDensity();
-        updateGasParticleProperties(tree); 
 
         // Recalculate forces
         tree->calculateForces();
@@ -313,6 +309,8 @@ void Simulation::run()
             {
                 if(particles[i]->type == 2)
                 {
+                    
+                    //std::cout << std::fixed << std::scientific << "Particle " << i << " rho: " << particles[i]->rho << std::endl;
                     //cooling and star formation
                     if(coolingEnabled)
                     {
@@ -342,7 +340,7 @@ void Simulation::run()
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
         }
-        //std::cout << "Gas in the system: " << gasMass / totalMass * 100 << "%" << std::endl;
+        if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
@@ -361,24 +359,7 @@ void Simulation::run()
     std::cout << "Total simulation time: " << duration.count() << " seconds" << std::endl;
 }
 
-void Simulation::updateGasParticleProperties(std::shared_ptr<Tree> tree)
-{
-    //update the properties of the gas particles
-    for (int i = 0; i < numberOfParticles; i++)
-    {
-        if(particles[i]->type == 2)
-        {
-            //calc P, P = (gamma-1)*u*rho
-            particles[i]->P = (Constants::GAMMA - 1.0) * particles[i]->U * particles[i]->rho;
-            //calc T, T = (gamma-1)*u*prtn / (bk)
-            particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn * particles[i]->mu / (Constants::k_b);
-        }
-    }
-    
-    //calc Median Pressure
-    tree->root->calcMedianPressure();
-}
-
+//only for Debugging and Comparison with the octree, extremely slow
 void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
 {
     p->acceleration = vec3(0.0, 0.0, 0.0);
