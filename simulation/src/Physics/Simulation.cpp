@@ -136,7 +136,14 @@ if (false)
     Log::startProcess("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
     //build the tree
+    /* for(int i = 0; i < 2000; i++)
+    {
+        tree = std::make_shared<Tree>(this);
+        tree->buildTree();
+    } */
+
     tree->buildTree();
+
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
@@ -177,6 +184,9 @@ if (false)
 
 void Simulation::run()
 {
+    startTimeSimulation = std::chrono::high_resolution_clock::now();
+
+
     globalTime = 0.0;
     double nextSaveTime = fixedStep;
 
@@ -342,6 +352,11 @@ void Simulation::run()
     }
 
     std::cout << "Simulation finished." << std::endl;
+
+    // Print the total simulation time
+    auto endTimeSimulation = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTimeSimulation - startTimeSimulation);
+    std::cout << "Total simulation time: " << duration.count() << " seconds" << std::endl;
 }
 
 //only for Debugging and Comparison with the octree, extremely slow

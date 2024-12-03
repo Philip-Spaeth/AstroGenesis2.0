@@ -2,6 +2,9 @@
 #include "Constants.h"
 #include "kernel.h"
 #include <algorithm>
+#include "omp.h"
+#include <thread>
+#include <iostream>
 
 
 Node::Node()
@@ -180,6 +183,206 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
     }
 }
 
+
+void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+{
+    if(particles.size() == 0) return;
+
+
+    if(particles.size() > 1)
+    {
+        isLeaf = false;
+    }
+    else{
+        isLeaf = true;
+        particle = particles[0];
+        particle->node = shared_from_this();
+
+        centerOfMass = particle->position;
+        mass = particle->mass;
+        if(particle->type == 2)
+        {
+            gasMass = particle->mass;
+        }
+
+        return;
+    }
+
+
+    // Nodes Bauen
+    for (int i = 0; i < 8; i++) 
+    {
+        children[i] = std::make_shared<Node>();
+        // setup the node properties
+        children[i]->position = position + vec3(
+            radius * (i & 1 ? 0.5 : -0.5),
+            radius * (i & 2 ? 0.5 : -0.5),
+            radius * (i & 4 ? 0.5 : -0.5));
+        // std::cout << children[i]->position << std::endl;
+        children[i]->radius = radius / 2;
+        children[i]->depth = depth + 1;
+        children[i]->parent = shared_from_this();
+    }
+
+    //std::cout << "Tiefe" << depth << std::endl;
+
+    //#pragma omp parallel for
+    for (size_t i = 0; i < particles.size(); i++) 
+    {
+        mass += particles[i]->mass;
+        if(particles[i]->type == 2)
+        {
+            gasMass += particles[i]->mass;
+        }
+        centerOfMass = (centerOfMass * (mass - particles[i]->mass) + particles[i]->position * particles[i]->mass) / mass;
+
+
+        // get the octant of the particle
+        int octant = getOctant(particles[i]);
+        
+        // insert the particle in the corresponding octant
+        if (octant != -1) 
+        {
+            children[octant]->childParticles.push_back(particles[i]);
+        }
+    }
+
+    // Insert the particles in the corresponding octant
+    const int numThreads = std::thread::hardware_concurrency();
+    omp_set_num_threads(numThreads); 
+
+    #pragma omp parallel for
+    for (int i = 0; i < 8; i++) 
+    {
+        if (children[i]->childParticles.size() > 0) 
+        {
+            children[i]->insert(children[i]->childParticles);
+        }
+    }
+    
+    
+}
+
+
+/* void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+{
+    if (particles.empty()) return;
+
+    if (particles.size() > 1)
+    {
+        isLeaf = false;
+    }
+    else
+    {
+        isLeaf = true;
+        particle = particles[0];
+        particle->node = shared_from_this();
+
+        centerOfMass = particle->position;
+        mass = particle->mass;
+        gasMass = (particle->type == 2) ? particle->mass : 0.0;
+
+        return;
+    }
+
+    // Erstellen der Kinderknoten parallelisieren
+    for (int i = 0; i < 8; ++i) 
+    {
+        children[i] = std::make_shared<Node>();
+        // Setup der Knoten-Eigenschaften
+        children[i]->position = position + vec3(
+            radius * ((i & 1) ? 0.5 : -0.5),
+            radius * ((i & 2) ? 0.5 : -0.5),
+            radius * ((i & 4) ? 0.5 : -0.5));
+        children[i]->radius = radius / 2.0;
+        children[i]->depth = depth + 1;
+        children[i]->parent = shared_from_this();
+    }
+
+    // Vorbereitung für die parallele Verarbeitung
+    double total_mass = 0.0;
+    double total_gasMass = 0.0;
+    vec3 total_position_mass(0.0, 0.0, 0.0);
+
+    // Temporäre Speicher für childParticles pro Oktant
+    std::vector<std::vector<std::shared_ptr<Particle>>> temp_childParticles(8);
+
+    // Parallele Verarbeitung der Partikel
+    #pragma omp parallel
+    {
+        // Thread-lokale Variablen
+        double thread_mass = 0.0;
+        double thread_gasMass = 0.0;
+        vec3 thread_position_mass(0.0, 0.0, 0.0);
+        std::vector<std::shared_ptr<Particle>> thread_temp_childParticles[8];
+
+        // Parallelisierte Schleife über die Partikel
+        #pragma omp for nowait
+        for (size_t i = 0; i < particles.size(); ++i) 
+        {
+            auto& p = particles[i];
+            thread_mass += p->mass;
+            if (p->type == 2)
+            {
+                thread_gasMass += p->mass;
+            }
+            // Sammeln der Positionen und Massen für spätere Berechnung des Centers of Mass
+            thread_position_mass += p->position * p->mass;
+
+            // Bestimmen des Oktanten
+            int octant = getOctant(p);
+            
+            // Hinzufügen des Partikels zum entsprechenden Oktanten
+            if (octant != -1) 
+            {
+                thread_temp_childParticles[octant].push_back(p);
+            }
+        }
+
+        // Kritischer Abschnitt zum Zusammenführen der Ergebnisse
+        #pragma omp critical
+        {
+            total_mass += thread_mass;
+            total_gasMass += thread_gasMass;
+            total_position_mass += thread_position_mass;
+
+            // Zusammenführen der temporären childParticles
+            for (int o = 0; o < 8; ++o)
+            {
+                temp_childParticles[o].insert(
+                    temp_childParticles[o].end(),
+                    thread_temp_childParticles[o].begin(),
+                    thread_temp_childParticles[o].end());
+            }
+        }
+    }
+
+    // Nach der parallelen Schleife die aggregierten Werte zuweisen
+    mass = total_mass;
+    gasMass = total_gasMass;
+    if (mass > 0)
+    {
+        centerOfMass = total_position_mass * (1.0 / mass);
+    }
+
+    // Zuweisen der gesammelten childParticles zu den Kinderknoten
+    for (int o = 0; o < 8; ++o)
+    {
+        children[o]->childParticles = std::move(temp_childParticles[o]);
+    }
+
+    // Rekursive Einfügung der Partikel in die Kinderknoten parallelisieren
+    #pragma omp parallel for
+    for (int i = 0; i < 8; ++i) 
+    {
+        if (!children[i]->childParticles.empty()) 
+        {
+            children[i]->insert(children[i]->childParticles);
+        }
+    }
+} */
+
+
 void Node::insert(std::shared_ptr<Particle> newParticle) 
 {
     if (!newParticle) 
@@ -290,7 +493,7 @@ int Node::getOctant(std::shared_ptr<Particle> newParticle)
     if (newParticle->position.x < position.x - radius || newParticle->position.x > position.x + radius ||
         newParticle->position.y < position.y - radius || newParticle->position.y > position.y + radius ||
         newParticle->position.z < position.z - radius || newParticle->position.z > position.z + radius) {
-        std::cout << "Particle is outside the bounds" << std::endl;
+        //std::cout << "Particle is outside the bounds" << std::endl;
         return -1; // Particle is outside the bounds
     }
 
