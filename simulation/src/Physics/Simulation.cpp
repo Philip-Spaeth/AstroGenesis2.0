@@ -281,9 +281,17 @@ void Simulation::run()
             }
         }
 
+        std::cout << "Build Tree" << std::endl;
         std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
+
+        for(int i = 0; i < 10; i++)
+        {
+            tree = std::make_shared<Tree>(this);
+            tree->buildTree();
+        }
         tree->buildTree();
         
+        std::cout << "Calculate Visual Density" << std::endl;
         tree->calcVisualDensity();
 
         // Calculate the gas density for SPH

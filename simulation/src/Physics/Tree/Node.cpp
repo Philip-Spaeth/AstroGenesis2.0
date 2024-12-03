@@ -5,6 +5,7 @@
 #include "omp.h"
 #include <thread>
 #include <iostream>
+#include "Tree.h"
 
 
 Node::Node()
@@ -188,6 +189,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
 
 void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
 {
+
     if(particles.empty()) return;
 
     if(particles.size() > 1)
@@ -222,26 +224,107 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles)
         children[i]->parent = shared_from_this();
     }
 
-    for (const auto& p : particles) 
+
+    if(depth < 2 )
     {
-        mass += p->mass;
-        if(p->type == 2)
+        // Vorbereitung für die parallele Verarbeitung
+        double total_mass = 0.0;
+        double total_gasMass = 0.0;
+        vec3 total_position_mass(0.0, 0.0, 0.0);
+
+        // Temporäre Speicher für childParticles pro Oktant
+        std::vector<std::vector<std::shared_ptr<Particle>>> temp_childParticles(8);
+
+        #pragma omp parallel
         {
-            gasMass += p->mass;
-            if (gasMass > 0) 
+            // Thread-lokale Variablen
+            double thread_mass = 0.0;
+            double thread_gasMass = 0.0;
+            vec3 thread_position_mass(0.0, 0.0, 0.0);
+            std::vector<std::shared_ptr<Particle>> thread_temp_childParticles[8];
+
+            // Parallelisierte Schleife über die Partikel
+            #pragma omp for nowait
+            for (size_t i = 0; i < particles.size(); ++i) 
             {
-                mVel = (mVel * (gasMass - p->mass) + p->velocity * p->mass) / gasMass;
+                auto& p = particles[i];
+                thread_mass += p->mass;
+                if (p->type == 2)
+                {
+                    thread_gasMass += p->mass;
+                }
+                // Sammeln der Positionen und Massen für spätere Berechnung des Centers of Mass
+                thread_position_mass += p->position * p->mass;
+
+                // Bestimmen des Oktanten
+                int octant = getOctant(p);
+                
+                // Hinzufügen des Partikels zum entsprechenden Oktanten
+                if (octant != -1) 
+                {
+                    thread_temp_childParticles[octant].push_back(p);
+                }
+            }
+
+            // Kritischer Abschnitt zum Zusammenführen der Ergebnisse
+            #pragma omp critical
+            {
+                total_mass += thread_mass;
+                total_gasMass += thread_gasMass;
+                total_position_mass += thread_position_mass;
+
+                // Zusammenführen der temporären childParticles
+                for (int o = 0; o < 8; ++o)
+                {
+                    temp_childParticles[o].insert(
+                        temp_childParticles[o].end(),
+                        thread_temp_childParticles[o].begin(),
+                        thread_temp_childParticles[o].end());
+                }
             }
         }
 
-        centerOfMass = (centerOfMass * (mass - p->mass) + p->position * p->mass) / mass;
-
-        int octant = getOctant(p);
-        if (octant != -1) 
+        // Nach der parallelen Schleife die aggregierten Werte zuweisen
+        mass = total_mass;
+        gasMass = total_gasMass;
+        if (mass > 0)
         {
-            children[octant]->childParticles.push_back(p);
+            centerOfMass = total_position_mass * (1.0 / mass);
+        }
+
+        // Zuweisen der gesammelten childParticles zu den Kinderknoten
+        for (int o = 0; o < 8; ++o)
+        {
+            children[o]->childParticles = std::move(temp_childParticles[o]);
         }
     }
+    else
+    {
+        for (const auto& p : particles) 
+        {
+            // Beim ersten Durchlauf noch parameter von Partikeln einsammeln
+
+            // Partikeln Nodes zuweisen
+            mass += p->mass;
+            if(p->type == 2)
+            {
+                gasMass += p->mass;
+                if (gasMass > 0) 
+                {
+                    mVel = (mVel * (gasMass - p->mass) + p->velocity * p->mass) / gasMass;
+                }
+            }
+
+            centerOfMass = (centerOfMass * (mass - p->mass) + p->position * p->mass) / mass;
+
+            int octant = getOctant(p);
+            if (octant != -1) 
+            {
+                children[octant]->childParticles.push_back(p);
+            }
+        }
+    }
+    
 
     #pragma omp parallel
     {
