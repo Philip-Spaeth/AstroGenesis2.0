@@ -13,9 +13,11 @@ public:
     Node();
     ~Node();
 
+    //Multi-threading
     void insert(std::vector<std::shared_ptr<Particle>> particles);
-
+    //old
     void insert(std::shared_ptr<Particle> newParticle);
+
     int getOctant(std::shared_ptr<Particle> newParticle);
 
     void calculateGravityForce(std::shared_ptr<Particle> newparticle, double softening, double theta);

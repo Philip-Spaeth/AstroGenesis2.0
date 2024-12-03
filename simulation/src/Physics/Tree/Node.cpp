@@ -233,7 +233,12 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles)
         if(particles[i]->type == 2)
         {
             gasMass += particles[i]->mass;
+            if (gasMass > 0) 
+            {
+                mVel = (mVel * (gasMass - particles[i]->mass) + particles[i]->velocity * particles[i]->mass) / gasMass;
+            }
         }
+
         centerOfMass = (centerOfMass * (mass - particles[i]->mass) + particles[i]->position * particles[i]->mass) / mass;
 
 
@@ -259,130 +264,10 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles)
             children[i]->insert(children[i]->childParticles);
         }
     }
-    
-    
 }
 
 
-/* void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
-{
-    if (particles.empty()) return;
-
-    if (particles.size() > 1)
-    {
-        isLeaf = false;
-    }
-    else
-    {
-        isLeaf = true;
-        particle = particles[0];
-        particle->node = shared_from_this();
-
-        centerOfMass = particle->position;
-        mass = particle->mass;
-        gasMass = (particle->type == 2) ? particle->mass : 0.0;
-
-        return;
-    }
-
-    // Erstellen der Kinderknoten parallelisieren
-    for (int i = 0; i < 8; ++i) 
-    {
-        children[i] = std::make_shared<Node>();
-        // Setup der Knoten-Eigenschaften
-        children[i]->position = position + vec3(
-            radius * ((i & 1) ? 0.5 : -0.5),
-            radius * ((i & 2) ? 0.5 : -0.5),
-            radius * ((i & 4) ? 0.5 : -0.5));
-        children[i]->radius = radius / 2.0;
-        children[i]->depth = depth + 1;
-        children[i]->parent = shared_from_this();
-    }
-
-    // Vorbereitung für die parallele Verarbeitung
-    double total_mass = 0.0;
-    double total_gasMass = 0.0;
-    vec3 total_position_mass(0.0, 0.0, 0.0);
-
-    // Temporäre Speicher für childParticles pro Oktant
-    std::vector<std::vector<std::shared_ptr<Particle>>> temp_childParticles(8);
-
-    // Parallele Verarbeitung der Partikel
-    #pragma omp parallel
-    {
-        // Thread-lokale Variablen
-        double thread_mass = 0.0;
-        double thread_gasMass = 0.0;
-        vec3 thread_position_mass(0.0, 0.0, 0.0);
-        std::vector<std::shared_ptr<Particle>> thread_temp_childParticles[8];
-
-        // Parallelisierte Schleife über die Partikel
-        #pragma omp for nowait
-        for (size_t i = 0; i < particles.size(); ++i) 
-        {
-            auto& p = particles[i];
-            thread_mass += p->mass;
-            if (p->type == 2)
-            {
-                thread_gasMass += p->mass;
-            }
-            // Sammeln der Positionen und Massen für spätere Berechnung des Centers of Mass
-            thread_position_mass += p->position * p->mass;
-
-            // Bestimmen des Oktanten
-            int octant = getOctant(p);
-            
-            // Hinzufügen des Partikels zum entsprechenden Oktanten
-            if (octant != -1) 
-            {
-                thread_temp_childParticles[octant].push_back(p);
-            }
-        }
-
-        // Kritischer Abschnitt zum Zusammenführen der Ergebnisse
-        #pragma omp critical
-        {
-            total_mass += thread_mass;
-            total_gasMass += thread_gasMass;
-            total_position_mass += thread_position_mass;
-
-            // Zusammenführen der temporären childParticles
-            for (int o = 0; o < 8; ++o)
-            {
-                temp_childParticles[o].insert(
-                    temp_childParticles[o].end(),
-                    thread_temp_childParticles[o].begin(),
-                    thread_temp_childParticles[o].end());
-            }
-        }
-    }
-
-    // Nach der parallelen Schleife die aggregierten Werte zuweisen
-    mass = total_mass;
-    gasMass = total_gasMass;
-    if (mass > 0)
-    {
-        centerOfMass = total_position_mass * (1.0 / mass);
-    }
-
-    // Zuweisen der gesammelten childParticles zu den Kinderknoten
-    for (int o = 0; o < 8; ++o)
-    {
-        children[o]->childParticles = std::move(temp_childParticles[o]);
-    }
-
-    // Rekursive Einfügung der Partikel in die Kinderknoten parallelisieren
-    #pragma omp parallel for
-    for (int i = 0; i < 8; ++i) 
-    {
-        if (!children[i]->childParticles.empty()) 
-        {
-            children[i]->insert(children[i]->childParticles);
-        }
-    }
-} */
-
-
+//old insert function
 void Node::insert(std::shared_ptr<Particle> newParticle) 
 {
     if (!newParticle) 

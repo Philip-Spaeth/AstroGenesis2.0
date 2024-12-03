@@ -135,13 +135,6 @@ if (false)
 
     Log::startProcess("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-    //build the tree
-    /* for(int i = 0; i < 2000; i++)
-    {
-        tree = std::make_shared<Tree>(this);
-        tree->buildTree();
-    } */
-
     tree->buildTree();
 
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
