@@ -681,7 +681,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         // Lesen der Massen
                         unsigned int index = 0;
                         for (int type = 0; type < 6; ++type) {
-                            for (unsigned int i = 0; i < header.npart[type]; ++i) {
+                            for (int i = 0; i < header.npart[type]; ++i) {
                                 if (typelist[type]) {
                                     // Individuelle Masse lesen
                                     float mass;
@@ -702,7 +702,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         // Lesen von U für Gaspartikel (Typ 0)
                         unsigned int index = 0;
                         for (int type = 0; type < 6; ++type) {
-                            for (unsigned int i = 0; i < header.npart[type]; ++i) {
+                            for (int i = 0; i < header.npart[type]; ++i) {
                                 if (type == 0) {
                                     // U lesen
                                     float u;
@@ -731,7 +731,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         unsigned int index = 0;
         for (int type = 0; type < 6; ++type) 
         {
-            for (unsigned int i = 0; i < header.npart[type]; ++i) 
+            for (int i = 0; i < header.npart[type]; ++i) 
             {
                 Particle particle;
                 particle.position = vec3(ps[index].pos[0], ps[index].pos[1], ps[index].pos[2]) * Units::KPC;
@@ -739,25 +739,38 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                 particle.id = ps[index].id;
                 particle.mass = ps[index].mass * Units::MSUN * 1e10;
                 particle.U = ps[index].u * 1e6;
-                if(type == 0)
+                
+                if(type == 0) // Gaspartikel
                 {
-                  particle.type = 2;
-                  particle.galaxyPart = 1;
+                particle.type = 2; // Interner Typ 2: Gas
+                particle.galaxyPart = 1; // Disk
                 }
-                if(type == 2 || type == 3 || type == 4 || type == 5)
+                else if(type == 1) // Halopartikel (Dunkle Materie)
                 {
-                  particle.type = 3;
-                  particle.galaxyPart = 1;
-                  if(type == 3 || type == 5)
-                  {
-                    particle.galaxyPart = 2;
-                  }
+                particle.type = 3; // Interner Typ 3: Dunkle Materie
+                particle.galaxyPart = 3; // Halo
                 }
-                if(type == 1)
+                else if(type == 2) // Diskpartikel (Sterne)
                 {
-                  particle.type = 3;
-                  particle.galaxyPart = 3;
+                particle.type = 1; // Interner Typ 1: Sterne
+                particle.galaxyPart = 1; // Disk
                 }
+                else if(type == 3) // Bulgepartikel (Sterne)
+                {
+                particle.type = 1; // Interner Typ 1: Sterne
+                particle.galaxyPart = 2; // Bulge
+                }
+                else if(type == 4) // Sternpartikel (falls vorhanden)
+                {
+                particle.type = 1; // Interner Typ 1: Sterne
+                particle.galaxyPart = 1; // Je nach Bedarf definieren
+                }
+                else if(type == 5) // Schwarzes Loch
+                {
+                particle.type = 1; // Interner Typ 4: Schwarzes Loch (falls definiert)
+                particle.galaxyPart = 2; // Je nach Bedarf definieren
+                }
+
                 particles[index] = std::make_shared<Particle>(particle);
                 ++index;
             }
@@ -767,6 +780,24 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         std::random_device rd;
         std::mt19937 g(rd());
         std::shuffle(particles.begin(), particles.end(), g);
+
+        int gasCount, starCount, darkCount = 0;
+        int bulgeCount, diskCount, haloCount = 0;
+        for (int i = 0; i < (int)particles.size(); i++)
+        {
+            if(particles[i]->type == 1) starCount++;
+            if(particles[i]->type == 2) gasCount++;
+            if(particles[i]->type == 3) darkCount++;
+            if(particles[i]->galaxyPart == 2) bulgeCount++;
+            if(particles[i]->galaxyPart == 1) diskCount++;
+            if(particles[i]->galaxyPart == 3) haloCount++;
+        }
+        std::cout << "internal type 1 (stars): " << starCount << std::endl;
+        std::cout << "internal type 2 (gas): " << gasCount << std::endl;
+        std::cout << "internal type 3 (dark matter): " << darkCount << std::endl;
+        std::cout << "galaxy part 1 (disk): " << diskCount << std::endl;
+        std::cout << "galaxy part 2 (bulge): " << bulgeCount << std::endl;
+        std::cout << "galaxy part 3 (halo): " << haloCount << std::endl;
 
         std::cout << "gadget2 snapshot sucessfully read." << std::endl;
     }
