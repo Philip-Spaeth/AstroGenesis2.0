@@ -21,6 +21,7 @@
 #include "Units.h"
 #include <unistd.h>
 #include <cstdint>
+#include <array>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -28,6 +29,56 @@ namespace fs = std::filesystem;
 DataManager::DataManager(std::string path)
 {
   this->outputPath = path;
+}
+
+struct io_header_1 {
+    int32_t npart[6];
+    double mass[6];
+    double time;
+    double redshift;
+    int32_t flag_sfr;
+    int32_t flag_feedback;
+    int32_t npartTotal[6];
+    int32_t flag_cooling;
+    int32_t num_files;
+    double BoxSize;
+    double Omega0;
+    double OmegaLambda;
+    double HubbleParam;
+    char fill[256 - 6 * 4 - 6 * 8 - 2 * 8 - 2 * 4 - 6 * 4 - 2 * 4 - 4 * 8];
+};
+
+// Blockgröße prüfen
+void checkBlockSize(std::ifstream &file, const std::string &context) {
+    int32_t blockSize;
+    file.read(reinterpret_cast<char*>(&blockSize), sizeof(blockSize));
+    if (!file) {
+        std::cerr << "Error reading block size in " << context << std::endl;
+        exit(1);
+    }
+    std::cout << context << " block size: " << blockSize << " bytes" << std::endl;
+}
+
+enum iofields {
+    IO_POS, IO_VEL, IO_ID, IO_MASS, IO_U, IO_RHO, IO_NE, IO_NH, IO_HSML, IO_SFR, IO_AGE, IO_LASTENTRY
+};
+
+// Hilfsfunktionen
+std::string getBlockLabel(iofields block) {
+    switch (block) {
+        case IO_POS: return "Position";
+        case IO_VEL: return "Velocity";
+        case IO_ID: return "ID";
+        case IO_MASS: return "Mass";
+        case IO_U: return "Internal Energy";
+        case IO_RHO: return "Density";
+        case IO_NE: return "Electron Abundance";
+        case IO_NH: return "Neutral Hydrogen Abundance";
+        case IO_HSML: return "Smoothing Length";
+        case IO_SFR: return "Star Formation Rate";
+        case IO_AGE: return "Stellar Age";
+        default: return "Unknown";
+    }
 }
 
 
@@ -371,6 +422,14 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
     file.close();
 }
 
+struct ptc {
+    float pos[3];
+    float vel[3];
+    unsigned int id;
+    float mass;
+    float u; // internal energy
+};
+
 bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Simulation* sim)
 {
     // Öffne die Datei im Binärmodus
@@ -513,6 +572,203 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
     else if(inputFormat == "hdf5")
     {
         //...
+    }
+    // makeGal format
+    else if (true)
+    {
+        int block_size;
+        io_header_1 header;
+
+        file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+
+        // Lesen des Block-Headers
+        char label[4];
+        file.read(label, 4); // Sollte "HEAD" sein
+        int nextblock;
+        file.read(reinterpret_cast<char*>(&nextblock), sizeof(nextblock));
+
+        file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+
+        file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+        file.read(reinterpret_cast<char*>(&header), sizeof(header));
+        file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+
+        std::cout << "Gadget2 Header: " << std::endl;
+        std::cout << "Gas (Typ 0): " << header.npart[0] << std::endl;
+        std::cout << "Halo (Typ 1): " << header.npart[1] << std::endl;
+        std::cout << "Disk (Typ 2): " << header.npart[2] << std::endl;
+        std::cout << "Bulge (Typ 3): " << header.npart[3] << std::endl;
+        std::cout << "Stars (Typ 4): " << header.npart[4] << std::endl;
+        std::cout << "Black Hole (Typ 5): " << header.npart[5] << std::endl;
+
+
+        // Gesamtanzahl der Partikel berechnen
+        unsigned int total_particles = 0;
+        for(int i = 0; i < 6; ++i){
+            total_particles += header.npart[i];
+        }
+
+        // Reservieren des Speicherplatzes für Partikel
+        particles.resize(total_particles);
+
+        // Reservieren des Speicherplatzes für Partikel
+        std::vector<ptc> ps(total_particles);
+
+        // Jetzt die Datenblöcke in der gleichen Reihenfolge lesen, wie sie geschrieben wurden
+
+        enum iofields { IO_POS, IO_VEL, IO_ID, IO_MASS, IO_U, IO_RHO, IO_HSML, IO_LASTENTRY };
+
+        for (int bnr = 0; bnr < IO_LASTENTRY; ++bnr) {
+            bool block_present = false;
+            switch (bnr) {
+                case IO_POS:
+                case IO_VEL:
+                case IO_ID:
+                case IO_U:
+                case IO_RHO:
+                case IO_HSML:
+                case IO_MASS:
+                    block_present = true;
+                    break;
+                default:
+                    block_present = false;
+                    break;
+            }
+            if (!block_present)
+                continue;
+
+            // Lesen des Block-Headers
+            file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+            file.read(label, 4);
+            file.read(reinterpret_cast<char*>(&nextblock), sizeof(nextblock));
+            file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+
+            // Lesen der Daten
+            file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+
+            switch (bnr) {
+                case IO_POS:
+                    // Lesen der Positionen
+                    for (unsigned int i = 0; i < total_particles; ++i) {
+                        file.read(reinterpret_cast<char*>(ps[i].pos), 3 * sizeof(float));
+                    }
+                    break;
+
+                case IO_VEL:
+                    // Lesen der Geschwindigkeiten
+                    for (unsigned int i = 0; i < total_particles; ++i) {
+                        file.read(reinterpret_cast<char*>(ps[i].vel), 3 * sizeof(float));
+                    }
+                    break;
+
+                case IO_ID:
+                    // Lesen der IDs
+                    for (unsigned int i = 0; i < total_particles; ++i) {
+                        file.read(reinterpret_cast<char*>(&ps[i].id), sizeof(unsigned int));
+                    }
+                    break;
+
+                case IO_MASS:
+                    {
+                        // Bestimmen, welche Typen individuelle Massen haben
+                        int typelist[6];
+                        for (int i = 0; i < 6; ++i) {
+                            typelist[i] = 0;
+                            if (header.mass[i] == 0 && header.npart[i] > 0)
+                                typelist[i] = 1;
+                        }
+
+                        // Lesen der Massen
+                        unsigned int index = 0;
+                        for (int type = 0; type < 6; ++type) {
+                            for (unsigned int i = 0; i < header.npart[type]; ++i) {
+                                if (typelist[type]) {
+                                    // Individuelle Masse lesen
+                                    float mass;
+                                    file.read(reinterpret_cast<char*>(&mass), sizeof(float));
+                                    ps[index].mass = mass;
+                                } else {
+                                    // Masse aus dem Header verwenden
+                                    ps[index].mass = static_cast<float>(header.mass[type]);
+                                }
+                                ++index;
+                            }
+                        }
+                    }
+                    break;
+
+                case IO_U:
+                    {
+                        // Lesen von U für Gaspartikel (Typ 0)
+                        unsigned int index = 0;
+                        for (int type = 0; type < 6; ++type) {
+                            for (unsigned int i = 0; i < header.npart[type]; ++i) {
+                                if (type == 0) {
+                                    // U lesen
+                                    float u;
+                                    file.read(reinterpret_cast<char*>(&u), sizeof(float));
+                                    ps[index].u = u;
+                                } else {
+                                    // U auf 0 setzen für andere Typen
+                                    ps[index].u = 0.0f;
+                                }
+                                ++index;
+                            }
+                        }
+                    }
+                    break;
+
+                // Falls du RHO und HSML auch benötigst, füge hier den Code hinzu
+
+                default:
+                    // Unbekannter Block, überspringen
+                    file.seekg(block_size, std::ios::cur);
+                    break;
+            }
+
+            file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
+        }
+        unsigned int index = 0;
+        for (int type = 0; type < 6; ++type) 
+        {
+            for (unsigned int i = 0; i < header.npart[type]; ++i) 
+            {
+                Particle particle;
+                particle.position = vec3(ps[index].pos[0], ps[index].pos[1], ps[index].pos[2]) * Units::KPC;
+                particle.velocity = vec3(ps[index].vel[0], ps[index].vel[1], ps[index].vel[2]) * Units::KMS;
+                particle.id = ps[index].id;
+                particle.mass = ps[index].mass * Units::MSUN * 1e10;
+                particle.U = ps[index].u * 1e6;
+                if(type == 0)
+                {
+                  particle.type = 2;
+                  particle.galaxyPart = 1;
+                }
+                if(type == 2 || type == 3 || type == 4 || type == 5)
+                {
+                  particle.type = 3;
+                  particle.galaxyPart = 1;
+                  if(type == 3 || type == 5)
+                  {
+                    particle.galaxyPart = 2;
+                  }
+                }
+                if(type == 1)
+                {
+                  particle.type = 3;
+                  particle.galaxyPart = 3;
+                }
+                particles[index] = std::make_shared<Particle>(particle);
+                ++index;
+            }
+        }
+
+        //shuffle the particles 
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(particles.begin(), particles.end(), g);
+
+        std::cout << "gadget2 snapshot sucessfully read." << std::endl;
     }
     else if(inputFormat == "gadget")
     {
