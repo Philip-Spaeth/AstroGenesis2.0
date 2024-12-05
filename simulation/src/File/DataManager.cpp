@@ -440,6 +440,8 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         return false;
     }
 
+    std::cout << "Reading IC: " << inputPath << "\n" << std::endl; 
+
     if(inputFormat == "ag")
     {
         std::cout << "reading ag initial condition data ..." << std::endl;
@@ -594,12 +596,12 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         file.read(reinterpret_cast<char*>(&block_size), sizeof(block_size));
 
         std::cout << "Gadget2 Header: " << std::endl;
-        std::cout << "Gas (Typ 0): " << header.npart[0] << std::endl;
-        std::cout << "Halo (Typ 1): " << header.npart[1] << std::endl;
-        std::cout << "Disk (Typ 2): " << header.npart[2] << std::endl;
-        std::cout << "Bulge (Typ 3): " << header.npart[3] << std::endl;
-        std::cout << "Stars (Typ 4): " << header.npart[4] << std::endl;
-        std::cout << "Black Hole (Typ 5): " << header.npart[5] << std::endl;
+        std::cout << "  Gas (Typ 0): " << header.npart[0] << std::endl;
+        std::cout << "  Halo (Typ 1): " << header.npart[1] << std::endl;
+        std::cout << "  Disk (Typ 2): " << header.npart[2] << std::endl;
+        std::cout << "  Bulge (Typ 3): " << header.npart[3] << std::endl;
+        std::cout << "  Stars (Typ 4): " << header.npart[4] << std::endl;
+        std::cout << "  Black Hole (Typ 5): " << header.npart[5] << std::endl;
 
 
         // Gesamtanzahl der Partikel berechnen
@@ -718,8 +720,6 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     }
                     break;
 
-                // Falls du RHO und HSML auch benötigst, füge hier den Code hinzu
-
                 default:
                     // Unbekannter Block, überspringen
                     file.seekg(block_size, std::ios::cur);
@@ -740,35 +740,35 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                 particle.mass = ps[index].mass * Units::MSUN * 1e10;
                 particle.U = ps[index].u * 1e6;
                 
-                if(type == 0) // Gaspartikel
+                if(type == 0)
                 {
-                particle.type = 2; // Interner Typ 2: Gas
-                particle.galaxyPart = 1; // Disk
+                particle.type = 2;
+                particle.galaxyPart = 1;
                 }
-                else if(type == 1) // Halopartikel (Dunkle Materie)
+                else if(type == 1)
                 {
-                particle.type = 3; // Interner Typ 3: Dunkle Materie
-                particle.galaxyPart = 3; // Halo
+                particle.type = 3;
+                particle.galaxyPart = 3;
                 }
-                else if(type == 2) // Diskpartikel (Sterne)
+                else if(type == 2)
                 {
-                particle.type = 1; // Interner Typ 1: Sterne
-                particle.galaxyPart = 1; // Disk
+                particle.type = 1;
+                particle.galaxyPart = 1;
                 }
-                else if(type == 3) // Bulgepartikel (Sterne)
+                else if(type == 3)
                 {
-                particle.type = 1; // Interner Typ 1: Sterne
-                particle.galaxyPart = 2; // Bulge
+                particle.type = 1;
+                particle.galaxyPart = 2;
                 }
-                else if(type == 4) // Sternpartikel (falls vorhanden)
+                else if(type == 4)
                 {
-                particle.type = 1; // Interner Typ 1: Sterne
-                particle.galaxyPart = 1; // Je nach Bedarf definieren
+                particle.type = 1;
+                particle.galaxyPart = 1;
                 }
-                else if(type == 5) // Schwarzes Loch
+                else if(type == 5)
                 {
-                particle.type = 1; // Interner Typ 4: Schwarzes Loch (falls definiert)
-                particle.galaxyPart = 2; // Je nach Bedarf definieren
+                particle.type = 1;
+                particle.galaxyPart = 2;
                 }
 
                 particles[index] = std::make_shared<Particle>(particle);
@@ -783,24 +783,30 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
 
         int gasCount, starCount, darkCount = 0;
         int bulgeCount, diskCount, haloCount = 0;
+        double totalMass, bulgeMass, diskMass, haloMass = 0;
+        double gasMass, starMass, darkMass = 0;
         for (int i = 0; i < (int)particles.size(); i++)
         {
-            if(particles[i]->type == 1) starCount++;
-            if(particles[i]->type == 2) gasCount++;
-            if(particles[i]->type == 3) darkCount++;
-            if(particles[i]->galaxyPart == 2) bulgeCount++;
-            if(particles[i]->galaxyPart == 1) diskCount++;
-            if(particles[i]->galaxyPart == 3) haloCount++;
+            if(particles[i]->type == 1) {starCount++; starMass += particles[i]->mass; totalMass += particles[i]->mass;}
+            if(particles[i]->type == 2) {gasCount++; gasMass += particles[i]->mass; totalMass += particles[i]->mass;}
+            if(particles[i]->type == 3) {darkCount++; darkMass += particles[i]->mass; totalMass += particles[i]->mass;}
+            if(particles[i]->galaxyPart == 2) {bulgeCount++; bulgeMass += particles[i]->mass;}
+            if(particles[i]->galaxyPart == 1) {diskCount++; diskMass += particles[i]->mass;}
+            if(particles[i]->galaxyPart == 3) {haloCount++; haloMass += particles[i]->mass;}
         }
-        std::cout << "internal type 1 (stars): " << starCount << std::endl;
-        std::cout << "internal type 2 (gas): " << gasCount << std::endl;
-        std::cout << "internal type 3 (dark matter): " << darkCount << std::endl;
-        std::cout << "galaxy part 1 (disk): " << diskCount << std::endl;
-        std::cout << "galaxy part 2 (bulge): " << bulgeCount << std::endl;
-        std::cout << "galaxy part 3 (halo): " << haloCount << std::endl;
 
-        std::cout << "gadget2 snapshot sucessfully read." << std::endl;
+        std::cout << std::fixed << std::scientific << std::setprecision(1) << "\nTotal Mass: " << totalMass << "kg" << std::endl;
+        std::cout << std::fixed << std::scientific << std::setprecision(1) <<  "  type 1 (stars) N: " << starCount << " and Mass: " << starMass << "kg or " << std::fixed << (starMass / totalMass) * 100 << "%" << std::endl;
+        std::cout << std::fixed << std::scientific << std::setprecision(1) <<  "  type 2 (gas) N: " << gasCount << " and Mass: " << gasMass << "kg or " << std::fixed<< (gasMass / totalMass) * 100 << "%" << std::endl;
+        std::cout << std::fixed << std::scientific << std::setprecision(1) << "  type 3 (dark matter) N: " << darkCount << " and Mass: " << darkMass << "kg or "<< std::fixed << (darkMass / totalMass) * 100 << "%" << std::endl;
+
+        std::cout << std::fixed << std::scientific<< std::setprecision(1) << "\n  galaxyPart 1 (disk) N: " << diskCount << " and Mass: " << diskMass << "kg or "<< std::fixed << (diskMass / totalMass) * 100 << "%" << std::endl;
+        std::cout << std::fixed << std::scientific<< std::setprecision(1) << "  galaxyPart 2 (bulge) N: " << bulgeCount << " and Mass: " << bulgeMass << "kg or "<< std::fixed << (bulgeMass / totalMass) * 100 << "%" << std::endl;
+        std::cout << std::fixed << std::scientific<< std::setprecision(1) << "  galaxyPart 3 (halo) N: " << haloCount << " and Mass: " << haloMass << "kg or "<< std::fixed << (haloMass / totalMass) * 100 << "%" << std::endl;
+
+        //std::cout << "\ngadget2 snapshot sucessfully read.\n" << std::endl;
     }
+
     else if(inputFormat == "gadget")
     {
         std::cout << "reading gadget2 snapshot ..." << std::endl;
@@ -838,12 +844,12 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         
         // Ausgabe des Headers zur Überprüfung
         std::cout << "Gadget2 Header: " << std::endl;
-        std::cout << "Gas (Typ 0): " << header.npart[0] << std::endl;
-        std::cout << "Halo (Typ 1): " << header.npart[1] << std::endl;
-        std::cout << "Disk (Typ 2): " << header.npart[2] << std::endl;
-        std::cout << "Bulge (Typ 3): " << header.npart[3] << std::endl;
-        std::cout << "Stars (Typ 4): " << header.npart[4] << std::endl;
-        std::cout << "Black Hole (Typ 5): " << header.npart[5] << std::endl;
+        std::cout << "   Gas (Typ 0): " << header.npart[0] << std::endl;
+        std::cout << "   Halo (Typ 1): " << header.npart[1] << std::endl;
+        std::cout << "   Disk (Typ 2): " << header.npart[2] << std::endl;
+        std::cout << "   Bulge (Typ 3): " << header.npart[3] << std::endl;
+        std::cout << "   Stars (Typ 4): " << header.npart[4] << std::endl;
+        std::cout << "   Black Hole (Typ 5): " << header.npart[5] << std::endl;
 
         /*
         std::cout << "Mass per type:" << std::endl;
@@ -1202,8 +1208,8 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                     {
                         particle->type = 1;
                         particle->galaxyPart = 1; // Disk
-                        //count_star++;
-                        
+                        count_star++;
+                        /*
                         //20% of particles in disk are gas
                         double r = random::uniform(0,5);
                         if(r < 1)
@@ -1218,6 +1224,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         {
                             count_star++;
                         }
+                        */
                         
                     }
                     else if (type == 3)
@@ -1300,13 +1307,13 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
             }
         }
         std::cout << "\nParticle types: " << std::endl;
-        std::cout << "stars: " << num_stars << std::endl;
-        std::cout << "gas: " << num_gas << std::endl;
-        std::cout << "dark matter: " << num_dark << std::endl;
+        std::cout << "  stars: " << num_stars << std::endl;
+        std::cout << "  gas: " << num_gas << std::endl;
+        std::cout << "  dark matter: " << num_dark << std::endl;
         std::cout << "Galaxy parts: " << std::endl;
-        std::cout << "disk: " << num_disk << std::endl;
-        std::cout << "bulge: " << num_bulge << std::endl;
-        std::cout << "halo: " << num_halo << std::endl;
+        std::cout << "  disk: " << num_disk << std::endl;
+        std::cout << "  bulge: " << num_bulge << std::endl;
+        std::cout << "  halo: " << num_halo << std::endl;
 
         // Datei schließen
         file.close();
