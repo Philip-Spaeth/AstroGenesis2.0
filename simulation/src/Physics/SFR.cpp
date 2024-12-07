@@ -17,6 +17,7 @@ void SFR::sfrRoutine(std::shared_ptr<Particle>& particle)
         double t_star = 1e15;//(1 / epsilon) * std::sqrt( (3* Constants::PI) / (32 * Constants::G * particle->rho) );
         double p = 1 - exp(-epsilon * particle->timeStep / t_star);
         double r = ((double) rand()) / RAND_MAX;
+        particle->sfr = p;
         if (r < p)
         {
             //gas -> star

@@ -576,7 +576,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         //...
     }
     // makeGal format
-    else if (true)
+    else if (inputFormat == "makeGal")
     {
         int block_size;
         io_header_1 header;

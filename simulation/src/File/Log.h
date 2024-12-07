@@ -29,9 +29,10 @@ namespace Log
 
     //save data to in csv file
     void printData(const std::string& file, const double x, const double y);
-    extern std::vector<std::ofstream> dataFiles;
 
-    //save Velocity Curve
     void saveVelocityCurve(std::vector<std::shared_ptr<Particle>> particles, int numberOfParticles);
+    void saveTotalSFRCurve(std::vector<std::shared_ptr<Particle>> particles, const double time);
+    void saveMassCurve(std::vector<std::shared_ptr<Particle>> particles, const double time);
+    void saveTotalTempCurve(std::vector<std::shared_ptr<Particle>> particles, const double time);
 }
 #endif

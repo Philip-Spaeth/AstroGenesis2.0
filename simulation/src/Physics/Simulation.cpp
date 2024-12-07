@@ -246,6 +246,10 @@ void Simulation::run()
         double gasMass = 0;
         double totalMass = 0;
 
+        //Log::saveTotalSFRCurve(particles, globalTime);
+        //Log::saveMassCurve(particles, globalTime);
+        //Log::saveTotalTempCurve(particles, globalTime);
+
         // Second kick
         #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
@@ -272,6 +276,7 @@ void Simulation::run()
                         //calc SFR
                         sfr->sfrRoutine(particles[i]);
                     }
+                    
                     if(particles[i]->type == 2)
                     {
                         // Integrate the internal energy
@@ -291,7 +296,7 @@ void Simulation::run()
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
         }
-        if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
+        //if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
