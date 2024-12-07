@@ -31,6 +31,6 @@ void TimeIntegration::Ueuler(std::shared_ptr<Particle>& particle, double deltaTi
     //std::cout << std::fixed << std::scientific << particle->dUdt  * deltaTime<< std::endl;
     if(!std::isnan(particle->dUdt))particle->U += particle->dUdt * deltaTime;
     //std::cout << std::fixed << std::scientific << "  U diff: " << particle->dUdt  * deltaTime / particle->U<< std::endl;
-    //std::cout << std::fixed << std::scientific << "  U: " << particle->U << std::endl;
+    //std::cout << std::fixed << std::scientific << "  T: " << particle->T << std::endl;
     particle->dUdt = 0;
 }

@@ -8,6 +8,9 @@
 #include <string>
 #include <filesystem>
 #include <chrono>
+#include <locale>
+#include <vector>
+#include "Units.h"
 
 
 std::string formatWithComma(double value) 
@@ -23,6 +26,106 @@ std::string formatWithComma(double value)
 
 namespace Log
 {
+    void saveTotalSFRCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    {
+        double totalSFR = 0;
+        for (size_t i = 0; i < particles.size(); i++)
+        {
+            if(particles[i]->type == 2) totalSFR += particles[i]->sfr;
+        }
+        Log::printData("totalSFR.csv", time, totalSFR);
+    }
+    void saveMassCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    {
+        double gasMass = 0;
+        double starMass = 0;
+        for (size_t i = 0; i < particles.size(); i++)
+        {
+            if(particles[i]->type == 2) gasMass += particles[i]->mass;
+            if(particles[i]->type == 1) starMass += particles[i]->mass;
+        }
+        Log::printData("gasMass.csv", time, gasMass);
+        Log::printData("starMass.csv", time, starMass);
+    }
+    void saveTotalTempCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    {
+        double totalTemp = 0;
+        for (size_t i = 0; i < particles.size(); i++)
+        {
+            if(particles[i]->type == 2) totalTemp += particles[i]->T;
+        }
+        Log::printData("totalTemp.csv", time, totalTemp);
+
+    }
+    void saveVelocityCurve(std::vector<std::shared_ptr<Particle>> particles, int numberOfParticles)
+    {
+        std::cout << "Saving velocity curve..." << std::endl;
+        std::vector<Particle> ps;
+        for (int i = 0; i < numberOfParticles; i ++)
+        {
+            if(particles[i]->galaxyPart != 1) continue;
+            Particle p;
+            p.position = particles[i]->position;
+            p.velocity = particles[i]->velocity;
+            ps.push_back(p);
+        }
+
+        //get the velocity of the particles
+        struct data
+        {
+            double r;
+            double v;
+            double i;
+        };
+
+        std::vector<data> v;
+        for (size_t i = 0; i < ps.size(); i++) {
+            data d;
+            d.r = ps[i].position.length() / Units::KPC;
+            d.v = ps[i].velocity.length() / Units::KMS;
+            d.i = i;
+            v.push_back(d);
+        }
+
+        // Sortiere die Daten nach Abstand
+        std::sort(v.begin(), v.end(), [](const data& a, const data& b) {
+            return a.r < b.r;
+        });
+
+        // Teile die Daten in Bins auf
+        double r_abstand = v.back().r / 100;
+        std::vector<std::vector<double>> bins(100);
+
+        for (const auto& elem : v) {
+            int bin_index = static_cast<int>(elem.r / r_abstand);
+            if (bin_index >= 100) bin_index = 99; // Sicherstellen, dass der Index im gültigen Bereich bleibt
+            bins[bin_index].push_back(elem.v);
+        }
+
+        // Berechne den Median der Geschwindigkeiten für jeden Bin
+        std::vector<double> medians(100);
+        for (size_t i = 0; i < bins.size(); i++) {
+            if (bins[i].empty()) {
+                medians[i] = 0; // oder einen anderen repräsentativen Wert für leere Bins
+                continue;
+            }
+            size_t mid = bins[i].size() / 2;
+            std::nth_element(bins[i].begin(), bins[i].begin() + mid, bins[i].end());
+            double median = bins[i][mid];
+            if (bins[i].size() % 2 == 0) {
+                std::nth_element(bins[i].begin(), bins[i].begin() + mid - 1, bins[i].end());
+                median = (median + bins[i][mid - 1]) / 2.0;
+            }
+            medians[i] = median;
+        }
+        //print the velocity of the particles
+        for (size_t i = 0; i < medians.size(); i++)
+        {
+            Log::printData("vel_Curve.csv",(i + 1) * r_abstand, medians[i]);
+        }
+    }
+
+
     std::string outputDir;
     void setOutputDir(const std::string& dir) 
     {
@@ -34,24 +137,33 @@ namespace Log
     }
 
 //save data in csv file
-    std::vector<std::ofstream> dataFiles;
 
     void printData(const std::string& filename, const double x, const double y) 
-    {
-        std::string fullPath = outputDir + "/" + filename;
-        auto it = std::find_if(dataFiles.begin(), dataFiles.end(),
-            [&fullPath](const std::ofstream& f) { return f.is_open() && f.rdbuf()->is_open(); });
+    { 
+        std::ofstream file(outputDir + "/"+ filename, std::ios::app);
 
-        if (it == dataFiles.end()) 
-        {
-            dataFiles.emplace_back(std::ofstream(fullPath, std::ios::out | std::ios::app));
-            it = dataFiles.end() - 1;
+        // Überprüfen, ob die Datei erfolgreich geöffnet wurde
+        if (!file.is_open()) {
+            throw std::ios_base::failure("Fehler beim Öffnen der Datei.");
         }
 
-        *it << formatWithComma(x) << ";" << formatWithComma(y) << "\n";
-        it->flush();
-    }
+        // Formatieren der Zahlen mit Punkt als Dezimaltrennzeichen
+        std::ostringstream formattedX, formattedY;
+        formattedX << std::fixed << std::setprecision(10) << x;
+        formattedY << std::fixed << std::setprecision(10) << y;
+        // Ersetzen des Punktes durch ein Komma
+        std::string xStr = formattedX.str();
+        std::string yStr = formattedY.str();
+        std::replace(xStr.begin(), xStr.end(), '.', ',');
+        std::replace(yStr.begin(), yStr.end(), '.', ',');
 
+        // Schreiben der formatierten Daten in die Datei
+        file << xStr << ";" << yStr << "\n";
+
+        // Datei schließen
+        file.close();
+    }
+    
 //track process time
     bool hasStarted = false;
     std::ofstream LogsDir;
@@ -83,7 +195,7 @@ namespace Log
 
             if (proccessFile.is_open()) 
             {
-                std::cout << "Logfile opened successfully." << std::endl;
+                //std::cout << "Logfile opened successfully." << std::endl;
             } 
             else 
             {

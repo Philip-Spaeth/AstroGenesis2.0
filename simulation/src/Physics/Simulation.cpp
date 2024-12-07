@@ -20,9 +20,7 @@ Simulation::Simulation()
     sfr = std::make_shared<SFR>();
 }
 
-Simulation::~Simulation()
-{
-}
+Simulation::~Simulation() {}
 
 bool Simulation::init()
 {
@@ -35,8 +33,6 @@ bool Simulation::init()
     Log::setOutputDir(dataManager->outputPath + "/logs");
     
     fixedStep = endTime / fixedTimeSteps;
-
-    std::cout << "Total Number of Particles in the Config.ini file: " << numberOfParticles << std::endl;
 
 
 //catch errors 
@@ -53,11 +49,6 @@ bool Simulation::init()
         return false;
     }
 
-    //print the general information aboput the simulation
-    std::cout << "\nSimulation parameters:" << std::endl;
-    std::cout << "  Number of particles: " << numberOfParticles << std::endl;
-    std::cout << "  End time: " << std::scientific << std::setprecision(0) << (double)endTime / (double)3600.0 << " years" << std::endl;
-
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
@@ -72,66 +63,26 @@ bool Simulation::init()
         return false;
     }
     
-    double totalMass = 0;
-    double gasMass = 0;
     //check if there are null pointers in the particles vector
-    #pragma omp parallel for reduction(+:totalMass, gasMass)
+    #pragma omp parallel for
     for (int i = 0; i < numberOfParticles; i++)
     {
         if (!particles[i]) 
         {
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
         }
-
-        //additional debug information
         if(particles[i]->type == 2)
         {
-            gasMass += particles[i]->mass;
             particles[i]->T = (Constants::GAMMA - 1.0) * particles[i]->U * Constants::prtn * particles[i]->mu / (Constants::k_b);
             //std::cout << particles[i]->U << "   ,   " << particles[i]->T << std::endl;
         }
-        //std::cout << particles[i]->position.x << "   ,   " << particles[i]->position.y << "   ,   " << particles[i]->position.z << std::endl;
-
-        totalMass += particles[i]->mass;
     }
-    std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "% " << "of the total mass" << std::endl;
-
-
-//save velocity curve
-if (false)
-{
-    int N = 1000;
-    //get the velocity of the particles
-    struct data
-    {
-        double r;
-        double v;
-        double i;
-    };
-    std::vector<data> v;
-    int step = numberOfParticles / N;
-    for (int i = 0; i < numberOfParticles; i += step)
-    {
-        data d;
-        d.r = particles[i]->position.length() / Units::KPC;
-        d.v = particles[i]->velocity.length() / Units::KMS;
-        d.i = i;
-        v.push_back(d);
-    }
-
-    //sort v after r
-    std::sort(v.begin(), v.end(), [](data a, data b) { return a.r < b.r; });
-
-    //print the velocity of the particles
-    for (size_t i = 0; i < v.size(); i++)
-    {
-        Log::printData("vel_Curve.csv",v[i].r, v[i].v);
-    }
-}
     //shuffle the particles to get a random distribution
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(particles.begin(), particles.end(), g);
+
+    Log::saveVelocityCurve(particles, numberOfParticles);
 
     Log::startProcess("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
@@ -295,6 +246,10 @@ void Simulation::run()
         double gasMass = 0;
         double totalMass = 0;
 
+        //Log::saveTotalSFRCurve(particles, globalTime);
+        //Log::saveMassCurve(particles, globalTime);
+        //Log::saveTotalTempCurve(particles, globalTime);
+
         // Second kick
         #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
@@ -310,7 +265,7 @@ void Simulation::run()
                 if(particles[i]->type == 2)
                 {
                     
-                    //std::cout << std::fixed << std::scientific << "Particle " << i << " rho: " << particles[i]->rho << std::endl;
+                    //std::cout << std::fixed << std::scientific << "Particle " << i << " rho: " << particles[i]->T << std::endl;
                     //cooling and star formation
                     if(coolingEnabled)
                     {
@@ -321,6 +276,7 @@ void Simulation::run()
                         //calc SFR
                         sfr->sfrRoutine(particles[i]);
                     }
+                    
                     if(particles[i]->type == 2)
                     {
                         // Integrate the internal energy
@@ -340,7 +296,7 @@ void Simulation::run()
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
         }
-        if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
+        //if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
