@@ -84,8 +84,21 @@ bool Simulation::init()
 
     Log::saveVelocityCurve(particles, numberOfParticles);
 
-    Log::startProcess("build Tree");
     std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
+    Log::startProcess("build Tree");
+    /* while(true)
+        {   
+
+            std::cout << "Building tree..." << std::endl;
+            Log::startProcess("build Tree 2");
+            // destroy the old tree
+            tree.reset();
+
+            tree = std::make_shared<Tree>(this);
+            tree->buildTree();
+
+            Log::startProcess("anderer Prozess");
+        } */
     tree->buildTree();
 
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
@@ -233,15 +246,33 @@ void Simulation::run()
         }
 
         std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
+        Log::startProcess("build Tree 2");
+        /* while(true)
+        {   
+
+            std::cout << "Building tree..." << std::endl;
+            Log::startProcess("build Tree 2");
+            // destroy the old tree
+
+            tree = std::make_shared<Tree>(this);
+            tree->buildTree();
+
+            Log::startProcess("anderer Prozess");
+        } */
         tree->buildTree();
         
+        std::cout << "calc Visual Density" << std::endl;
+        Log::startProcess("Visual Density 2");
         tree->calcVisualDensity();
 
         // Calculate the gas density for SPH
+        Log::startProcess("SPH density and update 2");
         tree->calcGasDensity();
 
         // Recalculate forces
+        Log::startProcess("Force Calculation 2");
         tree->calculateForces();
+        Log::startProcess("anderer Prozess");
         
         double gasMass = 0;
         double totalMass = 0;

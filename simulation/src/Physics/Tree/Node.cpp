@@ -5,6 +5,9 @@
 #include "omp.h"
 #include <thread>
 #include <iostream>
+#include <numeric>
+
+
 
 
 Node::Node()
@@ -20,13 +23,27 @@ Node::Node()
     parent = std::weak_ptr<Node>();
 }
 
-Node::~Node()
+/* Node::~Node()
 {
+    //std::cout << "Node destroyed: " << this << std::endl;
+    // destroy recursively
+
+    //#pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
-        children[i].reset();
+
+
+        // delete children[i];
+        if(children[i] != nullptr)
+        {
+            children[i].reset();
+        }
+        //children[i].reset();
+
+        this->particle = nullptr;
+        this->childParticles.clear();
     }
-}
+} */
 
 
 vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
@@ -186,79 +203,191 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
 }
 
 
-void Node::insert(std::vector<std::shared_ptr<Particle>> particles) 
+
+void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
 {
-    if(particles.empty()) return;
+    if (particles.empty()) return;
 
-    if(particles.size() > 1)
-    {
-        isLeaf = false;
-    }
-    else{
-        isLeaf = true;
-        particle = particles[0];
-        particle->node = shared_from_this();
-
-        centerOfMass = particle->position;
-        mass = particle->mass;
-        if(particle->type == 2)
-        {
-            gasMass = particle->mass;
+    // Basisschicht ohne Parallelisierung
+    if (cores <= 0) {
+        for (const auto& newParticle : particles) {
+            if (!newParticle) continue;
+            insert(newParticle);
         }
-
         return;
     }
 
-    // Nodes Bauen
-    for (int i = 0; i < 8; i++) 
-    {
+    if (particles.size() == 1) {
+        isLeaf = true;
+        particle = particles[0];
+        // Da particle ein std::shared_ptr ist, direkt zuweisen
+        particle->node = shared_from_this();
+        centerOfMass = particle->position;
+        mass = particle->mass;
+        gasMass = (particle->type == 2) ? particle->mass : 0.0;
+        return;
+    }
+
+    isLeaf = false;
+
+    // Kinderknoten erstellen
+    for (int i = 0; i < 8; i++) {
         children[i] = std::make_shared<Node>();
         children[i]->position = position + vec3(
-            radius * (i & 1 ? 0.5f : -0.5f),
-            radius * (i & 2 ? 0.5f : -0.5f),
-            radius * (i & 4 ? 0.5f : -0.5f));
-        children[i]->radius = radius / 2;
+            radius * ((i & 1) ? 0.5f : -0.5f),
+            radius * ((i & 2) ? 0.5f : -0.5f),
+            radius * ((i & 4) ? 0.5f : -0.5f));
+        children[i]->radius = radius / 2.0f;
         children[i]->depth = depth + 1;
         children[i]->parent = shared_from_this();
     }
 
-    for (const auto& p : particles) 
+    // Initialisierung der globalen Masseneigenschaften mit separaten Reduktionen für x, y, z
+    double total_mass = 0.0;
+    double total_gasMass = 0.0;
+    double total_position_mass_x = 0.0;
+    double total_position_mass_y = 0.0;
+    double total_position_mass_z = 0.0;
+
+    // Partikel den Oktanten zuweisen
+    // Verwenden eines lokalen Buffers pro Thread, um Contention zu vermeiden
+    int max_threads = cores > 0 ? cores : omp_get_max_threads();
+    std::vector<std::vector<std::vector<std::shared_ptr<Particle>>>> thread_octants(max_threads, std::vector<std::vector<std::shared_ptr<Particle>>>(8));
+
+    // Dynamische Chunk-Größe basierend auf der Partikelanzahl und der Tiefe
+    int chunk_size = static_cast<int>(particles.size() / (max_threads * (depth + 1)));
+    chunk_size = std::max(chunk_size, 1);
+
+    // Parallelisierte Schleife mit separaten Reduktionen für x, y, z
+    #pragma omp parallel num_threads(max_threads) default(none) shared(particles, thread_octants, chunk_size, max_threads) \
+        reduction(+:total_mass, total_gasMass, total_position_mass_x, total_position_mass_y, total_position_mass_z)
     {
-        mass += p->mass;
-        if(p->type == 2)
-        {
-            gasMass += p->mass;
-            if (gasMass > 0) 
-            {
-                mVel = (mVel * (gasMass - p->mass) + p->velocity * p->mass) / gasMass;
+        int thread_id = omp_get_thread_num();
+        #pragma omp for schedule(dynamic, chunk_size)
+        for (size_t i = 0; i < particles.size(); ++i) {
+            const auto& p = particles[i];
+            if (!p) continue; // Sicherstellen, dass der Particle gültig ist
+
+            total_mass += p->mass;
+            if (p->type == 2) {
+                total_gasMass += p->mass;
             }
-        }
+            total_position_mass_x += p->position.x * p->mass;
+            total_position_mass_y += p->position.y * p->mass;
+            total_position_mass_z += p->position.z * p->mass;
 
-        centerOfMass = (centerOfMass * (mass - p->mass) + p->position * p->mass) / mass;
-
-        int octant = getOctant(p);
-        if (octant != -1) 
-        {
-            children[octant]->childParticles.push_back(p);
+            int octant = getOctant(p);
+            if (octant != -1 && thread_id < max_threads) {
+                thread_octants[thread_id][octant].push_back(p);
+            }
         }
     }
 
+    mass = total_mass;
+    gasMass = total_gasMass;
+    if (mass > 0.0) {
+        centerOfMass = vec3{ total_position_mass_x / mass, total_position_mass_y / mass, total_position_mass_z / mass };
+    }
+
+    // Zusammenführen der per-thread Buffers in die globalen Oktanten-Listen
+    #pragma omp parallel for schedule(static) default(none) shared(thread_octants, children, max_threads)
+    for (int o = 0; o < 8; ++o) {
+        for (int t = 0; t < max_threads; ++t) {
+            children[o]->childParticles.insert(children[o]->childParticles.end(),
+                thread_octants[t][o].begin(),
+                thread_octants[t][o].end());
+        }
+    }
+
+    // Aufteilung der Cores auf Nodes:
+    std::vector<int> coreAssignments = zuweiseKerne(children, 8, cores);
+    int new_cores = cores / 8;
+    new_cores = std::max(new_cores, 1);
+
+    // Rekursive Einfügung der Kinderknoten mittels Tasks
     #pragma omp parallel
     {
         #pragma omp single nowait
         {
-            for (int i = 0; i < 8; i++) 
-            {
-                if (children[i]->childParticles.size() > 0) 
-                {
-                    #pragma omp task firstprivate(i)
+            for (int i = 0; i < 8; ++i) {
+                if (!children[i]->childParticles.empty()) {
+                    Node* childPtr = children[i].get(); // Rohzeiger erhalten
+                    int assigned_cores = coreAssignments[i];
+
+                    #pragma omp task firstprivate(childPtr, assigned_cores) shared(children)
                     {
-                        children[i]->insert(children[i]->childParticles);
+                        // Verwende den Rohzeiger in der insert-Aufruf
+                        childPtr->insert(childPtr->childParticles, assigned_cores);
                     }
                 }
             }
+
+            // Warten auf das Ende aller Tasks
+            if(depth == 0) {
+                #pragma omp taskwait
+            }
+            //#pragma omp taskwait
         }
     }
+}
+
+
+
+// Funktion zur Kernzuweisung
+std::vector<int> Node::zuweiseKerne(const std::shared_ptr<Node> children[], size_t size, int gesamtKerne) {
+    // 1. Gesamte Arbeitslast berechnen (Parallel mit OpenMP)
+    long long gesamteArbeitslast = 0;
+
+    #pragma omp parallel for reduction(+:gesamteArbeitslast)
+    for (size_t i = 0; i < size; ++i) {
+        if (children[i]) {
+            gesamteArbeitslast += children[i]->childParticles.size();
+        }
+    }
+
+    // Handle Division durch Null
+    if (gesamteArbeitslast == 0) {
+        return std::vector<int>(size, 0);
+    }
+
+    // 2. Proportionale Zuweisung der Kerne und Sammlung der gebrochenen Anteile (Parallel mit OpenMP)
+    std::vector<int> zuweisungen(size, 0);
+    std::vector<std::pair<double, int>> gebrocheneTeile(size);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < size; ++i) {
+        if (children[i]) {
+            double exakt = (static_cast<double>(children[i]->childParticles.size()) / gesamteArbeitslast) * gesamtKerne;
+            zuweisungen[i] = static_cast<int>(std::floor(exakt));
+            double gebrochen = exakt - std::floor(exakt);
+            gebrocheneTeile[i] = {gebrochen, static_cast<int>(i)};
+        } else {
+            zuweisungen[i] = 0;
+            gebrocheneTeile[i] = {0.0, static_cast<int>(i)};
+        }
+    }
+
+    // 3. Verbleibende Kerne berechnen (seriell, da std::accumulate in C++17 nicht OpenMP-kompatibel ist)
+    int sumZuweisungen = std::accumulate(zuweisungen.begin(), zuweisungen.end(), 0);
+    int verbleibend = gesamtKerne - sumZuweisungen;
+
+    if (verbleibend > 0) {
+        // 4. Sortiere die Nodes basierend auf den größten gebrochenen Anteilen (seriell)
+        std::sort(gebrocheneTeile.begin(), gebrocheneTeile.end(),
+                  [](const std::pair<double, int>& a, const std::pair<double, int>& b) -> bool {
+                      return a.first > b.first;
+                  });
+
+        // 5. Verbleibende Kerne zuweisen (seriell)
+        for (const auto& teil : gebrocheneTeile) {
+            if (verbleibend <= 0)
+                break;
+            zuweisungen[teil.second] += 1;
+            verbleibend -= 1;
+        }
+    }
+
+    return zuweisungen;
 }
 
 

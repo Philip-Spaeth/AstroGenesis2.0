@@ -14,7 +14,12 @@ class Tree
 {
 public:
     Tree(Simulation* sim){ simulation = sim;};
-    ~Tree(){root.reset();};
+    ~Tree(){};
+    /* {
+        std::cout << "Tree destroyed: " << this << std::endl;
+        root = nullptr;
+    }; */
+    //~Tree() = default;    
 
     Simulation* simulation;
 

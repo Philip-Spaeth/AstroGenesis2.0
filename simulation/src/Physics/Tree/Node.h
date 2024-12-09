@@ -11,10 +11,13 @@ class Node : public std::enable_shared_from_this<Node>
 {
 public:
     Node();
-    ~Node();
+    // Jedes Node-Objekt hat einen eigenen shared_ptr, der auf sich selbst zeigt
+    ~Node() = default;
 
     //Multi-threading
-    void insert(std::vector<std::shared_ptr<Particle>> particles);
+    //void insert(std::vector<std::shared_ptr<Particle>> particles);
+    void insert(std::vector<std::shared_ptr<Particle>> particles, int cores);
+    std::vector<int> zuweiseKerne(const std::shared_ptr<Node> children[], size_t size, int gesamtKerne);
     //old
     void insert(std::shared_ptr<Particle> newParticle);
 
