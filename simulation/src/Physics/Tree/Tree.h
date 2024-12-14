@@ -14,26 +14,14 @@ class Tree
 {
 public:
     Tree(Simulation* sim){ simulation = sim;};
-    ~Tree(){};
-    /* {
-        std::cout << "Tree destroyed: " << this << std::endl;
-        root = nullptr;
-    }; */
-    //~Tree() = default;    
+    ~Tree();   
 
     Simulation* simulation;
-
-    std::shared_ptr<Node> root;
-
-
+    Node* root;
+    
     void buildTree();
     void calculateForces();
     double calcTreeWidth();
     void calcVisualDensity();
     void calcGasDensity();
-
-    //multithreading
-    void calculateForcesWorker();
-    std::atomic<int> currentParticleIndex;
-    std::mutex mutex;
 };

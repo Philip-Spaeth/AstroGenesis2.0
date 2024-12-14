@@ -7,24 +7,21 @@
 
 class Particle;
 
-class Node : public std::enable_shared_from_this<Node>
+class Node
 {
 public:
     Node();
-    // Jedes Node-Objekt hat einen eigenen shared_ptr, der auf sich selbst zeigt
-    ~Node() = default;
+    ~Node();
 
-    //Multi-threading
-    //void insert(std::vector<std::shared_ptr<Particle>> particles);
-    void insert(std::vector<std::shared_ptr<Particle>> particles, int cores);
-    std::vector<int> zuweiseKerne(const std::shared_ptr<Node> children[], size_t size, int gesamtKerne);
+    void insert(const std::vector<Particle*> particles, int cores);
+    std::vector<int> zuweiseKerne(Node* children[], size_t size, int gesamtKerne);
     //old
-    void insert(std::shared_ptr<Particle> newParticle);
+    void insert(Particle* newParticle);
 
-    int getOctant(std::shared_ptr<Particle> newParticle);
+    int getOctant(Particle* newParticle);
 
-    void calculateGravityForce(std::shared_ptr<Particle> newparticle, double softening, double theta);
-    vec3 calcSPHForce(std::shared_ptr<Particle> newparticle);
+    void calculateGravityForce(Particle* newparticle, double softening, double theta) const;
+    vec3 calcSPHForce(Particle* newparticle) const;
 
     double mH = 0;
     double mRho = 0;
@@ -39,9 +36,9 @@ public:
     void calcGasDensity(double massInH);
 
     int depth;
-    bool isLeaf;
+    bool isLeaf = false;
     //if leaf node, the particle is stored here
-    std::shared_ptr<Particle> particle;
+    Particle* particle;
 
     vec3 position;
     double radius;
@@ -50,11 +47,11 @@ public:
     vec3 centerOfMass;
     double mass;
     //childparticles vector for the density calculation
-    std::vector<std::shared_ptr<Particle>> childParticles;
+    std::vector<Particle*> childParticles = std::vector<Particle*>();
 
     //Children of the node
-    std::shared_ptr<Node> children[8];
+    Node* children[8];
 
     //parent of the node
-    std::weak_ptr<Node> parent;
+    Node* parent;
 };

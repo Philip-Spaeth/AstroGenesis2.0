@@ -82,7 +82,7 @@ std::string getBlockLabel(iofields block) {
 }
 
 
-void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
+void DataManager::saveData(std::vector<Particle*> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime)
 {
     //cut the particles to the number of particles
     if (numberOfParticles < (int)particles.size()) 
@@ -282,26 +282,26 @@ void DataManager::saveData(std::vector<std::shared_ptr<Particle>> particles, int
             {
                 //save disk as a disk particle
                 gadget_type = 2;
-                gas_particles.push_back(particles[i].get());
+                gas_particles.push_back(particles[i]);
             } 
             if (particles[i]->galaxyPart == 3 && particles[i]->type == 3) 
             {
                 //save halo as a halo particle
                 gadget_type = 1;
-                disk_particles.push_back(particles[i].get());
+                disk_particles.push_back(particles[i]);
             } 
             if (particles[i]->galaxyPart == 2 && particles[i]->type == 1)
             {
                 //save bulge as a bulge particle
                 gadget_type = 3;
-                halo_particles.push_back(particles[i].get());
+                halo_particles.push_back(particles[i]);
             }
 
             //exeption: if if particle is a gas no matter if it is a disk or bulge particle save it as a gas particle
             if (particles[i]->type == 2) 
             {
                 gadget_type = 0;
-                gas_particles.push_back(particles[i].get());
+                gas_particles.push_back(particles[i]);
             }
 
             header.npart[gadget_type]++;
@@ -430,7 +430,7 @@ struct ptc {
     float u; // internal energy
 };
 
-bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Simulation* sim)
+bool DataManager::loadICs(std::vector<Particle*>& particles, Simulation* sim)
 {
     // Öffne die Datei im Binärmodus
     std::ifstream file("../../input_data/" + inputPath, std::ios::binary);
@@ -464,16 +464,16 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         // Partikel auslesen
         for (unsigned int i = 0; i < total_particles; ++i)
         {
-            Particle particle;
-            file.read(reinterpret_cast<char*>(&particle.position), sizeof(vec3));
-            file.read(reinterpret_cast<char*>(&particle.mass), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.T), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.sfr), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
-            file.read(reinterpret_cast<char*>(&particle.galaxyPart), sizeof(uint8_t));
-            file.read(reinterpret_cast<char*>(&particle.id), sizeof(uint32_t));
-            particles.push_back(std::make_shared<Particle>(particle));
+            Particle* particle = new Particle();
+            file.read(reinterpret_cast<char*>(&particle->position), sizeof(vec3));
+            file.read(reinterpret_cast<char*>(&particle->mass), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->T), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->visualDensity), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->sfr), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->type), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle->galaxyPart), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle->id), sizeof(uint32_t));
+            particles.push_back(particle);
         }
 
         file.close();
@@ -502,28 +502,28 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         // Partikel auslesen
         for (unsigned int i = 0; i < total_particles; ++i)
         {
-            Particle particle;
+            Particle* particle = new Particle();
             float posX, posY, posZ;
             file.read(reinterpret_cast<char*>(&posX), sizeof(float));
             file.read(reinterpret_cast<char*>(&posY), sizeof(float));
             file.read(reinterpret_cast<char*>(&posZ), sizeof(float));
-            particle.position = vec3(posX, posY, posZ);
+            particle->position = vec3(posX, posY, posZ);
             float visualDensity;
             file.read(reinterpret_cast<char*>(&visualDensity), sizeof(float));
-            particle.visualDensity = visualDensity;
+            particle->visualDensity = visualDensity;
             float sfr;
             file.read(reinterpret_cast<char*>(&sfr), sizeof(float));
-            particle.sfr = sfr;
+            particle->sfr = sfr;
             float T;
             file.read(reinterpret_cast<char*>(&T), sizeof(float));
-            particle.T = T;
+            particle->T = T;
             uint8_t type;
             file.read(reinterpret_cast<char*>(&type), sizeof(uint8_t));
-            particle.type = type;
+            particle->type = type;
             uint8_t galaxyPart;
             file.read(reinterpret_cast<char*>(&galaxyPart), sizeof(uint8_t));
-            particle.galaxyPart = galaxyPart;
-            particles.push_back(std::make_shared<Particle>(particle));
+            particle->galaxyPart = galaxyPart;
+            particles.push_back(particle);
         }
 
         file.close();
@@ -552,18 +552,18 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         // Partikel auslesen
         for (unsigned int i = 0; i < total_particles; ++i)
         {
-            Particle particle;
-            file.read(reinterpret_cast<char*>(&particle.position), sizeof(vec3));
-            file.read(reinterpret_cast<char*>(&particle.velocity), sizeof(vec3));
-            file.read(reinterpret_cast<char*>(&particle.mass), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.T), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.P), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.visualDensity), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.U), sizeof(double));
-            file.read(reinterpret_cast<char*>(&particle.type), sizeof(uint8_t));
-            file.read(reinterpret_cast<char*>(&particle.galaxyPart), sizeof(uint8_t));
-            file.read(reinterpret_cast<char*>(&particle.id), sizeof(uint32_t));
-            particles.push_back(std::make_shared<Particle>(particle));
+            Particle* particle = new Particle();
+            file.read(reinterpret_cast<char*>(&particle->position), sizeof(vec3));
+            file.read(reinterpret_cast<char*>(&particle->velocity), sizeof(vec3));
+            file.read(reinterpret_cast<char*>(&particle->mass), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->T), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->P), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->visualDensity), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->U), sizeof(double));
+            file.read(reinterpret_cast<char*>(&particle->type), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle->galaxyPart), sizeof(uint8_t));
+            file.read(reinterpret_cast<char*>(&particle->id), sizeof(uint32_t));
+            particles.push_back(particle);
         }
 
         file.close();
@@ -733,45 +733,45 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
         {
             for (int i = 0; i < header.npart[type]; ++i) 
             {
-                Particle particle;
-                particle.position = vec3(ps[index].pos[0], ps[index].pos[1], ps[index].pos[2]) * Units::KPC;
-                particle.velocity = vec3(ps[index].vel[0], ps[index].vel[1], ps[index].vel[2]) * Units::KMS;
-                particle.id = ps[index].id;
-                particle.mass = ps[index].mass * Units::MSUN * 1e10;
-                particle.U = ps[index].u * 1e6;
+                Particle* particle = new Particle();
+                particle->position = vec3(ps[index].pos[0], ps[index].pos[1], ps[index].pos[2]) * Units::KPC;
+                particle->velocity = vec3(ps[index].vel[0], ps[index].vel[1], ps[index].vel[2]) * Units::KMS;
+                particle->id = ps[index].id;
+                particle->mass = ps[index].mass * Units::MSUN * 1e10;
+                particle->U = ps[index].u * 1e6;
                 
                 if(type == 0)
                 {
-                particle.type = 2;
-                particle.galaxyPart = 1;
+                particle->type = 2;
+                particle->galaxyPart = 1;
                 }
                 else if(type == 1)
                 {
-                particle.type = 3;
-                particle.galaxyPart = 3;
+                particle->type = 3;
+                particle->galaxyPart = 3;
                 }
                 else if(type == 2)
                 {
-                particle.type = 1;
-                particle.galaxyPart = 1;
+                particle->type = 1;
+                particle->galaxyPart = 1;
                 }
                 else if(type == 3)
                 {
-                particle.type = 1;
-                particle.galaxyPart = 2;
+                particle->type = 1;
+                particle->galaxyPart = 2;
                 }
                 else if(type == 4)
                 {
-                particle.type = 1;
-                particle.galaxyPart = 1;
+                particle->type = 1;
+                particle->galaxyPart = 1;
                 }
                 else if(type == 5)
                 {
-                particle.type = 1;
-                particle.galaxyPart = 2;
+                particle->type = 1;
+                particle->galaxyPart = 2;
                 }
 
-                particles[index] = std::make_shared<Particle>(particle);
+                particles[index] = particle;
                 ++index;
             }
         }
@@ -1114,7 +1114,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                             std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
                             return false;
                         }
-                        auto particle = std::make_shared<Particle>();
+                        Particle* particle = new Particle();
                         particle->id = ids[current_particle];
 
                         // Setzen des Partikeltyps und der Masse
@@ -1194,7 +1194,7 @@ bool DataManager::loadICs(std::vector<std::shared_ptr<Particle>>& particles, Sim
                         std::cerr << "Fehler: Überschreitung der Partikelanzahl beim Erstellen der Partikel!" << std::endl;
                         return false;
                     }
-                    auto particle = std::make_shared<Particle>();
+                    Particle* particle = new Particle();
                     particle->id = ids[current_particle];
 
                     // Setzen des Partikeltyps und der Masse

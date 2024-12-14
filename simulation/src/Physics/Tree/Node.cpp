@@ -7,9 +7,6 @@
 #include <iostream>
 #include <numeric>
 
-
-
-
 Node::Node()
 {
     mass = 0.0;
@@ -20,33 +17,22 @@ Node::Node()
     {
         children[i] = nullptr;
     }
-    parent = std::weak_ptr<Node>();
+    parent = nullptr;
 }
 
-/* Node::~Node()
+Node::~Node()
 {
-    //std::cout << "Node destroyed: " << this << std::endl;
-    // destroy recursively
-
-    //#pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
-
-
-        // delete children[i];
-        if(children[i] != nullptr)
+        if (children[i])
         {
-            children[i].reset();
+            delete children[i];
+            children[i] = nullptr;
         }
-        //children[i].reset();
-
-        this->particle = nullptr;
-        this->childParticles.clear();
     }
-} */
+}
 
-
-vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
+vec3 Node::calcSPHForce(Particle* newparticle) const
 {
     vec3 acc = vec3(0,0,0);
     double h_i = newparticle->h;
@@ -132,7 +118,7 @@ vec3 Node::calcSPHForce(std::shared_ptr<Particle> newparticle)
     return acc;
 }
 
-void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double softening, double theta)
+/* void Node::calculateGravityForce(Particle* newparticle, double softening, double theta)
 {
     if (mass == 0) return;
     if (!newparticle) return;
@@ -153,14 +139,14 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             double e = -(2.8 * e0) / (kernel::softeningKernel(r / (2.8 * e0)) - r);
             //gravity calculation
             vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
-            newparticle->acceleration += gravityAcceleration;
+            newparticle->acc += gravityAcceleration;
 
             if(r < newparticle->h * 2)
             {
                 //check if both are gas particles
                 if(this->particle->type == 2 && newparticle->type == 2)
                 {
-                    newparticle->acceleration += calcSPHForce(newparticle);
+                    newparticle->acc += calcSPHForce(newparticle);
                 }
             }
         }
@@ -175,7 +161,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             double e = -(2.8 * e0) / (kernel::softeningKernel(r / (2.8 * e0)) - r);
             //gravity calculation
             vec3 gravityAcceleration = Constants::G * mass / (r * r + e * e) * d.normalize();
-            newparticle->acceleration += gravityAcceleration;
+            newparticle->acc += gravityAcceleration;
             //std::cout << e << std::endl;
 
             //SPH calculation
@@ -184,7 +170,7 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
                 //check if both are gas particles
                 if(newparticle->type == 2 && gasMass > 0)
                 {
-                    newparticle->acceleration += calcSPHForce(newparticle);
+                    newparticle->acc += calcSPHForce(newparticle);
                 }
             }
         }
@@ -200,19 +186,179 @@ void Node::calculateGravityForce(std::shared_ptr<Particle> newparticle, double s
             }
         }
     }
+} */
+
+
+
+// In Node.cpp
+void Node::calculateGravityForce(Particle* newparticle, double softening, double theta) const
+{
+    // 1. Überprüfen, ob dieser Knoten Masse hat
+    if (mass == 0) {
+        return;
+    }
+
+    // 2. Überprüfen, ob das neue Partikel gültig ist
+    if (newparticle == nullptr) {
+        return;
+    }
+
+    // 3. Vermeiden, dass ein Partikel mit sich selbst interagiert
+    if (newparticle == this->particle) {
+        return;
+    }
+
+    // 4. Überprüfen, ob das neue Partikel Masse hat
+    if (newparticle->mass == 0) {
+        return;
+    }
+
+    // 5. Berechnung des Abstandsvektors und der Distanz
+    vec3 d = centerOfMass - newparticle->position;
+    double r = d.length();
+
+    // 6. Vermeiden von Division durch Null
+    if (r == 0) {
+        return;
+    }
+    
+    // 7. Überprüfung, ob der aktuelle Knoten ein Blattknoten ist
+    if (isLeaf)
+    {
+        // 7.1. Überprüfen, ob dieses Blatt ein Partikel enthält und nicht dasselbe Partikel ist
+        if (this->particle != nullptr && newparticle != this->particle)
+        {
+            // 7.1.1. Berechnung des Softening-Faktors
+            double e0 = softening;
+            
+            double softeningFactorInput = r / (2.8 * e0);
+
+            // Sicherheitsprüfung der Kernel-Funktion
+            double kernelValue = kernel::softeningKernel(softeningFactorInput);
+            if ((kernelValue - r) == 0) {
+                return;
+            }
+
+            double e = -(2.8 * e0) / (kernelValue - r);
+            if(std::isnan(e))
+            {
+                std::cout << "NAN e" << std::endl;
+                return;
+            }
+            vec3 gravityAcceleration = (Constants::G * mass / (r * r + e0 * e0)) * d.normalize();
+            if(abs(e) > (e0 * 0.0001) && abs(e) < 1e30)
+            {
+                gravityAcceleration = (Constants::G * mass / (r * r + e * e)) * d.normalize();
+            }
+            
+            if(std::isnan(gravityAcceleration.x) || std::isnan(gravityAcceleration.y) || std::isnan(gravityAcceleration.z))
+            {
+                std::cout << "NAN gravacc" << std::endl;
+                return;
+            }
+            
+            newparticle->acc += gravityAcceleration;
+
+            // 7.1.3. Überprüfen, ob der Abstand klein genug ist für SPH-Kräfte
+            if (r < newparticle->h * 2)
+            {
+                // 7.1.3.1. Überprüfen, ob beide Partikel Gaspartikel sind
+                if (this->particle->type == 2 && newparticle->type == 2)
+                {
+                    // Berechnung der SPH-Kräfte und Hinzufügen zur Beschleunigung
+                    vec3 sphForce = calcSPHForce(newparticle);
+                    newparticle->acc += sphForce;
+                }
+            }
+        }
+    }
+    else
+    {
+        // 8. Berechnung des Öffnungsparameters s
+        double s = radius / r;
+
+        // 9. Überprüfen, ob der Öffnungsparameter kleiner als theta ist
+        if (s < theta)
+        {
+            // 7.1.1. Berechnung des Softening-Faktors
+            double e0 = softening;
+            
+            double softeningFactorInput = r / (2.8 * e0);
+
+            // Sicherheitsprüfung der Kernel-Funktion
+            double kernelValue = kernel::softeningKernel(softeningFactorInput);
+            if ((kernelValue - r) == 0) {
+                return;
+            }
+
+            double e = -(2.8 * e0) / (kernelValue - r);
+            if(std::isnan(e))
+            {
+                std::cout << "NAN e" << std::endl;
+                return;
+            }
+            vec3 gravityAcceleration = (Constants::G * mass / (r * r + e0 * e0)) * d.normalize();
+            if(abs(e) > (e0 * 0.0001) && abs(e) < 1e30)
+            {
+                gravityAcceleration = (Constants::G * mass / (r * r + e * e)) * d.normalize();
+            }
+            
+            if(std::isnan(gravityAcceleration.x) || std::isnan(gravityAcceleration.y) || std::isnan(gravityAcceleration.z))
+            {
+                std::cout << "NAN gravacc" << std::endl;
+                return;
+            }
+            
+            newparticle->acc += gravityAcceleration;
+
+            // 9.3. Überprüfen, ob der Abstand klein genug ist für SPH-Kräfte
+            if (r < newparticle->h * 2)
+            {
+                // 9.3.1. Überprüfen, ob das neue Partikel ein Gaspartikel ist und dieser Knoten Gasmasse hat
+                if (newparticle->type == 2 && gasMass > 0)
+                {
+                    // Berechnung der SPH-Kräfte und Hinzufügen zur Beschleunigung
+                    vec3 sphForce = calcSPHForce(newparticle);
+                    newparticle->acc += sphForce;
+                }
+            }
+        }
+        else
+        { 
+            // 10. Rekursiver Aufruf für alle vorhandenen Kinder
+            for (int i = 0; i < 8; i++)
+            {
+                // 10.1. Überprüfen, ob das Kind existiert
+                if (children[i] == nullptr) {
+                    continue;
+                }
+
+                // 10.2. Überprüfen, ob das Kind Masse hat
+                if (children[i]->mass == 0) {
+                    continue;
+                }
+
+                // 10.3. Rekursiver Aufruf der Funktion für das Kind
+                children[i]->calculateGravityForce(newparticle, softening, theta);
+            }
+        }
+    }
 }
 
 
 
-void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
+
+
+void Node::insert(const std::vector<Particle*> particles, int cores)
 {
+    
     if (particles.empty()) return;
 
-    // Basisschicht ohne Parallelisierung
-    if (cores <= 0) {
-        for (const auto& newParticle : particles) {
-            if (!newParticle) continue;
-            insert(newParticle);
+    if (cores <= 0) 
+    {
+        for(int i = 0; i < (int)particles.size(); i++)
+        {
+            insert(particles[i]);
         }
         return;
     }
@@ -221,7 +367,7 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
         isLeaf = true;
         particle = particles[0];
         // Da particle ein std::shared_ptr ist, direkt zuweisen
-        particle->node = shared_from_this();
+        particle->node = this;
         centerOfMass = particle->position;
         mass = particle->mass;
         gasMass = (particle->type == 2) ? particle->mass : 0.0;
@@ -232,14 +378,14 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
 
     // Kinderknoten erstellen
     for (int i = 0; i < 8; i++) {
-        children[i] = std::make_shared<Node>();
+        children[i] = new Node();
         children[i]->position = position + vec3(
             radius * ((i & 1) ? 0.5f : -0.5f),
             radius * ((i & 2) ? 0.5f : -0.5f),
             radius * ((i & 4) ? 0.5f : -0.5f));
         children[i]->radius = radius / 2.0f;
         children[i]->depth = depth + 1;
-        children[i]->parent = shared_from_this();
+        children[i]->parent = this;
     }
 
     // Initialisierung der globalen Masseneigenschaften mit separaten Reduktionen für x, y, z
@@ -252,7 +398,7 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
     // Partikel den Oktanten zuweisen
     // Verwenden eines lokalen Buffers pro Thread, um Contention zu vermeiden
     int max_threads = cores > 0 ? cores : omp_get_max_threads();
-    std::vector<std::vector<std::vector<std::shared_ptr<Particle>>>> thread_octants(max_threads, std::vector<std::vector<std::shared_ptr<Particle>>>(8));
+    std::vector<std::vector<std::vector<Particle*>>> thread_octants(max_threads, std::vector<std::vector<Particle*>>(8));
 
     // Dynamische Chunk-Größe basierend auf der Partikelanzahl und der Tiefe
     int chunk_size = static_cast<int>(particles.size() / (max_threads * (depth + 1)));
@@ -310,31 +456,27 @@ void Node::insert(std::vector<std::shared_ptr<Particle>> particles, int cores)
         #pragma omp single nowait
         {
             for (int i = 0; i < 8; ++i) {
-                if (!children[i]->childParticles.empty()) {
-                    Node* childPtr = children[i].get(); // Rohzeiger erhalten
-                    int assigned_cores = coreAssignments[i];
+                if (children[i] && !children[i]->childParticles.empty()) {
+                    int assigned_cores = coreAssignments[i] -1;
+                    Node* child = children[i]; // Temporäre Variable für bessere Kompatibilität
 
-                    #pragma omp task firstprivate(childPtr, assigned_cores) shared(children)
+                    #pragma omp task firstprivate(child, assigned_cores)
                     {
-                        // Verwende den Rohzeiger in der insert-Aufruf
-                        childPtr->insert(childPtr->childParticles, assigned_cores);
+                        child->insert(child->childParticles, assigned_cores);
                     }
                 }
             }
 
-            // Warten auf das Ende aller Tasks
-            if(depth == 0) {
-                #pragma omp taskwait
-            }
-            //#pragma omp taskwait
+            #pragma omp taskwait // Warten auf das Ende aller Tasks
         }
     }
+   
 }
 
 
 
 // Funktion zur Kernzuweisung
-std::vector<int> Node::zuweiseKerne(const std::shared_ptr<Node> children[], size_t size, int gesamtKerne) {
+std::vector<int> Node::zuweiseKerne(Node* children[], size_t size, int gesamtKerne) {
     // 1. Gesamte Arbeitslast berechnen (Parallel mit OpenMP)
     long long gesamteArbeitslast = 0;
 
@@ -392,7 +534,7 @@ std::vector<int> Node::zuweiseKerne(const std::shared_ptr<Node> children[], size
 
 
 //old insert function
-void Node::insert(std::shared_ptr<Particle> newParticle) 
+void Node::insert(Particle* newParticle) 
 {
     if (!newParticle) 
     {
@@ -419,7 +561,7 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
         if (!particle) {
             // set the particle to the node
             particle = newParticle;
-            particle->node = shared_from_this();
+            particle->node = this;
         }
         // if the node has a particle
         else 
@@ -427,7 +569,7 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
             // create the children of the node
             for (int i = 0; i < 8; i++) 
             {
-                children[i] = std::make_shared<Node>();
+                children[i] = new Node();
                 // setup the node properties
                 children[i]->position = position + vec3(
                     radius * (i & 1 ? 0.5 : -0.5),
@@ -436,7 +578,7 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
                 // std::cout << children[i]->position << std::endl;
                 children[i]->radius = radius / 2;
                 children[i]->depth = depth + 1;
-                children[i]->parent = shared_from_this();
+                children[i]->parent = this;
             }
 
             // get the octant of the particle
@@ -459,7 +601,7 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
             // set the node as not a leaf node
             isLeaf = false;
             // set the particle to null
-            particle.reset();
+            particle = nullptr;
         }
     }
     // if the node is not a leaf node
@@ -497,8 +639,10 @@ void Node::insert(std::shared_ptr<Particle> newParticle)
 }
 
 
-int Node::getOctant(std::shared_ptr<Particle> newParticle) 
+int Node::getOctant(Particle* newParticle) 
 {
+    if(!newParticle) return -1;
+
     if (newParticle->position.x < position.x - radius || newParticle->position.x > position.x + radius ||
         newParticle->position.y < position.y - radius || newParticle->position.y > position.y + radius ||
         newParticle->position.z < position.z - radius || newParticle->position.z > position.z + radius) {
@@ -520,22 +664,22 @@ void Node::calcGasDensity(double massInH)
     if(gasMass == 0) return;
 
     //check if the parent ist not expired
-    if(parent.lock() != nullptr)
+    if(parent != nullptr)
     {
         //go upwards the tree until the mass of the node is closest to  massInH
-        if(gasMass <  massInH && parent.lock())	//if the mass of the node is smaller than massInH and the node has a parent
+        if(gasMass <  massInH && parent)	//if the mass of the node is smaller than massInH and the node has a parent
         {
             //stop if the current gasMass is closer to massInH than the parent gasMass
             double massDifference =  massInH - gasMass;
-            double parentMassDifference =  massInH - parent.lock()->gasMass;
+            double parentMassDifference =  massInH - parent->gasMass;
             if(std::abs(massDifference) > std::abs(parentMassDifference))
             {
-                parent.lock()->calcGasDensity( massInH);
+                parent->calcGasDensity( massInH);
             }
         }
         //stop if the current gasMass is closer to  massInH than the parent gasMass
         double massDifference =  massInH - gasMass;
-        double parentMassDifference =  massInH - parent.lock()->gasMass;
+        double parentMassDifference =  massInH - parent->gasMass;
         if(std::abs(massDifference) < std::abs(parentMassDifference) && gasMass != 0)
         {
             //calculate h for all the child particles in the node
@@ -581,10 +725,10 @@ void Node::calcGasDensity(double massInH)
 void Node::calcVisualDensity(double radiusDensityEstimation) 
 {
     double radiusDifference = radiusDensityEstimation - radius;
-    double parentRadiusDifference = radiusDensityEstimation - parent.lock()->radius;
-    if(std::abs(radiusDifference) > std::abs(parentRadiusDifference) && parent.lock())
+    double parentRadiusDifference = radiusDensityEstimation - parent->radius;
+    if(std::abs(radiusDifference) > std::abs(parentRadiusDifference) && parent)
     {
-        parent.lock()->calcVisualDensity(radiusDensityEstimation);
+        parent->calcVisualDensity(radiusDensityEstimation);
     }
     else
     {

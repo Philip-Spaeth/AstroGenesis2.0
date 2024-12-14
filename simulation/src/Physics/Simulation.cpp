@@ -82,25 +82,11 @@ bool Simulation::init()
     std::mt19937 g(rd());
     std::shuffle(particles.begin(), particles.end(), g);
 
-    Log::saveVelocityCurve(particles, numberOfParticles);
-
-    std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-    Log::startProcess("build Tree");
-    /* while(true)
-        {   
-
-            std::cout << "Building tree..." << std::endl;
-            Log::startProcess("build Tree 2");
-            // destroy the old tree
-            tree.reset();
-
-            tree = std::make_shared<Tree>(this);
-            tree->buildTree();
-
-            Log::startProcess("anderer Prozess");
-        } */
+    //Log::saveVelocityCurve(particles, numberOfParticles);
+    
+    Log::startProcess("build tree");
+    Tree* tree = new Tree(this);
     tree->buildTree();
-
     std::cout << "\nInitial tree size: " << std::fixed << std::scientific << std::setprecision(1) << tree->root->radius <<"m"<< std::endl;
     
     Log::startProcess("Visual Density");
@@ -114,6 +100,10 @@ bool Simulation::init()
     // Initial force calculation
     Log::startProcess("Force Calculation");
     tree->calculateForces();
+    
+    //delete the tree
+    Log::startProcess("delete tree");
+    delete tree;
 
     //save the particles data
     Log::startProcess("Save data");
@@ -170,7 +160,7 @@ void Simulation::run()
             std::cerr << "Error: Particle " << i << " is not initialized." << std::endl;
             continue;
         }
-        double accelMag = particles[i]->acceleration.length();
+        double accelMag = particles[i]->acc.length();
         if (accelMag > 0) {
             double timeStep = eta * std::sqrt(e0 / accelMag);
             particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
@@ -196,7 +186,7 @@ void Simulation::run()
             }
             if (globalTime >= particles[i]->nextIntegrationTime)
             {
-                double accelMag = particles[i]->acceleration.length();
+                double accelMag = particles[i]->acc.length();
                 if (accelMag > 0) {
                     double timeStep = eta * std::sqrt(e0 / accelMag);
                     particles[i]->timeStep = std::clamp(timeStep, minTimeStep, maxTimeStep);
@@ -228,6 +218,8 @@ void Simulation::run()
 
         // Advance global time by the smallest integration time
         globalTime = minIntegrationTime;
+        
+        Log::startProcess("first kick");
         // Update positions and velocities using the KDK Leapfrog scheme for particles due to be integrated
         #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
@@ -244,35 +236,19 @@ void Simulation::run()
                 timeIntegration->Drift(particles[i], particles[i]->timeStep);
             }
         }
-
-        std::shared_ptr<Tree> tree = std::make_shared<Tree>(this);
-        Log::startProcess("build Tree 2");
-        /* while(true)
-        {   
-
-            std::cout << "Building tree..." << std::endl;
-            Log::startProcess("build Tree 2");
-            // destroy the old tree
-
-            tree = std::make_shared<Tree>(this);
-            tree->buildTree();
-
-            Log::startProcess("anderer Prozess");
-        } */
-        tree->buildTree();
         
-        std::cout << "calc Visual Density" << std::endl;
-        Log::startProcess("Visual Density 2");
+
+        Log::startProcess("build tree");
+        Tree* tree = new Tree(this);
+        tree->buildTree();
+
+        Log::startProcess("Visual Density");
         tree->calcVisualDensity();
-
-        // Calculate the gas density for SPH
-        Log::startProcess("SPH density and update 2");
+        Log::startProcess("SPH density and update");
         tree->calcGasDensity();
-
-        // Recalculate forces
-        Log::startProcess("Force Calculation 2");
+        
+        Log::startProcess("Force Calculation");
         tree->calculateForces();
-        Log::startProcess("anderer Prozess");
         
         double gasMass = 0;
         double totalMass = 0;
@@ -282,6 +258,7 @@ void Simulation::run()
         //Log::saveTotalTempCurve(particles, globalTime);
 
         // Second kick
+        Log::startProcess("second kick");
         #pragma omp parallel for
         for (int i = 0; i < numberOfParticles; i++)
         {
@@ -300,12 +277,12 @@ void Simulation::run()
                     //cooling and star formation
                     if(coolingEnabled)
                     {
-                        cooling->coolingRoutine(particles[i]);
+                        //cooling->coolingRoutine(particles[i]);
                     }
                     if(starFormation)
                     {
                         //calc SFR
-                        sfr->sfrRoutine(particles[i]);
+                        //sfr->sfrRoutine(particles[i]);
                     }
                     
                     if(particles[i]->type == 2)
@@ -329,9 +306,13 @@ void Simulation::run()
         }
         //if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
+        Log::startProcess("delete tree");
+        delete tree;
+
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)
         {
+            Log::startProcess("Save data");
             dataManager->saveData(particles, static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, numParticlesOutput, fixedStep, endTime, globalTime);
             console->printProgress(static_cast<int>(nextSaveTime / fixedStep), fixedTimeSteps, "");
             nextSaveTime += fixedStep;
@@ -347,9 +328,9 @@ void Simulation::run()
 }
 
 //only for Debugging and Comparison with the octree, extremely slow
-void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
+void Simulation::calculateForcesWithoutOctree(Particle* p)
 {
-    p->acceleration = vec3(0.0, 0.0, 0.0);
+    p->acc = vec3(0.0, 0.0, 0.0);
     p->dUdt = 0;
 
     #pragma omp parallel for
@@ -360,7 +341,7 @@ void Simulation::calculateForcesWithoutOctree(std::shared_ptr<Particle> p)
             vec3 d = particles[j]->position -p->position;
             double r = d.length();
             vec3 newAcceleration = d * (Constants::G * particles[j]->mass / (r * r * r));
-            p->acceleration += newAcceleration;
+            p->acc += newAcceleration;
         }
     }
 }
