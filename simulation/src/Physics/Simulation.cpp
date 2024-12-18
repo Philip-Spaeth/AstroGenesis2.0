@@ -104,6 +104,7 @@ bool Simulation::init()
     //delete the tree
     Log::startProcess("delete tree");
     delete tree;
+    //tree->deleteTreeParallel();
 
     //save the particles data
     Log::startProcess("Save data");
@@ -303,11 +304,13 @@ void Simulation::run()
             }
             if(particles[i]->type == 2) gasMass += particles[i]->mass;
             totalMass += particles[i]->mass;
+
         }
         //if(starFormation) std::cout << "Gas fraction: " << gasMass / totalMass * 100 << "%" << std::endl;
 
         Log::startProcess("delete tree");
         delete tree;
+        //tree->deleteTreeParallel();
 
         // Save data at regular intervals defined by fixedStep
         if (globalTime >= nextSaveTime)

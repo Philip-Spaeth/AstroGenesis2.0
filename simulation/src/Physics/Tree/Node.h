@@ -11,7 +11,8 @@ class Node
 {
 public:
     Node();
-    ~Node();
+    virtual ~Node();
+    void deleteTreeParallel(int cores);
 
     void insert(const std::vector<Particle*> particles, int cores);
     std::vector<int> zuweiseKerne(Node* children[], size_t size, int gesamtKerne);
@@ -50,7 +51,7 @@ public:
     std::vector<Particle*> childParticles = std::vector<Particle*>();
 
     //Children of the node
-    Node* children[8];
+    Node* children[8] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
     //parent of the node
     Node* parent;

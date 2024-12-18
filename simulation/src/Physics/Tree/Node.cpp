@@ -7,6 +7,9 @@
 #include <iostream>
 #include <numeric>
 
+#include <vector>
+#include <future>    // Für std::async und std::future
+
 Node::Node()
 {
     mass = 0.0;
@@ -15,22 +18,72 @@ Node::Node()
     particle = nullptr;
     for (int i = 0; i < 8; i++)
     {
-        children[i] = nullptr;
+        if (children[i] != nullptr) {
+            delete children[i];
+            children[i] = nullptr;
+        }
     }
     parent = nullptr;
+
+    radius = 0;
 }
 
 Node::~Node()
 {
+    //#pragma omp parallel for
     for (int i = 0; i < 8; i++)
     {
+
         if (children[i])
         {
+            if(reinterpret_cast<std::uintptr_t>(children[i]) < 0x1000) { // Example invalid address
+                std::cerr << "Error (Dekonstruktor): children[i] pointer is invalid (address: " << children[i] << ")" << std::endl;
+                children[i] = nullptr;
+                continue;
+            }
+
+
             delete children[i];
             children[i] = nullptr;
         }
     }
 }
+
+void Node::deleteTreeParallel(int cores)
+{
+    if(cores > 1)
+    {
+        #pragma omp parallel for num_threads(cores)
+        for (int i = 0; i < 8; i++)
+        {
+            if (children[i])
+            {
+                if(reinterpret_cast<std::uintptr_t>(children[i]) < 0x1000) { // Example invalid address
+                    std::cerr << "Error (Dekonstruktor): children[i] pointer is invalid (address: " << children[i] << ")" << std::endl;
+                    children[i] = nullptr;
+                    continue;
+                }
+
+                children[i]->deleteTreeParallel((cores / 8) - 1); // Rekursion ohne Parallelität
+                //delete children[i];
+                children[i] = nullptr;
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (children[i])
+            {
+                delete children[i];
+                children[i] = nullptr;
+            }
+        }
+    }
+}
+
+
 
 vec3 Node::calcSPHForce(Particle* newparticle) const
 {
@@ -351,42 +404,46 @@ void Node::calculateGravityForce(Particle* newparticle, double softening, double
 
 void Node::insert(const std::vector<Particle*> particles, int cores)
 {
-    
-    if (particles.empty()) return;
+    if(particles.size() == 0) return;
 
-    if (cores <= 0) 
+    if(particles.size() == 1)
     {
-        for(int i = 0; i < (int)particles.size(); i++)
-        {
-            insert(particles[i]);
-        }
-        return;
-    }
-
-    if (particles.size() == 1) {
         isLeaf = true;
-        particle = particles[0];
-        // Da particle ein std::shared_ptr ist, direkt zuweisen
-        particle->node = this;
+        this->particle = particles[0];
+        this->particle->node = this;
         centerOfMass = particle->position;
         mass = particle->mass;
         gasMass = (particle->type == 2) ? particle->mass : 0.0;
         return;
     }
 
+    if(particles.size() < cores*100)
+    {
+        for (size_t i = 0; i < particles.size(); i++)
+        {
+            if (!particles[i]) continue;
+            insert(particles[i]);
+        }
+        return;
+    }
+
     isLeaf = false;
 
-    // Kinderknoten erstellen
-    for (int i = 0; i < 8; i++) {
+    // erstellen der Kinderknoten
+    for (int i = 0; i < 8; i++)
+    {
         children[i] = new Node();
         children[i]->position = position + vec3(
-            radius * ((i & 1) ? 0.5f : -0.5f),
-            radius * ((i & 2) ? 0.5f : -0.5f),
-            radius * ((i & 4) ? 0.5f : -0.5f));
-        children[i]->radius = radius / 2.0f;
+            radius * (i & 1 ? 0.5 : -0.5),
+            radius * (i & 2 ? 0.5 : -0.5),
+            radius * (i & 4 ? 0.5 : -0.5));
+        children[i]->radius = radius / 2;
         children[i]->depth = depth + 1;
         children[i]->parent = this;
     }
+
+    // Zuteilung der Partikel in die Kinderknoten
+    // Liste nach Partikeln sortieren sortiertwert ist particle->position->x Sortierung trennwert ist radius
 
     // Initialisierung der globalen Masseneigenschaften mit separaten Reduktionen für x, y, z
     double total_mass = 0.0;
@@ -411,13 +468,32 @@ void Node::insert(const std::vector<Particle*> particles, int cores)
         int thread_id = omp_get_thread_num();
         #pragma omp for schedule(dynamic, chunk_size)
         for (size_t i = 0; i < particles.size(); ++i) {
+
+            if(depth == 0) particles[i]->node = nullptr; // Reset particle Node Pointer
+
             const auto& p = particles[i];
             if (!p) continue; // Sicherstellen, dass der Particle gültig ist
 
             total_mass += p->mass;
             if (p->type == 2) {
                 total_gasMass += p->mass;
+                gasMass += p->mass;
+                if (gasMass > 0) 
+                {
+                    mVel = (mVel * (gasMass - p->mass) + p->velocity * p->mass) / gasMass;
+                    /*if (newParticle->rho > 0) {
+                        mRho = (mRho * (gasMass - newParticle->mass) + newParticle->rho * newParticle->mass) / gasMass;
+                    }
+                    if (newParticle->P > 0) {
+                        mP = (mP * (gasMass - newParticle->mass) + newParticle->P * newParticle->mass) / gasMass;
+                    }
+                    if (newParticle->h > 0) {
+                        mH = (mH * (gasMass - newParticle->mass) + newParticle->h * newParticle->mass) / gasMass;
+                    }*/
+                }
             }
+
+
             total_position_mass_x += p->position.x * p->mass;
             total_position_mass_y += p->position.y * p->mass;
             total_position_mass_z += p->position.z * p->mass;
@@ -445,32 +521,16 @@ void Node::insert(const std::vector<Particle*> particles, int cores)
         }
     }
 
-    // Aufteilung der Cores auf Nodes:
-    std::vector<int> coreAssignments = zuweiseKerne(children, 8, cores);
-    int new_cores = cores / 8;
-    new_cores = std::max(new_cores, 1);
 
-    // Rekursive Einfügung der Kinderknoten mittels Tasks
-    #pragma omp parallel
+    // Rekursiver Aufruf für die Kinderknoten
+    for (int i = 0; i < 8; i++)
     {
-        #pragma omp single nowait
+        if (children[i]->childParticles.size() > 0)
         {
-            for (int i = 0; i < 8; ++i) {
-                if (children[i] && !children[i]->childParticles.empty()) {
-                    int assigned_cores = coreAssignments[i] -1;
-                    Node* child = children[i]; // Temporäre Variable für bessere Kompatibilität
-
-                    #pragma omp task firstprivate(child, assigned_cores)
-                    {
-                        child->insert(child->childParticles, assigned_cores);
-                    }
-                }
-            }
-
-            #pragma omp taskwait // Warten auf das Ende aller Tasks
+            children[i]->insert(children[i]->childParticles, cores);
         }
     }
-   
+
 }
 
 
@@ -666,12 +726,20 @@ void Node::calcGasDensity(double massInH)
     //check if the parent ist not expired
     if(parent != nullptr)
     {
+
+        if(reinterpret_cast<std::uintptr_t>(parent) < 0x100000) { // Beispiel für eine ungültige Adresse
+            std::cerr << "Error: parent pointer is invalid (address: " << parent << ")" << std::endl;
+            // Optional: Fehlerbehandlung, z.B. Rückkehr oder Ausnahme werfen
+            return;
+        }
+
         //go upwards the tree until the mass of the node is closest to  massInH
         if(gasMass <  massInH && parent)	//if the mass of the node is smaller than massInH and the node has a parent
         {
             //stop if the current gasMass is closer to massInH than the parent gasMass
             double massDifference =  massInH - gasMass;
-            double parentMassDifference =  massInH - parent->gasMass;
+            double gasMass = parent->gasMass;
+            double parentMassDifference =  massInH - gasMass;
             if(std::abs(massDifference) > std::abs(parentMassDifference))
             {
                 parent->calcGasDensity( massInH);
@@ -683,9 +751,15 @@ void Node::calcGasDensity(double massInH)
         if(std::abs(massDifference) < std::abs(parentMassDifference) && gasMass != 0)
         {
             //calculate h for all the child particles in the node
-            #pragma omp parallel for
+            #pragma omp parallel for 
             for (size_t i = 0; i < childParticles.size(); i++)
             {
+                if(reinterpret_cast<std::uintptr_t>(childParticles[i]) < 0x1000) { // Beispiel für eine ungültige Adresse
+                    std::cerr << "Error (calcGasDensity): childParticle pointer is invalid (address: " << childParticles[i] << ")" << std::endl;
+                    // Optional: Fehlerbehandlung, z.B. Rückkehr oder Ausnahme werfen
+                    continue;
+                }
+
                 if(childParticles[i]->type == 2)
                 {
                     childParticles[i]->h = radius * 2;
@@ -722,21 +796,83 @@ void Node::calcGasDensity(double massInH)
 }
 
 // for the other particles just for visualization
-void Node::calcVisualDensity(double radiusDensityEstimation) 
+/* void Node::calcVisualDensity(double radiusDensityEstimation) 
 {
-    double radiusDifference = radiusDensityEstimation - radius;
-    double parentRadiusDifference = radiusDensityEstimation - parent->radius;
-    if(std::abs(radiusDifference) > std::abs(parentRadiusDifference) && parent)
+    if(parent != nullptr)
     {
-        parent->calcVisualDensity(radiusDensityEstimation);
+        double radiusDifference = radiusDensityEstimation - radius;
+        double parentRadiusDifference = radiusDensityEstimation - parent->radius;
+        if(std::abs(radiusDifference) > std::abs(parentRadiusDifference) && parent)
+        {
+            parent->calcVisualDensity(radiusDensityEstimation);
+        }
+        else
+        {
+            double volume = radius * radius * radius;
+            double density = mass / volume;
+            for(size_t i = 0; i < childParticles.size(); i++)
+            {
+                childParticles[i]->visualDensity = density;
+            }
+        
     }
     else
     {
-        double volume = radius * radius * radius;
-        double density = mass / volume;
+        std::cout << "Visual Density: Parent is nuillpointer" << std::endl;
+
         for(size_t i = 0; i < childParticles.size(); i++)
         {
-            childParticles[i]->visualDensity = density;
+            childParticles[i]->visualDensity = 0;
+        }
+    }
+
+} */
+
+
+void Node::calcVisualDensity(double radiusDensityEstimation) 
+{
+    if(parent != nullptr) {
+
+        // Additional check for the validity of the parent pointer
+        if(reinterpret_cast<std::uintptr_t>(parent) < 0x100000) { // Example invalid address
+            std::cerr << "Error: parent pointer is invalid (address: " << parent << ")" << std::endl;
+            return;
+        }
+        if(reinterpret_cast<std::uintptr_t>(parent) == 0x4433c6b8197e3a36 || reinterpret_cast<std::uintptr_t>(parent) == 0x445a2118c02e3386) { // Example invalid address
+            std::cerr << "Error: specific adress (address: " << parent << ")" << std::endl;
+            return;
+        }
+
+
+        // Potential Issue: 'radius' is used before it's defined
+        double radiusDifference = radiusDensityEstimation - radius;
+        double parentRadius = parent->radius; // 'radius' is defined here
+        double parentRadiusDifference = radiusDensityEstimation - parentRadius;
+
+        if(std::abs(radiusDifference) > std::abs(parentRadiusDifference) && parent) {
+            parent->calcVisualDensity(radiusDensityEstimation);
+        }
+        else {
+            double volume = radius * radius * radius;
+            if(volume == 0 || mass == 0) return;
+            double density = mass / volume;
+
+            if(density == 0 || density == INFINITY) return;
+
+            size_t numChildren = childParticles.size(); // Assuming childParticles is a std::vector
+            for (size_t i = 0; i < numChildren; ++i) {
+                Particle* currentParticle = childParticles[i];
+                
+                // Check if currentParticle is valid
+                if (reinterpret_cast<std::uintptr_t>(currentParticle) < 0x100000) {
+                    // Handle invalid particle address
+                    continue;
+                }
+
+                // Proceed with calculations using currentParticle
+                childParticles[i]->visualDensity = density; // Crash occurs here
+            }
         }
     }
 }
+

@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_C_FLAGS_DEBUG "-g -O0")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -g -O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+
+
 
 set(PROJECT_AND_EXE_NAME "AstroGen2")
 project(${PROJECT_AND_EXE_NAME})

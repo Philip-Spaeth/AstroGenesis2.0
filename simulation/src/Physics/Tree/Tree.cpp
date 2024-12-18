@@ -13,7 +13,13 @@ Tree::~Tree()
 {
     delete root;
     root = nullptr;
-} 
+
+    /* int max_threads = omp_get_max_threads();
+    omp_set_num_threads(max_threads);
+    omp_set_nested(1);
+
+    root->deleteTreeParallel(max_threads); */
+}
 
 void Tree::buildTree()
 {
@@ -26,7 +32,7 @@ void Tree::buildTree()
     root->radius = calcTreeWidth();
     root->depth = 0;
     
-    if(true)
+    if(false)
     {
         for (int i = 0; i < simulation->numberOfParticles; i++)
         {
@@ -45,7 +51,7 @@ void Tree::buildTree()
     //end Time
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    //std::cout << "Tree built in " << elapsed_seconds.count() << "s" << std::endl;
+    std::cout << "Tree built in " << elapsed_seconds.count() << "s" << std::endl;
 }
 
 void Tree::calculateForces() 

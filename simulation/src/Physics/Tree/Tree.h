@@ -14,7 +14,7 @@ class Tree
 {
 public:
     Tree(Simulation* sim){ simulation = sim;};
-    ~Tree();   
+    ~Tree();
 
     Simulation* simulation;
     Node* root;
