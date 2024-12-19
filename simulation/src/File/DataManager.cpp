@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <cstdint>
 #include <array>
+#include <sys/stat.h>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -1417,6 +1418,30 @@ bool DataManager::loadConfig(const std::string& filename, Simulation* simulation
     {
         std::cerr << "Number of particles to output is greater than the total number of particles." << std::endl;
         return false;
+    }
+
+    // check if output folder exists
+    struct stat info;
+    if(stat(outputPath.c_str(), &info) != 0)
+    {
+        // create output folder
+    }
+    else if(info.st_mode & S_IFDIR)
+    {
+        // fragen ob gelöscht werden soll
+        std::string answer;
+        std::cout << "Output folder already exists. Do you want to delete it? (y/n): ";
+        std::cin >> answer;
+        if(answer == "y")
+        {
+            //delete everything in the output folder
+            std::string command = "rm -rf " + outputPath;
+            system(command.c_str());
+        }
+        else
+        {
+            return false;
+        }
     }
 
     //delete everything in the output folder
