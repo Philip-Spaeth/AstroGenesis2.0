@@ -15,9 +15,10 @@ public:
     ~Particle(){}
 
     // Particle properties in SI units
-    vec3 position;
-    vec3 velocity;
-    vec3 acceleration;
+    vec3 position = vec3(0,0,0);
+    vec3 velocity = vec3(0,0,0);
+    vec3 acceleration = vec3(0,0,0);
+    vec3 acc = vec3(0,0,0);
     double mass = 0;
 
     //unique id
@@ -53,6 +54,5 @@ public:
     //calculated for all particles not just SPH gas, just for visualization
     double visualDensity = 0;
 
-    //Octree properties
-    std::weak_ptr<Node> node;
+    Node* node;
 };

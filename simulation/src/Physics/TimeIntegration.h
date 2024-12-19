@@ -12,12 +12,12 @@ public:
     ~TimeIntegration(){}
 
     //Semi implicit Euler
-    void Euler(std::shared_ptr<Particle> particle, double deltaTime);
+    void Euler(Particle* particle, double deltaTime);
 
     //Leapfrog
-    void Kick(std::shared_ptr<Particle> particle, double deltaTime);
-    void Drift(std::shared_ptr<Particle> particle, double deltaTime);
+    void Kick(Particle* particle, double deltaTime);
+    void Drift(Particle* particle, double deltaTime);
 
     //integrate the internal energy
-    void Ueuler(std::shared_ptr<Particle>& particle, double deltaTime);
+    void Ueuler(Particle* particle, double deltaTime);
 };
