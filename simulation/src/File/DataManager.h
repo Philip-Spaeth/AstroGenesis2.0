@@ -27,10 +27,10 @@ public:
     bool loadConfig(const std::string& filename, Simulation* simulation);
 
 //save data in AGF and gadget format
-    void saveData(std::vector<std::shared_ptr<Particle>> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime);
+    void saveData(std::vector<Particle*> particles, int timeStep, int numberTimesteps, int numberOfParticles, double deltaTime, double endTime, double currentTime);
 
 //
-    bool loadICs(std::vector<std::shared_ptr<Particle>>& particles, Simulation* sim);
+    bool loadICs(std::vector<Particle*>& particles, Simulation* sim);
 
     //Data Size
     size_t ag_MemorySize;

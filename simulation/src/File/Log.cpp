@@ -26,7 +26,7 @@ std::string formatWithComma(double value)
 
 namespace Log
 {
-    void saveTotalSFRCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    void saveTotalSFRCurve(std::vector<Particle*> particles, const double time)
     {
         double totalSFR = 0;
         for (size_t i = 0; i < particles.size(); i++)
@@ -35,7 +35,7 @@ namespace Log
         }
         Log::printData("totalSFR.csv", time, totalSFR);
     }
-    void saveMassCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    void saveMassCurve(std::vector<Particle*> particles, const double time)
     {
         double gasMass = 0;
         double starMass = 0;
@@ -47,7 +47,7 @@ namespace Log
         Log::printData("gasMass.csv", time, gasMass);
         Log::printData("starMass.csv", time, starMass);
     }
-    void saveTotalTempCurve(std::vector<std::shared_ptr<Particle>> particles, const double time)
+    void saveTotalTempCurve(std::vector<Particle*> particles, const double time)
     {
         double totalTemp = 0;
         for (size_t i = 0; i < particles.size(); i++)
@@ -57,7 +57,7 @@ namespace Log
         Log::printData("totalTemp.csv", time, totalTemp);
 
     }
-    void saveVelocityCurve(std::vector<std::shared_ptr<Particle>> particles, int numberOfParticles)
+    void saveVelocityCurve(std::vector<Particle*> particles, int numberOfParticles)
     {
         std::cout << "Saving velocity curve..." << std::endl;
         std::vector<Particle> ps;

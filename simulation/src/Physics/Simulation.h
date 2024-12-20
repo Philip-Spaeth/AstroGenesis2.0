@@ -67,7 +67,7 @@ public:
     double theta;
     
     //particles
-    std::vector<std::shared_ptr<Particle>> particles;
+    std::vector<Particle*> particles;
 private:
 
     //pointers to modules
@@ -78,5 +78,5 @@ private:
     std::shared_ptr<SFR> sfr;
 
     //calculations without the octree, just for debugging purposes
-    void calculateForcesWithoutOctree(std::shared_ptr<Particle> p);
+    void calculateForcesWithoutOctree(Particle* p);
 };
