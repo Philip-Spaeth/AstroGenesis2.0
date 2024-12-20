@@ -52,9 +52,43 @@ bool Simulation::init()
     //print the computers / server computational parameters like number of threads, ram, cpu, etc.
     Console::printSystemInfo();
     
-    //Log::startProcess("load IC");
-    dataManager->loadICs(particles, this);    
+    //Log::startProcess("load IC")
+    dataManager->loadICs(particles, this);
+/*
+    std::vector<std::shared_ptr<Particle>> andromedaParticles;
+    dataManager->loadICs(andromedaParticles, this);
+    std::vector<std::shared_ptr<Particle>> milkyWayParticles;
+    dataManager->loadICs(milkyWayParticles, this);
+    double angleX = 0.9;
+    double angleY = 2.2;
+    double angleZ = -1.14;
 
+    double cosX = cos(angleX), sinX = sin(angleX);
+    double cosY = cos(angleY), sinY = sin(angleY);
+    double cosZ = cos(angleZ), sinZ = sin(angleZ);
+    for (int i = 0; i < (int)andromedaParticles.size(); i++)
+    {
+        vec3 pos = andromedaParticles[i]->position;
+
+        double y1 = pos.y * cosX - pos.z * sinX;
+        double z1 = pos.y * sinX + pos.z * cosX;
+        double x2 = pos.x * cosY + z1 * sinY;
+        double z2 = -pos.x * sinY + z1 * cosY;
+        double x3 = x2 * cosZ - y1 * sinZ;
+        double y3 = x2 * sinZ + y1 * cosZ;
+
+        andromedaParticles[i]->position = vec3(x3, y3, z2);
+        andromedaParticles[i]->position += vec3(0.2 * Units::MPC, 0.1 * Units::MPC, 0.0);
+        andromedaParticles[i]->velocity += vec3(- 1000 * Units::KMS, - 500 * Units::KMS, 0.0);
+        particles.push_back(andromedaParticles[i]);
+    }
+    for (int i = 0; i < (int)milkyWayParticles.size(); i++)
+    {
+        particles.push_back(milkyWayParticles[i]);
+    }
+    dataManager->saveData(particles, 0, fixedTimeSteps, numParticlesOutput, fixedStep, endTime, 0.0);
+*/
+    //numberOfParticles = particles.size();
     if((size_t)numberOfParticles != particles.size())
     {
         std::cerr << "Error: Number of particles in the ConfigFile does not match the number of particles in the data file." << std::endl;
@@ -83,7 +117,6 @@ bool Simulation::init()
     std::shuffle(particles.begin(), particles.end(), g);
 
     //Log::saveVelocityCurve(particles, numberOfParticles);
-    
     Log::startProcess("build tree");
     Tree* tree = new Tree(this);
     tree->buildTree();
